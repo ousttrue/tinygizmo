@@ -1,5 +1,13 @@
 # tinygizmo
 
+# Customize
+
+* CMake build
+
+# Original
+
+* https://github.com/ddiakopoulos/tinygizmo
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/ddiakopoulos/tinygizmo/master/preview.png"/>
 </p>

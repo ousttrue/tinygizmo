@@ -8,7 +8,7 @@
             "name": "tiny-gizmo-example",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tiny-gizmo-example/build/tiny-gizmo-example.exe",
+            "program": "${workspaceFolder}/build/tiny-gizmo-example/tiny-gizmo-example.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

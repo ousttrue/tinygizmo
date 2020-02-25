@@ -1,4 +1,4 @@
-set(TARGET_NAME tiny-gizmo-exammple)
+set(TARGET_NAME tiny-gizmo-example)
 add_executable(${TARGET_NAME}
     example-main.cpp
     )
