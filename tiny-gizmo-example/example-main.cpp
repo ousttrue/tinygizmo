@@ -8,7 +8,6 @@
 #include "gl-api.hpp"
 #include "teapot.h"
 
-using namespace tinygizmo;
 using namespace minalg;
 
 static inline uint64_t get_local_time_ns()
@@ -97,12 +96,12 @@ constexpr const char lit_frag[] = R"(#version 330
 //   Main Application   //
 //////////////////////////
 
-geometry_mesh make_teapot()
+tinygizmo::geometry_mesh make_teapot()
 {
-    geometry_mesh mesh;
+    tinygizmo::geometry_mesh mesh;
     for (int i = 0; i < 4974; i += 6)
     {
-        geometry_vertex v;
+        tinygizmo::geometry_vertex v;
         v.position = float3(teapot_vertices[i + 0], teapot_vertices[i + 1], teapot_vertices[i + 2]);
         v.normal = float3(teapot_vertices[i + 3], teapot_vertices[i + 4], teapot_vertices[i + 5]);
         mesh.vertices.push_back(v);
@@ -132,22 +131,24 @@ void draw_lit_mesh(GlShader &shader, GlMesh &mesh, const linalg::aliases::float3
     shader.unbind();
 }
 
-void upload_mesh(const geometry_mesh &cpu, GlMesh &gpu)
+void upload_mesh(const tinygizmo::geometry_mesh &cpu, GlMesh &gpu)
 {
     const auto &verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(cpu.vertices);
     const auto &tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(cpu.triangles);
     gpu.set_vertices(verts, GL_DYNAMIC_DRAW);
-    gpu.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(geometry_vertex), (GLvoid *)offsetof(geometry_vertex, position));
-    gpu.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(geometry_vertex), (GLvoid *)offsetof(geometry_vertex, normal));
-    gpu.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(geometry_vertex), (GLvoid *)offsetof(geometry_vertex, color));
+    gpu.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, position));
+    gpu.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, normal));
+    gpu.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, color));
     gpu.set_elements(tris, GL_DYNAMIC_DRAW);
 }
 
 int main(int argc, char *argv[])
 {
-    std::unique_ptr<Window> win;
 
-    bool ml = 0, mr = 0, bf = 0, bl = 0, bb = 0, br = 0;
+    // mouse state
+    bool ml = 0, mr = 0;
+    // wasd state
+    bool bf = 0, bl = 0, bb = 0, br = 0;
 
     camera cam = {};
     cam.yfov = 1.0f;
@@ -155,9 +156,10 @@ int main(int argc, char *argv[])
     cam.far_clip = 32.0f;
     cam.position = {0, 1.5f, 4};
 
-    gizmo_application_state gizmo_state;
-    gizmo_context gizmo_ctx;
+    tinygizmo::gizmo_application_state gizmo_state;
+    tinygizmo::gizmo_context gizmo_ctx;
 
+    std::unique_ptr<Window> win;
     try
     {
         win.reset(new Window(1280, 800, "tiny-gizmo-example-app"));
@@ -169,17 +171,15 @@ int main(int argc, char *argv[])
     }
 
     auto windowSize = win->get_window_size();
+    auto wireframeShader = GlShader(gizmo_vert, gizmo_frag);
+    auto litShader = GlShader(lit_vert, lit_frag);
 
-    GlShader wireframeShader, litShader;
-    GlMesh gizmoEditorMesh, teapotMesh;
-
-    wireframeShader = GlShader(gizmo_vert, gizmo_frag);
-    litShader = GlShader(lit_vert, lit_frag);
-
-    geometry_mesh teapot = make_teapot();
+    auto teapot = make_teapot();
+    GlMesh teapotMesh;
     upload_mesh(teapot, teapotMesh);
 
-    gizmo_ctx.render = [&](const geometry_mesh &r) {
+    GlMesh gizmoEditorMesh;
+    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
         upload_mesh(r, gizmoEditorMesh);
         draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), identity4x4);
     };
@@ -227,12 +227,12 @@ int main(int argc, char *argv[])
         lastCursor = minalg::float2(position.x, position.y);
     };
 
-    rigid_transform xform_a;
+    tinygizmo::rigid_transform xform_a;
     xform_a.position = {-2, 0, 0};
 
-    rigid_transform xform_a_last;
+    tinygizmo::rigid_transform xform_a_last;
 
-    rigid_transform xform_b;
+    tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
     auto t0 = std::chrono::high_resolution_clock::now();
