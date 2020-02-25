@@ -8,8 +8,6 @@
 #include "gl-api.hpp"
 #include "teapot.h"
 
-using namespace minalg;
-
 static inline uint64_t get_local_time_ns()
 {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -102,12 +100,12 @@ tinygizmo::geometry_mesh make_teapot()
     for (int i = 0; i < 4974; i += 6)
     {
         tinygizmo::geometry_vertex v;
-        v.position = float3(teapot_vertices[i + 0], teapot_vertices[i + 1], teapot_vertices[i + 2]);
-        v.normal = float3(teapot_vertices[i + 3], teapot_vertices[i + 4], teapot_vertices[i + 5]);
+        v.position = minalg::float3(teapot_vertices[i + 0], teapot_vertices[i + 1], teapot_vertices[i + 2]);
+        v.normal = minalg::float3(teapot_vertices[i + 3], teapot_vertices[i + 4], teapot_vertices[i + 5]);
         mesh.vertices.push_back(v);
     }
     for (int i = 0; i < 4680; i += 3)
-        mesh.triangles.push_back(uint3(teapot_triangles[i + 0], teapot_triangles[i + 1], teapot_triangles[i + 2]));
+        mesh.triangles.push_back(minalg::uint3(teapot_triangles[i + 0], teapot_triangles[i + 1], teapot_triangles[i + 2]));
     return mesh;
 }
 
