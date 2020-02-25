@@ -1,6 +1,10 @@
 set(TARGET_NAME tiny-gizmo-example)
 add_executable(${TARGET_NAME}
     example-main.cpp
+    gl-api.cpp
+    )
+set_property(TARGET ${TARGET_NAME}
+    PROPERTY CXX_STANDARD 20
     )
 target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/third-party
