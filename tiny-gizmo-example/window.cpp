@@ -6,7 +6,17 @@
 #define GLFW_INCLUDE_GLU
 #include <GLFW\glfw3.h>
 
-Window::Window(int width, int height, const char *title)
+Window::Window()
+{}
+
+Window::~Window()
+{
+    glfwMakeContextCurrent(window);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
+bool Window::initialize(int width, int height, const char *title)
 {
     if (glfwInit() == GL_FALSE)
         throw std::runtime_error("glfwInit() failed");
@@ -52,13 +62,10 @@ Window::Window(int width, int height, const char *title)
     });
 
     glfwSetWindowUserPointer(window, this);
-}
 
-Window::~Window()
-{
-    glfwMakeContextCurrent(window);
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    glfwSwapInterval(1);
+
+    return true;
 }
 
 GLFWwindow *Window::get_glfw_window_handle() { return window; };

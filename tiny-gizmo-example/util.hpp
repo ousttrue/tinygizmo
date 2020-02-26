@@ -9,13 +9,6 @@
 #include <functional>
 #include <vector>
 
-#define GLEW_STATIC
-#define GL_GLEXT_PROTOTYPES
-#include "glew.h"
-
-#define GLFW_INCLUDE_GLU
-#include "GLFW\glfw3.h"
-
 #include <tiny-gizmo.hpp>
 #include "linalg.h"
 

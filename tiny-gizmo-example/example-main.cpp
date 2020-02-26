@@ -9,6 +9,9 @@
 #include "teapot.h"
 #include "window.h"
 
+#define GLFW_INCLUDE_GLU
+#include <GLFW\glfw3.h>
+
 static inline uint64_t get_local_time_ns()
 {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -152,18 +155,9 @@ int main(int argc, char *argv[])
     tinygizmo::gizmo_application_state gizmo_state;
     tinygizmo::gizmo_context gizmo_ctx;
 
-    std::unique_ptr<Window> win;
-    try
-    {
-        win.reset(new Window(1280, 800, "tiny-gizmo-example-app"));
-        glfwSwapInterval(1);
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << "Caught GLFW window exception: " << e.what() << std::endl;
-    }
+    Window win;
+    win.initialize(1280, 800, "tiny-gizmo-example-app");
 
-    auto windowSize = win->get_window_size();
     auto wireframeShader = GlShader(gizmo_vert, gizmo_frag);
     auto litShader = GlShader(lit_vert, lit_frag);
 
@@ -172,12 +166,13 @@ int main(int argc, char *argv[])
     upload_mesh(teapot, teapotMesh);
 
     GlMesh gizmoEditorMesh;
+    auto windowSize = win.get_window_size();
     gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
         upload_mesh(r, gizmoEditorMesh);
         draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), identity4x4);
     };
 
-    win->on_key = [&](int key, int action, int mods) {
+    win.on_key = [&](int key, int action, int mods) {
         if (key == GLFW_KEY_LEFT_CONTROL)
             gizmo_state.hotkey_ctrl = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_L)
@@ -189,30 +184,30 @@ int main(int argc, char *argv[])
         if (key == GLFW_KEY_S)
             gizmo_state.hotkey_scale = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_W)
-            win->m_state.bf = (action != GLFW_RELEASE);
+            win.m_state.bf = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_A)
-            win->m_state.bl = (action != GLFW_RELEASE);
+            win.m_state.bl = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_S)
-            win->m_state.bb = (action != GLFW_RELEASE);
+            win.m_state.bb = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_D)
-            win->m_state.br = (action != GLFW_RELEASE);
+            win.m_state.br = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_ESCAPE)
-            win->close();
+            win.close();
     };
 
-    win->on_mouse_button = [&](int button, int action, int mods) {
+    win.on_mouse_button = [&](int button, int action, int mods) {
         if (button == GLFW_MOUSE_BUTTON_LEFT)
             gizmo_state.mouse_left = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_LEFT)
-            win->m_state.ml = (action != GLFW_RELEASE);
+            win.m_state.ml = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_RIGHT)
-            win->m_state.mr = (action != GLFW_RELEASE);
+            win.m_state.mr = (action != GLFW_RELEASE);
     };
 
     minalg::float2 lastCursor;
-    win->on_cursor_pos = [&](linalg::aliases::float2 position) {
+    win.on_cursor_pos = [&](linalg::aliases::float2 position) {
         auto deltaCursorMotion = minalg::float2(position.x, position.y) - lastCursor;
-        if (win->m_state.mr)
+        if (win.m_state.mr)
         {
             cam.yaw -= deltaCursorMotion.x * 0.01f;
             cam.pitch -= deltaCursorMotion.y * 0.01f;
@@ -230,7 +225,7 @@ int main(int argc, char *argv[])
 
     Window::State state;
     auto t0 = std::chrono::high_resolution_clock::now();
-    while (win->loop(&state))
+    while (win.loop(&state))
     {
         auto t1 = std::chrono::high_resolution_clock::now();
         float timestep = std::chrono::duration<float>(t1 - t0).count();
@@ -264,7 +259,7 @@ int main(int argc, char *argv[])
 
         const auto rayDir = get_ray_from_pixel({lastCursor.x, lastCursor.y}, {0, 0, windowSize.x, windowSize.y}, cam).direction;
 
-        // Gizmo input interaction state populated via win->on_input(...) callback above. Update app parameters:
+        // Gizmo input interaction state populated via win.on_input(...) callback above. Update app parameters:
         gizmo_state.viewport_size = minalg::float2(windowSize.x, windowSize.y);
         gizmo_state.cam.near_clip = cam.near_clip;
         gizmo_state.cam.far_clip = cam.far_clip;
@@ -303,7 +298,7 @@ int main(int argc, char *argv[])
 
         gl_check_error(__FILE__, __LINE__);
 
-        win->swap_buffers();
+        win.swap_buffers();
     }
     return EXIT_SUCCESS;
 }

@@ -22,7 +22,7 @@ public:
     };
     State m_state;
 
-    Window(int width, int height, const char *title);
+    Window();
     ~Window();
 
     Window(const Window &) = delete;
@@ -30,6 +30,7 @@ public:
     Window &operator=(const Window &) = delete;
     Window &operator=(Window &&) = delete;
 
+    bool initialize(int width, int height, const char *title);
     struct GLFWwindow *get_glfw_window_handle();
     bool should_close() const;
     int get_window_attrib(int attrib) const;
