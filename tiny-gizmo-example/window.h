@@ -17,6 +17,11 @@ struct WindowState
     bool key_left_control = false;
     // time state
     std::chrono::steady_clock::time_point time{};
+
+    float aspectRatio() const
+    {
+        return (float)windowWidth / (float)windowHeight;
+    }
 };
 
 class Window

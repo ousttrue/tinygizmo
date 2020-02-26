@@ -198,6 +198,8 @@ int main(int argc, char *argv[])
             }};
         gizmo_ctx.update(gizmo_state);
 
+        auto viewProjMatrix = cam.get_viewproj_matrix(state.aspectRatio());
+
         //
         // draw
         //
@@ -206,12 +208,12 @@ int main(int argc, char *argv[])
         // teapot a
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
-        teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
+        teapot.draw(cam.position, viewProjMatrix, teapotModelMatrix_a);
 
         // teapot a
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
-        teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_b);
+        teapot.draw(cam.position, viewProjMatrix, teapotModelMatrix_b);
 
         {
             //
@@ -230,7 +232,7 @@ int main(int argc, char *argv[])
         //
         // gizmo after xform user draw
         //
-        gizmo.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4, true);
+        gizmo.draw(cam.position, viewProjMatrix, identity4x4, true);
 
         //
         // present
