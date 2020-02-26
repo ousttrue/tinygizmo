@@ -117,36 +117,29 @@ tinygizmo::geometry_mesh make_teapot()
     return mesh;
 }
 
-struct GlModel
-{
-    std::shared_ptr<GlShader> shader;
-    GlMesh mesh;
-
-    void upload_mesh(const tinygizmo::geometry_mesh &cpu)
-    {
-        const auto &verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(cpu.vertices);
-        mesh.set_vertices(verts, GL_DYNAMIC_DRAW);
-        mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, position));
-        mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, normal));
-        mesh.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, color));
-
-        const auto &tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(cpu.triangles);
-        mesh.set_elements(tris, GL_DYNAMIC_DRAW);
-    }
-
-    void draw(const linalg::aliases::float3 eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model)
-    {
-        shader->bind();
-        shader->uniform("u_viewProj", viewProj);
-        shader->uniform("u_modelMatrix", model);
-        shader->uniform("u_eye", eye);
-        mesh.draw_elements();
-        shader->unbind();
-    }
-};
-
 int main(int argc, char *argv[])
 {
+    Window win;
+    win.initialize(1280, 800, "tiny-gizmo-example-app");
+
+    GlModel teapot;
+    teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
+    auto teapot_mesh = make_teapot();
+    teapot.upload_mesh(
+        (uint32_t)teapot_mesh.vertices.size(), teapot_mesh.vertices.data(),
+        (uint32_t)teapot_mesh.triangles.size(), teapot_mesh.triangles.data(),
+        false);
+
+    tinygizmo::gizmo_context gizmo_ctx;
+    GlModel gizmo;
+    gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
+    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
+        gizmo.upload_mesh(
+            (uint32_t)r.vertices.size(), r.vertices.data(),
+            (uint32_t)r.triangles.size(), r.triangles.data(),
+            true);
+    };
+
     camera cam{
         .yfov = 1.0f,
         .near_clip = 0.01f,
@@ -154,26 +147,8 @@ int main(int argc, char *argv[])
         .position = {0, 1.5f, 4},
     };
 
-    tinygizmo::gizmo_application_state gizmo_state;
-    tinygizmo::gizmo_context gizmo_ctx;
-
-    Window win;
-    win.initialize(1280, 800, "tiny-gizmo-example-app");
-
-    GlModel teapot;
-    teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
-    teapot.upload_mesh(make_teapot());
-
-    GlModel gizmo;
-    gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
-    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
-        gizmo.upload_mesh(r);
-    };
-
     tinygizmo::rigid_transform xform_a;
     xform_a.position = {-2, 0, 0};
-
-    tinygizmo::rigid_transform xform_a_last;
 
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
@@ -208,6 +183,7 @@ int main(int argc, char *argv[])
             cam.pitch -= deltaCursorMotion.y * 0.01f;
         }
 
+        tinygizmo::gizmo_application_state gizmo_state;
         gizmo_state.mouse_left = state.mouseLeftDown;
         gizmo_state.hotkey_ctrl = state.key_left_control;
         gizmo_state.hotkey_local = state.keycode['L'];
@@ -239,8 +215,9 @@ int main(int argc, char *argv[])
         gizmo_state.ray_origin = minalg::float3(cam.position.x, cam.position.y, cam.position.z);
         gizmo_state.ray_direction = minalg::float3(rayDir.x, rayDir.y, rayDir.z);
 
-        glDisable(GL_CULL_FACE);
+        // glDisable(GL_CULL_FACE);
 
+        // teapots
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
         teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
@@ -251,21 +228,11 @@ int main(int argc, char *argv[])
 
         glClear(GL_DEPTH_BUFFER_BIT);
 
+        // GIZMO
         gizmo_ctx.update(gizmo_state);
-
-        if (transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a))
-        {
-            std::cout << get_local_time_ns() << " - "
-                      << "First Gizmo Hovered..." << std::endl;
-            if (xform_a != xform_a_last)
-                std::cout << get_local_time_ns() << " - "
-                          << "First Gizmo Changed..." << std::endl;
-            xform_a_last = xform_a;
-        }
-
+        transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a);
         transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
         gizmo_ctx.draw();
-
         gizmo.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4);
 
         gl_check_error(__FILE__, __LINE__);
