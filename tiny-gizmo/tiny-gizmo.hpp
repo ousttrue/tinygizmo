@@ -500,9 +500,9 @@ namespace tinygizmo
         ~gizmo_context();
 
         void update(const gizmo_application_state & state);         // Clear geometry buffer and update internal `gizmo_application_state` data
-        void draw();                                                // Trigger a render callback per call to `update(...)`
+        void render();                                                // Trigger a render callback per call to `update(...)`
         transform_mode get_mode() const;                            // Return the active mode being used by `transform_gizmo(...)`
-        std::function<void(const geometry_mesh & r)> render;        // Callback to render the gizmo meshes
+        std::function<void(const geometry_mesh & r)> on_render;        // Callback to render the gizmo meshes
     };
 
     bool transform_gizmo(const std::string & name, gizmo_context & g, rigid_transform & t);
