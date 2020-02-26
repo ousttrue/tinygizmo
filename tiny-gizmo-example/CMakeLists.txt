@@ -1,6 +1,6 @@
 set(TARGET_NAME tiny-gizmo-example)
 add_executable(${TARGET_NAME}
-    example-main.cpp
+    main.cpp
     gl-api.cpp
     window.cpp
     )
