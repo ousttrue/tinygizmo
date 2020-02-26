@@ -25,10 +25,14 @@ constexpr const char gizmo_vert[] = R"(#version 330
     layout(location = 2) in vec4 color;
     out vec4 v_color;
     out vec3 v_world, v_normal;
-    uniform mat4 u_mvp;
+
+    //uniform mat4 u_mvp;
+    uniform mat4 u_modelMatrix;
+    uniform mat4 u_viewProj;
+
     void main()
     {
-        gl_Position = u_mvp * vec4(vertex.xyz, 1);
+        gl_Position = u_viewProj * u_modelMatrix * vec4(vertex.xyz, 1);
         v_color = color;
         v_world = vertex;
         v_normal = normal;
@@ -113,44 +117,42 @@ tinygizmo::geometry_mesh make_teapot()
     return mesh;
 }
 
-void draw_mesh(GlShader &shader, GlMesh &mesh, const linalg::aliases::float3 eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model)
+struct GlModel
 {
-    linalg::aliases::float4x4 modelViewProjectionMatrix = mul(viewProj, model);
-    shader.bind();
-    shader.uniform("u_mvp", modelViewProjectionMatrix);
-    shader.uniform("u_eye", eye);
-    mesh.draw_elements();
-    shader.unbind();
-}
+    std::shared_ptr<GlShader> shader;
+    GlMesh mesh;
 
-void draw_lit_mesh(GlShader &shader, GlMesh &mesh, const linalg::aliases::float3 eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model)
-{
-    shader.bind();
-    shader.uniform("u_viewProj", viewProj);
-    shader.uniform("u_modelMatrix", model);
-    shader.uniform("u_eye", eye);
-    mesh.draw_elements();
-    shader.unbind();
-}
+    void upload_mesh(const tinygizmo::geometry_mesh &cpu)
+    {
+        const auto &verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(cpu.vertices);
+        mesh.set_vertices(verts, GL_DYNAMIC_DRAW);
+        mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, position));
+        mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, normal));
+        mesh.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, color));
 
-void upload_mesh(const tinygizmo::geometry_mesh &cpu, GlMesh &gpu)
-{
-    const auto &verts = reinterpret_cast<const std::vector<linalg::aliases::float3> &>(cpu.vertices);
-    const auto &tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(cpu.triangles);
-    gpu.set_vertices(verts, GL_DYNAMIC_DRAW);
-    gpu.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, position));
-    gpu.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, normal));
-    gpu.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(tinygizmo::geometry_vertex), (GLvoid *)offsetof(tinygizmo::geometry_vertex, color));
-    gpu.set_elements(tris, GL_DYNAMIC_DRAW);
-}
+        const auto &tris = reinterpret_cast<const std::vector<linalg::aliases::uint3> &>(cpu.triangles);
+        mesh.set_elements(tris, GL_DYNAMIC_DRAW);
+    }
+
+    void draw(const linalg::aliases::float3 eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model)
+    {
+        shader->bind();
+        shader->uniform("u_viewProj", viewProj);
+        shader->uniform("u_modelMatrix", model);
+        shader->uniform("u_eye", eye);
+        mesh.draw_elements();
+        shader->unbind();
+    }
+};
 
 int main(int argc, char *argv[])
 {
-    camera cam = {};
-    cam.yfov = 1.0f;
-    cam.near_clip = 0.01f;
-    cam.far_clip = 32.0f;
-    cam.position = {0, 1.5f, 4};
+    camera cam{
+        .yfov = 1.0f,
+        .near_clip = 0.01f,
+        .far_clip = 32.0f,
+        .position = {0, 1.5f, 4},
+    };
 
     tinygizmo::gizmo_application_state gizmo_state;
     tinygizmo::gizmo_context gizmo_ctx;
@@ -158,16 +160,14 @@ int main(int argc, char *argv[])
     Window win;
     win.initialize(1280, 800, "tiny-gizmo-example-app");
 
-    auto wireframeShader = GlShader(gizmo_vert, gizmo_frag);
-    auto litShader = GlShader(lit_vert, lit_frag);
+    GlModel teapot;
+    teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
+    teapot.upload_mesh(make_teapot());
 
-    auto teapot = make_teapot();
-    GlMesh teapotMesh;
-    upload_mesh(teapot, teapotMesh);
-
-    GlMesh gizmoEditorMesh;
+    GlModel gizmo;
+    gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
     gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
-        upload_mesh(r, gizmoEditorMesh);
+        gizmo.upload_mesh(r);
     };
 
     tinygizmo::rigid_transform xform_a;
@@ -238,16 +238,16 @@ int main(int argc, char *argv[])
         gizmo_state.cam.orientation = minalg::float4(cameraOrientation.x, cameraOrientation.y, cameraOrientation.z, cameraOrientation.w);
         gizmo_state.ray_origin = minalg::float3(cam.position.x, cam.position.y, cam.position.z);
         gizmo_state.ray_direction = minalg::float3(rayDir.x, rayDir.y, rayDir.z);
-        //gizmo_state.screenspace_scale = 80.f; // optional flag to draw the gizmos at a constant screen-space scale
 
         glDisable(GL_CULL_FACE);
+
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
-        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
+        teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
 
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
-        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_b);
+        teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_b);
 
         glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
         transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
         gizmo_ctx.draw();
 
-        draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4);
+        gizmo.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4);
 
         gl_check_error(__FILE__, __LINE__);
 
