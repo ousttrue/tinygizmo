@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
-    Window::State state;
+    WindowState state;
     minalg::float2 lastCursor;
     auto t0 = std::chrono::high_resolution_clock::now();
     while (win.loop(&state))
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
         const auto rayDir = get_ray_from_pixel({lastCursor.x, lastCursor.y}, {0, 0, state.windowWidth, state.windowHeight}, cam).direction;
 
         // Gizmo input interaction state populated via win.on_input(...) callback above. Update app parameters:
-        gizmo_state.viewport_size = minalg::float2((int)state.windowWidth, (int)state.windowHeight);
+        gizmo_state.viewport_size = minalg::float2((float)state.windowWidth, (float)state.windowHeight);
         gizmo_state.cam.near_clip = cam.near_clip;
         gizmo_state.cam.far_clip = cam.far_clip;
         gizmo_state.cam.yfov = cam.yfov;
