@@ -7,7 +7,8 @@
 #include <GLFW\glfw3.h>
 
 Window::Window()
-{}
+{
+}
 
 Window::~Window()
 {
@@ -33,8 +34,6 @@ bool Window::initialize(int width, int height, const char *title)
 
     glfwSetCharCallback(window, [](GLFWwindow *window, unsigned int codepoint) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
-        if (w->on_char)
-            w->on_char(codepoint);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int, int action, int mods) {
@@ -49,16 +48,14 @@ bool Window::initialize(int width, int height, const char *title)
             w->on_mouse_button(button, action, mods);
     });
 
-    glfwSetCursorPosCallback(window, [](GLFWwindow *window, double xpos, double ypos) {
+    glfwSetCursorPosCallback(window, [](GLFWwindow *window, double x, double y) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
-        if (w->on_cursor_pos)
-            w->on_cursor_pos(linalg::aliases::float2(linalg::aliases::double2(xpos, ypos)));
+        w->m_state.mouseX = (int)x;
+        w->m_state.mouseY = (int)y;
     });
 
     glfwSetDropCallback(window, [](GLFWwindow *window, int numFiles, const char **paths) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
-        if (w->on_drop)
-            w->on_drop(numFiles, paths);
     });
 
     glfwSetWindowUserPointer(window, this);

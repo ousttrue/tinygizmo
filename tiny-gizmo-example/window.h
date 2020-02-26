@@ -7,18 +7,21 @@ class Window
     struct GLFWwindow *window = nullptr;
 
 public:
-    std::function<void(unsigned int codepoint)> on_char;
     std::function<void(int key, int action, int mods)> on_key;
     std::function<void(int button, int action, int mods)> on_mouse_button;
-    std::function<void(linalg::aliases::float2 pos)> on_cursor_pos;
-    std::function<void(int numFiles, const char **paths)> on_drop;
 
     struct State
     {
         // mouse state
-        bool ml = 0, mr = 0;
+        int mouseX=0;
+        int mouseY=0;
+        bool mouseLeftDown = 0;
+        bool mouseRightDown = 0;
         // wasd state
-        bool bf = 0, bl = 0, bb = 0, br = 0;
+        bool bf = 0;
+        bool bl = 0;
+        bool bb = 0;
+        bool br = 0;
     };
     State m_state;
 

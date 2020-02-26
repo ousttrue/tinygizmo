@@ -199,20 +199,9 @@ int main(int argc, char *argv[])
         if (button == GLFW_MOUSE_BUTTON_LEFT)
             gizmo_state.mouse_left = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_LEFT)
-            win.m_state.ml = (action != GLFW_RELEASE);
+            win.m_state.mouseLeftDown = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_RIGHT)
-            win.m_state.mr = (action != GLFW_RELEASE);
-    };
-
-    minalg::float2 lastCursor;
-    win.on_cursor_pos = [&](linalg::aliases::float2 position) {
-        auto deltaCursorMotion = minalg::float2(position.x, position.y) - lastCursor;
-        if (win.m_state.mr)
-        {
-            cam.yaw -= deltaCursorMotion.x * 0.01f;
-            cam.pitch -= deltaCursorMotion.y * 0.01f;
-        }
-        lastCursor = minalg::float2(position.x, position.y);
+            win.m_state.mouseRightDown = (action != GLFW_RELEASE);
     };
 
     tinygizmo::rigid_transform xform_a;
@@ -224,6 +213,7 @@ int main(int argc, char *argv[])
     xform_b.position = {+2, 0, 0};
 
     Window::State state;
+    minalg::float2 lastCursor;
     auto t0 = std::chrono::high_resolution_clock::now();
     while (win.loop(&state))
     {
@@ -231,7 +221,8 @@ int main(int argc, char *argv[])
         float timestep = std::chrono::duration<float>(t1 - t0).count();
         t0 = t1;
 
-        if (state.mr)
+        auto currentCursor = minalg::float2((float)state.mouseX, (float)state.mouseY);
+        if (state.mouseRightDown)
         {
             const linalg::aliases::float4 orientation = cam.get_orientation();
             linalg::aliases::float3 move;
@@ -245,7 +236,12 @@ int main(int argc, char *argv[])
                 move += qxdir(orientation);
             if (length2(move) > 0)
                 cam.position += normalize(move) * (timestep * 10);
+
+            auto deltaCursorMotion = currentCursor - lastCursor;
+            cam.yaw -= deltaCursorMotion.x * 0.01f;
+            cam.pitch -= deltaCursorMotion.y * 0.01f;
         }
+        lastCursor = currentCursor;
 
         glViewport(0, 0, windowSize.x, windowSize.y);
 
