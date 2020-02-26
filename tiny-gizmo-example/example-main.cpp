@@ -128,12 +128,6 @@ int main(int argc, char *argv[])
     tinygizmo::gizmo_context gizmo_ctx;
     GlModel gizmo;
     gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
-    gizmo_ctx.on_render = [&](const tinygizmo::geometry_mesh &r) {
-        gizmo.upload_mesh(
-            (uint32_t)r.vertices.size(), r.vertices.data(),
-            (uint32_t)r.triangles.size(), r.triangles.data(),
-            true);
-    };
 
     camera cam{
         .yfov = 1.0f,
@@ -150,6 +144,9 @@ int main(int argc, char *argv[])
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
+    //
+    // main loop
+    //
     WindowState state;
     WindowState lastState;
     for (int i = 0; win.loop(&state); ++i)
@@ -223,9 +220,13 @@ int main(int argc, char *argv[])
             //
             tinygizmo::transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a);
             tinygizmo::transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
-            gizmo_ctx.render();
+            auto &r = gizmo_ctx.render();
+            gizmo.upload_mesh(
+                (uint32_t)r.vertices.size(), r.vertices.data(),
+                (uint32_t)r.triangles.size(), r.triangles.data(),
+                true);
         }
-
+        
         //
         // gizmo after xform user draw
         //

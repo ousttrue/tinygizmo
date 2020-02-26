@@ -303,7 +303,9 @@ struct gizmo_context::gizmo_context_impl
 
     // Public methods
     void update(const gizmo_application_state & state);
-    void draw();
+
+    tinygizmo::geometry_mesh m_r{};
+    const tinygizmo::geometry_mesh & render();
 };
 
 gizmo_context::gizmo_context_impl::gizmo_context_impl(gizmo_context * ctx) : ctx(ctx)
@@ -335,21 +337,24 @@ void gizmo_context::gizmo_context_impl::update(const gizmo_application_state & s
     drawlist.clear();
 }
 
-void gizmo_context::gizmo_context_impl::draw()
+const tinygizmo::geometry_mesh & gizmo_context::gizmo_context_impl::render()
 {
-    if (ctx->on_render)
+    m_r.vertices.clear();
+    m_r.triangles.clear();
+
+    // geometry_mesh r; 
+    // Combine all gizmo sub-meshes into one super-mesh
+    for (auto & m : drawlist)
     {
-        geometry_mesh r; // Combine all gizmo sub-meshes into one super-mesh
-        for (auto & m : drawlist)
-        {
-            uint32_t numVerts = (uint32_t) r.vertices.size();
-            auto it = r.vertices.insert(r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
-            for (auto & f : m.mesh.triangles) r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z });
-            for (; it != r.vertices.end(); ++it) it->color = m.color; // Take the color and shove it into a per-vertex attribute
-        }
-        ctx->on_render(r);
+        uint32_t numVerts = (uint32_t) m_r.vertices.size();
+        auto it = m_r.vertices.insert(m_r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
+        for (auto & f : m.mesh.triangles) m_r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z });
+        for (; it != m_r.vertices.end(); ++it) it->color = m.color; // Take the color and shove it into a per-vertex attribute
     }
+
     last_state = active_state;
+
+    return m_r;
 }
 
 // This will calculate a scale constant based on the number of screenspace pixels passed as pixel_scale.
@@ -759,7 +764,7 @@ void scale_gizmo(const std::string & name, gizmo_context::gizmo_context_impl & g
 gizmo_context::gizmo_context() { impl.reset(new gizmo_context_impl(this)); };
 gizmo_context::~gizmo_context() { }
 void gizmo_context::update(const gizmo_application_state & state) { impl->update(state); }
-void gizmo_context::render() { impl->draw(); }
+const tinygizmo::geometry_mesh & gizmo_context::render() { return impl->render(); }
 transform_mode gizmo_context::get_mode() const { return impl->mode; }
 
 bool tinygizmo::transform_gizmo(const std::string & name, gizmo_context & g, rigid_transform & t)
