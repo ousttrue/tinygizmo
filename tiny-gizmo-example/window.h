@@ -1,5 +1,5 @@
 #pragma once
-#include <functional>
+#include <array>
 #include <linalg.h>
 
 class Window
@@ -7,7 +7,6 @@ class Window
     struct GLFWwindow *window = nullptr;
 
 public:
-    std::function<void(int key, int action, int mods)> on_key;
 
     struct State
     {
@@ -16,11 +15,9 @@ public:
         int mouseY=0;
         bool mouseLeftDown = 0;
         bool mouseRightDown = 0;
-        // wasd state
-        bool bf = 0;
-        bool bl = 0;
-        bool bb = 0;
-        bool br = 0;
+        // key state
+        std::array<bool, 127> keycode{};
+        bool key_left_control = false;
     };
     State m_state;
 

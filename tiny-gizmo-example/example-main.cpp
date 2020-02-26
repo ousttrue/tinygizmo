@@ -172,29 +172,6 @@ int main(int argc, char *argv[])
         draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), identity4x4);
     };
 
-    win.on_key = [&](int key, int action, int mods) {
-        if (key == GLFW_KEY_LEFT_CONTROL)
-            gizmo_state.hotkey_ctrl = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_L)
-            gizmo_state.hotkey_local = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_T)
-            gizmo_state.hotkey_translate = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_R)
-            gizmo_state.hotkey_rotate = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_S)
-            gizmo_state.hotkey_scale = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_W)
-            win.m_state.bf = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_A)
-            win.m_state.bl = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_S)
-            win.m_state.bb = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_D)
-            win.m_state.br = (action != GLFW_RELEASE);
-        if (key == GLFW_KEY_ESCAPE)
-            win.close();
-    };
-
     tinygizmo::rigid_transform xform_a;
     xform_a.position = {-2, 0, 0};
 
@@ -217,13 +194,13 @@ int main(int argc, char *argv[])
         {
             const linalg::aliases::float4 orientation = cam.get_orientation();
             linalg::aliases::float3 move;
-            if (state.bf)
+            if (state.keycode['W'])
                 move -= qzdir(orientation);
-            if (state.bl)
+            if (state.keycode['A'])
                 move -= qxdir(orientation);
-            if (state.bb)
+            if (state.keycode['S'])
                 move += qzdir(orientation);
-            if (state.br)
+            if (state.keycode['D'])
                 move += qxdir(orientation);
             if (length2(move) > 0)
                 cam.position += normalize(move) * (timestep * 10);
@@ -234,6 +211,11 @@ int main(int argc, char *argv[])
         }
 
         gizmo_state.mouse_left = state.mouseLeftDown;
+        gizmo_state.hotkey_ctrl = state.key_left_control;
+        gizmo_state.hotkey_local = state.keycode['L'];
+        gizmo_state.hotkey_translate = state.keycode['T'];
+        gizmo_state.hotkey_rotate = state.keycode['R'];
+        gizmo_state.hotkey_scale = state.keycode['S'];
 
         lastCursor = currentCursor;
 

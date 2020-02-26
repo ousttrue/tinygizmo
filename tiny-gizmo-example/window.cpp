@@ -38,8 +38,28 @@ bool Window::initialize(int width, int height, const char *title)
 
     glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int, int action, int mods) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
-        if (w->on_key)
-            w->on_key(key, action, mods);
+        if (key < 128)
+            w->m_state.keycode[key] = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_W)
+        //     w->m_state.keycode[] = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_A)
+        //     w->m_state.bl = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_S)
+        //     w->m_state.bb = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_D)
+        //     w->m_state.br = (action != GLFW_RELEASE);
+        if (key == GLFW_KEY_ESCAPE)
+            w->close();
+        if (key == GLFW_KEY_LEFT_CONTROL)
+            w->m_state.key_left_control = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_L)
+        //     gizmo_state.hotkey_local = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_T)
+        //     gizmo_state.hotkey_translate = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_R)
+        //     gizmo_state.hotkey_rotate = (action != GLFW_RELEASE);
+        // if (key == GLFW_KEY_S)
+        //     gizmo_state.hotkey_scale = (action != GLFW_RELEASE);
     });
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int mods) {
@@ -57,6 +77,10 @@ bool Window::initialize(int width, int height, const char *title)
     });
 
     glfwSetDropCallback(window, [](GLFWwindow *window, int numFiles, const char **paths) {
+        auto w = (Window *)glfwGetWindowUserPointer(window);
+    });
+
+    glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height){
         auto w = (Window *)glfwGetWindowUserPointer(window);
     });
 
