@@ -1,21 +1,10 @@
 ﻿// This is free and unencumbered software released into the public domain.
 // For more information, please refer to <http://unlicense.org>
 
-#include <iostream>
-#include <chrono>
-
 #include "util.hpp"
 #include "gl-api.hpp"
 #include "teapot.h"
 #include "window.h"
-
-#define GLFW_INCLUDE_GLU
-#include <GLFW\glfw3.h>
-
-static inline uint64_t get_local_time_ns()
-{
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-}
 
 const linalg::aliases::float4x4 identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 
@@ -122,6 +111,12 @@ int main(int argc, char *argv[])
     Window win;
     win.initialize(1280, 800, "tiny-gizmo-example-app");
 
+    GlRenderer renderer;
+    if (!renderer.initialize())
+    {
+        return 1;
+    }
+
     GlModel teapot;
     teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
     auto teapot_mesh = make_teapot();
@@ -133,7 +128,7 @@ int main(int argc, char *argv[])
     tinygizmo::gizmo_context gizmo_ctx;
     GlModel gizmo;
     gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
-    gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
+    gizmo_ctx.on_render = [&](const tinygizmo::geometry_mesh &r) {
         gizmo.upload_mesh(
             (uint32_t)r.vertices.size(), r.vertices.data(),
             (uint32_t)r.triangles.size(), r.triangles.data(),
@@ -147,25 +142,25 @@ int main(int argc, char *argv[])
         .position = {0, 1.5f, 4},
     };
 
+    // teapot a
     tinygizmo::rigid_transform xform_a;
     xform_a.position = {-2, 0, 0};
 
+    // teapot b
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
     WindowState state;
-    minalg::float2 lastCursor;
-    auto t0 = std::chrono::high_resolution_clock::now();
-    while (win.loop(&state))
+    WindowState lastState;
+    for (int i = 0; win.loop(&state); ++i)
     {
-        auto t1 = std::chrono::high_resolution_clock::now();
-        float timestep = std::chrono::duration<float>(t1 - t0).count();
-        t0 = t1;
-
-        auto currentCursor = minalg::float2((float)state.mouseX, (float)state.mouseY);
-        if (state.mouseRightDown)
+        if (i == 0)
         {
-            const linalg::aliases::float4 orientation = cam.get_orientation();
+            // skip
+        }
+        else if (state.mouseRightDown)
+        {
+            const auto orientation = cam.get_orientation();
             linalg::aliases::float3 move;
             if (state.keycode['W'])
                 move -= qzdir(orientation);
@@ -175,68 +170,71 @@ int main(int argc, char *argv[])
                 move += qzdir(orientation);
             if (state.keycode['D'])
                 move += qxdir(orientation);
+            float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
+
             if (length2(move) > 0)
                 cam.position += normalize(move) * (timestep * 10);
 
-            auto deltaCursorMotion = currentCursor - lastCursor;
-            cam.yaw -= deltaCursorMotion.x * 0.01f;
-            cam.pitch -= deltaCursorMotion.y * 0.01f;
+            cam.yaw -= (state.mouseX - lastState.mouseX) * 0.01f;
+            cam.pitch -= (state.mouseY - lastState.mouseY) * 0.01f;
         }
+        lastState = state;
 
-        tinygizmo::gizmo_application_state gizmo_state;
-        gizmo_state.mouse_left = state.mouseLeftDown;
-        gizmo_state.hotkey_ctrl = state.key_left_control;
-        gizmo_state.hotkey_local = state.keycode['L'];
-        gizmo_state.hotkey_translate = state.keycode['T'];
-        gizmo_state.hotkey_rotate = state.keycode['R'];
-        gizmo_state.hotkey_scale = state.keycode['S'];
+        const auto cameraOrientation = cam.get_orientation();
+        const auto rayDir = get_ray_from_pixel({(float)state.mouseX, (float)state.mouseY}, {0, 0, state.windowWidth, state.windowHeight}, cam).direction;
+        tinygizmo::gizmo_application_state gizmo_state{
+            .mouse_left = state.mouseLeftDown,
+            .hotkey_translate = state.keycode['T'],
+            .hotkey_rotate = state.keycode['R'],
+            .hotkey_scale = state.keycode['S'],
+            .hotkey_local = state.keycode['L'],
+            .hotkey_ctrl = state.key_left_control,
+            .viewport_size = minalg::float2((float)state.windowWidth, (float)state.windowHeight),
+            .ray_origin = minalg::float3(cam.position.x, cam.position.y, cam.position.z),
+            .ray_direction = minalg::float3(rayDir.x, rayDir.y, rayDir.z),
+            .cam = {
+                .yfov = cam.yfov,
+                .near_clip = cam.near_clip,
+                .far_clip = cam.far_clip,
+                .position = minalg::float3(cam.position.x, cam.position.y, cam.position.z),
+                .orientation = minalg::float4(cameraOrientation.x, cameraOrientation.y, cameraOrientation.z, cameraOrientation.w),
+            }};
+        gizmo_ctx.update(gizmo_state);
 
-        lastCursor = currentCursor;
+        //
+        // draw
+        //
+        renderer.beginFrame(state.windowWidth, state.windowHeight);
 
-        glViewport(0, 0, state.windowWidth, state.windowHeight);
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glClearColor(0.725f, 0.725f, 0.725f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        auto cameraOrientation = cam.get_orientation();
-
-        const auto rayDir = get_ray_from_pixel({lastCursor.x, lastCursor.y}, {0, 0, state.windowWidth, state.windowHeight}, cam).direction;
-
-        // Gizmo input interaction state populated via win.on_input(...) callback above. Update app parameters:
-        gizmo_state.viewport_size = minalg::float2((float)state.windowWidth, (float)state.windowHeight);
-        gizmo_state.cam.near_clip = cam.near_clip;
-        gizmo_state.cam.far_clip = cam.far_clip;
-        gizmo_state.cam.yfov = cam.yfov;
-        gizmo_state.cam.position = minalg::float3(cam.position.x, cam.position.y, cam.position.z);
-        gizmo_state.cam.orientation = minalg::float4(cameraOrientation.x, cameraOrientation.y, cameraOrientation.z, cameraOrientation.w);
-        gizmo_state.ray_origin = minalg::float3(cam.position.x, cam.position.y, cam.position.z);
-        gizmo_state.ray_direction = minalg::float3(rayDir.x, rayDir.y, rayDir.z);
-
-        // glDisable(GL_CULL_FACE);
-
-        // teapots
+        // teapot a
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
         teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
 
+        // teapot a
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
         teapot.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_b);
 
-        glClear(GL_DEPTH_BUFFER_BIT);
+        {
+            //
+            // after scene, before gizmo draw
+            // manipulate and update gizmo
+            //
+            transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a);
+            transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
+            gizmo_ctx.render();
+        }
 
-        // GIZMO
-        gizmo_ctx.update(gizmo_state);
-        transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a);
-        transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
-        gizmo_ctx.draw();
-        gizmo.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4);
+        //
+        // gizmo after xform user draw
+        //
+        gizmo.draw(cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4, true);
 
-        gl_check_error(__FILE__, __LINE__);
-
+        //
+        // present
+        //
+        renderer.endFrame();
         win.swap_buffers();
     }
     return EXIT_SUCCESS;

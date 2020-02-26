@@ -30,7 +30,7 @@ void flush_to_zero(float3 & f)
     if (std::abs(f.z) < 0.02f) f.z = 0.f;
 }
 
-// 32 bit Fowler–Noll–Vo Hash
+// 32 bit Fowleré‹’ollåŠo Hash
 uint32_t hash_fnv1a(const std::string & str)
 {
     static const uint32_t fnv1aBase32 = 0x811C9DC5u;
@@ -337,7 +337,7 @@ void gizmo_context::gizmo_context_impl::update(const gizmo_application_state & s
 
 void gizmo_context::gizmo_context_impl::draw()
 {
-    if (ctx->render)
+    if (ctx->on_render)
     {
         geometry_mesh r; // Combine all gizmo sub-meshes into one super-mesh
         for (auto & m : drawlist)
@@ -347,7 +347,7 @@ void gizmo_context::gizmo_context_impl::draw()
             for (auto & f : m.mesh.triangles) r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z });
             for (; it != r.vertices.end(); ++it) it->color = m.color; // Take the color and shove it into a per-vertex attribute
         }
-        ctx->render(r);
+        ctx->on_render(r);
     }
     last_state = active_state;
 }
@@ -759,7 +759,7 @@ void scale_gizmo(const std::string & name, gizmo_context::gizmo_context_impl & g
 gizmo_context::gizmo_context() { impl.reset(new gizmo_context_impl(this)); };
 gizmo_context::~gizmo_context() { }
 void gizmo_context::update(const gizmo_application_state & state) { impl->update(state); }
-void gizmo_context::draw() { impl->draw(); }
+void gizmo_context::render() { impl->draw(); }
 transform_mode gizmo_context::get_mode() const { return impl->mode; }
 
 bool tinygizmo::transform_gizmo(const std::string & name, gizmo_context & g, rigid_transform & t)

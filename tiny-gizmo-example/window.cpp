@@ -1,10 +1,7 @@
 #include "window.h"
-#define GLEW_STATIC
-#define GL_GLEXT_PROTOTYPES
-#include <glew.h>
-
 #define GLFW_INCLUDE_GLU
 #include <GLFW\glfw3.h>
+#include <chrono>
 
 Window::Window()
 {
@@ -26,11 +23,6 @@ bool Window::initialize(int width, int height, const char *title)
         throw std::runtime_error("glfwCreateWindow() failed");
 
     glfwMakeContextCurrent(window);
-
-    if (GLenum err = glewInit())
-    {
-        throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
-    }
 
     glfwSetCharCallback(window, [](GLFWwindow *window, unsigned int codepoint) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
@@ -90,6 +82,9 @@ bool Window::loop(WindowState *pState)
     }
 
     glfwPollEvents();
+
+    m_state.time = std::chrono::high_resolution_clock::now();
+
     *pState = m_state;
 
     return true;

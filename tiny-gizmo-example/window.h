@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <chrono>
 
 struct WindowState
 {
@@ -14,6 +15,8 @@ struct WindowState
     // key state
     std::array<bool, 127> keycode{};
     bool key_left_control = false;
+    // time state
+    std::chrono::steady_clock::time_point time{};
 };
 
 class Window
