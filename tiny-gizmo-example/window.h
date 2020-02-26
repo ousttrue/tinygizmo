@@ -7,12 +7,14 @@ class Window
     struct GLFWwindow *window = nullptr;
 
 public:
-
     struct State
     {
+        // window state
+        int windowWidth = 0;
+        int windowHeight = 0;
         // mouse state
-        int mouseX=0;
-        int mouseY=0;
+        int mouseX = 0;
+        int mouseY = 0;
         bool mouseLeftDown = 0;
         bool mouseRightDown = 0;
         // key state
@@ -30,6 +32,10 @@ public:
     Window &operator=(Window &&) = delete;
 
     bool initialize(int width, int height, const char *title);
+    bool loop(State *pState);
+    void swap_buffers();
+
+private:
     struct GLFWwindow *get_glfw_window_handle();
     bool should_close() const;
     int get_window_attrib(int attrib) const;
@@ -38,7 +44,5 @@ public:
     linalg::aliases::int2 get_framebuffer_size() const;
     linalg::aliases::float2 get_cursor_pos() const;
 
-    void swap_buffers();
     void close();
-    bool loop(State *pState);
 };

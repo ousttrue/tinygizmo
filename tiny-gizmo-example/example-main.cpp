@@ -166,10 +166,8 @@ int main(int argc, char *argv[])
     upload_mesh(teapot, teapotMesh);
 
     GlMesh gizmoEditorMesh;
-    auto windowSize = win.get_window_size();
     gizmo_ctx.render = [&](const tinygizmo::geometry_mesh &r) {
         upload_mesh(r, gizmoEditorMesh);
-        draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), identity4x4);
     };
 
     tinygizmo::rigid_transform xform_a;
@@ -219,7 +217,7 @@ int main(int argc, char *argv[])
 
         lastCursor = currentCursor;
 
-        glViewport(0, 0, windowSize.x, windowSize.y);
+        glViewport(0, 0, state.windowWidth, state.windowHeight);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -229,10 +227,10 @@ int main(int argc, char *argv[])
 
         auto cameraOrientation = cam.get_orientation();
 
-        const auto rayDir = get_ray_from_pixel({lastCursor.x, lastCursor.y}, {0, 0, windowSize.x, windowSize.y}, cam).direction;
+        const auto rayDir = get_ray_from_pixel({lastCursor.x, lastCursor.y}, {0, 0, state.windowWidth, state.windowHeight}, cam).direction;
 
         // Gizmo input interaction state populated via win.on_input(...) callback above. Update app parameters:
-        gizmo_state.viewport_size = minalg::float2(windowSize.x, windowSize.y);
+        gizmo_state.viewport_size = minalg::float2((int)state.windowWidth, (int)state.windowHeight);
         gizmo_state.cam.near_clip = cam.near_clip;
         gizmo_state.cam.far_clip = cam.far_clip;
         gizmo_state.cam.yfov = cam.yfov;
@@ -245,11 +243,11 @@ int main(int argc, char *argv[])
         glDisable(GL_CULL_FACE);
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
-        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), teapotModelMatrix_a);
+        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_a);
 
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
-        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)windowSize.x / (float)windowSize.y), teapotModelMatrix_b);
+        draw_lit_mesh(litShader, teapotMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), teapotModelMatrix_b);
 
         glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -267,6 +265,8 @@ int main(int argc, char *argv[])
 
         transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
         gizmo_ctx.draw();
+
+        draw_mesh(wireframeShader, gizmoEditorMesh, cam.position, cam.get_viewproj_matrix((float)state.windowWidth / (float)state.windowHeight), identity4x4);
 
         gl_check_error(__FILE__, __LINE__);
 

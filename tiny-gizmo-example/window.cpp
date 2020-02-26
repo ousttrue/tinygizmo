@@ -82,7 +82,10 @@ bool Window::initialize(int width, int height, const char *title)
 
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height){
         auto w = (Window *)glfwGetWindowUserPointer(window);
+        w->m_state.windowWidth = width;
+        w->m_state.windowHeight = height;
     });
+    glfwGetWindowSize(window, &m_state.windowWidth, &m_state.windowHeight);
 
     glfwSetWindowUserPointer(window, this);
 
