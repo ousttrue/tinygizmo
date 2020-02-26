@@ -1,14 +1,32 @@
 #pragma once
+#define GLEW_STATIC
+#define GL_GLEXT_PROTOTYPES
+#include <glew.h>
+
+#define GLFW_INCLUDE_GLU
+#include <GLFW\glfw3.h>
+
+#include <functional>
+#include <linalg.h>
 
 class Window
 {
-    GLFWwindow * window;
+    class GLFWwindow * window;
 public:
     std::function<void(unsigned int codepoint)> on_char;
     std::function<void(int key, int action, int mods)> on_key;
     std::function<void(int button, int action, int mods)> on_mouse_button;
     std::function<void(linalg::aliases::float2 pos)> on_cursor_pos;
     std::function<void(int numFiles, const char ** paths)> on_drop;
+
+    struct State
+    {
+        // mouse state
+        bool ml = 0, mr = 0;
+        // wasd state
+        bool bf = 0, bl = 0, bb = 0, br = 0;
+    };
+    State m_state;
 
     Window(int width, int height, const char * title)
     {
@@ -68,4 +86,5 @@ public:
 
     void swap_buffers() { glfwSwapBuffers(window); }
     void close() { glfwSetWindowShouldClose(window, 1); }
+    bool loop(State *pState);
 };

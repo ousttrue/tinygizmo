@@ -143,12 +143,6 @@ void upload_mesh(const tinygizmo::geometry_mesh &cpu, GlMesh &gpu)
 
 int main(int argc, char *argv[])
 {
-
-    // mouse state
-    bool ml = 0, mr = 0;
-    // wasd state
-    bool bf = 0, bl = 0, bb = 0, br = 0;
-
     camera cam = {};
     cam.yfov = 1.0f;
     cam.near_clip = 0.01f;
@@ -195,13 +189,13 @@ int main(int argc, char *argv[])
         if (key == GLFW_KEY_S)
             gizmo_state.hotkey_scale = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_W)
-            bf = (action != GLFW_RELEASE);
+            win->m_state.bf = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_A)
-            bl = (action != GLFW_RELEASE);
+            win->m_state.bl = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_S)
-            bb = (action != GLFW_RELEASE);
+            win->m_state.bb = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_D)
-            br = (action != GLFW_RELEASE);
+            win->m_state.br = (action != GLFW_RELEASE);
         if (key == GLFW_KEY_ESCAPE)
             win->close();
     };
@@ -210,15 +204,15 @@ int main(int argc, char *argv[])
         if (button == GLFW_MOUSE_BUTTON_LEFT)
             gizmo_state.mouse_left = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_LEFT)
-            ml = (action != GLFW_RELEASE);
+            win->m_state.ml = (action != GLFW_RELEASE);
         if (button == GLFW_MOUSE_BUTTON_RIGHT)
-            mr = (action != GLFW_RELEASE);
+            win->m_state.mr = (action != GLFW_RELEASE);
     };
 
     minalg::float2 lastCursor;
     win->on_cursor_pos = [&](linalg::aliases::float2 position) {
         auto deltaCursorMotion = minalg::float2(position.x, position.y) - lastCursor;
-        if (mr)
+        if (win->m_state.mr)
         {
             cam.yaw -= deltaCursorMotion.x * 0.01f;
             cam.pitch -= deltaCursorMotion.y * 0.01f;
@@ -234,26 +228,25 @@ int main(int argc, char *argv[])
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
+    Window::State state;
     auto t0 = std::chrono::high_resolution_clock::now();
-    while (!win->should_close())
+    while (win->loop(&state))
     {
-        glfwPollEvents();
-
         auto t1 = std::chrono::high_resolution_clock::now();
         float timestep = std::chrono::duration<float>(t1 - t0).count();
         t0 = t1;
 
-        if (mr)
+        if (state.mr)
         {
             const linalg::aliases::float4 orientation = cam.get_orientation();
             linalg::aliases::float3 move;
-            if (bf)
+            if (state.bf)
                 move -= qzdir(orientation);
-            if (bl)
+            if (state.bl)
                 move -= qxdir(orientation);
-            if (bb)
+            if (state.bb)
                 move += qzdir(orientation);
-            if (br)
+            if (state.br)
                 move += qxdir(orientation);
             if (length2(move) > 0)
                 cam.position += normalize(move) * (timestep * 10);
