@@ -344,10 +344,11 @@ struct interaction_state
 
 struct gizmo_context::gizmo_context_impl
 {
+private:
     gizmo_context *ctx;
+    tinygizmo::geometry_mesh m_r{};
 
-    gizmo_context_impl(gizmo_context *ctx);
-
+public:
     std::map<interact, gizmo_mesh_component> mesh_components;
     std::vector<gizmo_renderable> drawlist;
 
@@ -361,63 +362,58 @@ struct gizmo_context::gizmo_context_impl
     bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
     bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
 
-    // Public methods
-    void update(const gizmo_application_state &state);
-
-    tinygizmo::geometry_mesh m_r{};
-    const tinygizmo::geometry_mesh &render();
-};
-
-gizmo_context::gizmo_context_impl::gizmo_context_impl(gizmo_context *ctx) : ctx(ctx)
-{
-    std::vector<float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
-    std::vector<float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
-    std::vector<float2> ring_points = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
-    mesh_components[interact::translate_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-    mesh_components[interact::translate_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-    mesh_components[interact::translate_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-    mesh_components[interact::translate_yz] = {make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}), {0.5f, 1, 1, 0.5f}, {0, 1, 1, 0.6f}};
-    mesh_components[interact::translate_zx] = {make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}), {1, 0.5f, 1, 0.5f}, {1, 0, 1, 0.6f}};
-    mesh_components[interact::translate_xy] = {make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}), {1, 1, 0.5f, 0.5f}, {1, 1, 0, 0.6f}};
-    mesh_components[interact::translate_xyz] = {make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}), {0.9f, 0.9f, 0.9f, 0.25f}, {1, 1, 1, 0.35f}};
-    mesh_components[interact::rotate_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, 0.003f), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-    mesh_components[interact::rotate_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, -0.003f), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-    mesh_components[interact::rotate_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-    mesh_components[interact::scale_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-    mesh_components[interact::scale_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-    mesh_components[interact::scale_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-}
-
-void gizmo_context::gizmo_context_impl::update(const gizmo_application_state &state)
-{
-    active_state = state;
-    local_toggle = (!last_state.hotkey_local && active_state.hotkey_local && active_state.hotkey_ctrl) ? !local_toggle : local_toggle;
-    has_clicked = (!last_state.mouse_left && active_state.mouse_left) ? true : false;
-    has_released = (last_state.mouse_left && !active_state.mouse_left) ? true : false;
-    drawlist.clear();
-}
-
-const tinygizmo::geometry_mesh &gizmo_context::gizmo_context_impl::render()
-{
-    m_r.vertices.clear();
-    m_r.triangles.clear();
-
-    // geometry_mesh r;
-    // Combine all gizmo sub-meshes into one super-mesh
-    for (auto &m : drawlist)
+    gizmo_context_impl(gizmo_context *ctx) : ctx(ctx)
     {
-        uint32_t numVerts = (uint32_t)m_r.vertices.size();
-        auto it = m_r.vertices.insert(m_r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
-        for (auto &f : m.mesh.triangles)
-            m_r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z});
-        for (; it != m_r.vertices.end(); ++it)
-            it->color = m.color; // Take the color and shove it into a per-vertex attribute
+        std::vector<float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+        std::vector<float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
+        std::vector<float2> ring_points = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
+        mesh_components[interact::translate_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
+        mesh_components[interact::translate_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
+        mesh_components[interact::translate_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
+        mesh_components[interact::translate_yz] = {make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}), {0.5f, 1, 1, 0.5f}, {0, 1, 1, 0.6f}};
+        mesh_components[interact::translate_zx] = {make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}), {1, 0.5f, 1, 0.5f}, {1, 0, 1, 0.6f}};
+        mesh_components[interact::translate_xy] = {make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}), {1, 1, 0.5f, 0.5f}, {1, 1, 0, 0.6f}};
+        mesh_components[interact::translate_xyz] = {make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}), {0.9f, 0.9f, 0.9f, 0.25f}, {1, 1, 1, 0.35f}};
+        mesh_components[interact::rotate_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, 0.003f), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
+        mesh_components[interact::rotate_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, -0.003f), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
+        mesh_components[interact::rotate_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
+        mesh_components[interact::scale_x] = {make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
+        mesh_components[interact::scale_y] = {make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
+        mesh_components[interact::scale_z] = {make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
     }
 
-    last_state = active_state;
+    // Public methods
+    void gizmo_context_impl::update(const gizmo_application_state &state)
+    {
+        active_state = state;
+        local_toggle = (!last_state.hotkey_local && active_state.hotkey_local && active_state.hotkey_ctrl) ? !local_toggle : local_toggle;
+        has_clicked = (!last_state.mouse_left && active_state.mouse_left) ? true : false;
+        has_released = (last_state.mouse_left && !active_state.mouse_left) ? true : false;
+        drawlist.clear();
+    }
 
-    return m_r;
-}
+    const geometry_mesh &render()
+    {
+        m_r.vertices.clear();
+        m_r.triangles.clear();
+
+        // geometry_mesh r;
+        // Combine all gizmo sub-meshes into one super-mesh
+        for (auto &m : drawlist)
+        {
+            uint32_t numVerts = (uint32_t)m_r.vertices.size();
+            auto it = m_r.vertices.insert(m_r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
+            for (auto &f : m.mesh.triangles)
+                m_r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z});
+            for (; it != m_r.vertices.end(); ++it)
+                it->color = m.color; // Take the color and shove it into a per-vertex attribute
+        }
+
+        last_state = active_state;
+
+        return m_r;
+    }
+};
 
 // This will calculate a scale constant based on the number of screenspace pixels passed as pixel_scale.
 float scale_screenspace(gizmo_context::gizmo_context_impl &g, const float3 position, const float pixel_scale)
