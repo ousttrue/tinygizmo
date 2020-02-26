@@ -59,6 +59,7 @@
         "Lubyte",
         "Luint",
         "Lvoid",
+        "Wwindow",
         "glfw",
         "wasd",
         "yfov"

@@ -7,6 +7,7 @@
 #include "util.hpp"
 #include "gl-api.hpp"
 #include "teapot.h"
+#include "window.h"
 
 static inline uint64_t get_local_time_ns()
 {
