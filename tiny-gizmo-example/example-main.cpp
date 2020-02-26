@@ -195,15 +195,6 @@ int main(int argc, char *argv[])
             win.close();
     };
 
-    win.on_mouse_button = [&](int button, int action, int mods) {
-        if (button == GLFW_MOUSE_BUTTON_LEFT)
-            gizmo_state.mouse_left = (action != GLFW_RELEASE);
-        if (button == GLFW_MOUSE_BUTTON_LEFT)
-            win.m_state.mouseLeftDown = (action != GLFW_RELEASE);
-        if (button == GLFW_MOUSE_BUTTON_RIGHT)
-            win.m_state.mouseRightDown = (action != GLFW_RELEASE);
-    };
-
     tinygizmo::rigid_transform xform_a;
     xform_a.position = {-2, 0, 0};
 
@@ -241,6 +232,9 @@ int main(int argc, char *argv[])
             cam.yaw -= deltaCursorMotion.x * 0.01f;
             cam.pitch -= deltaCursorMotion.y * 0.01f;
         }
+
+        gizmo_state.mouse_left = state.mouseLeftDown;
+
         lastCursor = currentCursor;
 
         glViewport(0, 0, windowSize.x, windowSize.y);

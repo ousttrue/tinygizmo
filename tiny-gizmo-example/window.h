@@ -8,7 +8,6 @@ class Window
 
 public:
     std::function<void(int key, int action, int mods)> on_key;
-    std::function<void(int button, int action, int mods)> on_mouse_button;
 
     struct State
     {

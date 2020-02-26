@@ -44,8 +44,10 @@ bool Window::initialize(int width, int height, const char *title)
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int mods) {
         auto w = (Window *)glfwGetWindowUserPointer(window);
-        if (w->on_mouse_button)
-            w->on_mouse_button(button, action, mods);
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+            w->m_state.mouseLeftDown = (action != GLFW_RELEASE);
+        if (button == GLFW_MOUSE_BUTTON_RIGHT)
+            w->m_state.mouseRightDown = (action != GLFW_RELEASE);
     });
 
     glfwSetCursorPosCallback(window, [](GLFWwindow *window, double x, double y) {
