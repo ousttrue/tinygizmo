@@ -1,13 +1,13 @@
 ﻿// This is free and unencumbered software released into the public domain.
 // For more information, please refer to <http://unlicense.org>
 
-#include "util.hpp"
 #include "gl-api.hpp"
 #include "teapot.h"
 #include "window.h"
 #include <rigid_transform.h>
 #include <castalg.h>
 #include <tiny-gizmo.hpp>
+#include <linalg.h>
 
 const linalg::aliases::float4x4 identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 
@@ -98,6 +98,48 @@ struct vertex
 };
 static_assert(sizeof(vertex) == 40, "vertex size");
 
+namespace util
+{
+
+struct camera
+{
+    // float yfov;
+    // float near_clip;
+    // float far_clip;
+    // linalg::aliases::float3 position;
+    tinygizmo::camera_parameters params;
+    float pitch;
+    float yaw;
+    std::array<float, 4> get_orientation() const
+    {
+        return castalg::ref_cast<std::array<float, 4>>(qmul(rotation_quat(linalg::aliases::float3(0, 1, 0), yaw), rotation_quat(linalg::aliases::float3(1, 0, 0), pitch)));
+    }
+    linalg::aliases::float4x4 get_view_matrix() const
+    {
+        return mul(
+            rotation_matrix(qconj(castalg::ref_cast<linalg::aliases::float4>(get_orientation()))),
+            translation_matrix(-castalg::ref_cast<linalg::aliases::float3>(params.position)));
+    }
+    linalg::aliases::float4x4 get_projection_matrix(const float aspectRatio) const
+    {
+        return linalg::perspective_matrix(params.yfov, aspectRatio, params.near_clip, params.far_clip);
+    }
+    linalg::aliases::float4x4 get_viewproj_matrix(const float aspectRatio) const { return mul(get_projection_matrix(aspectRatio), get_view_matrix()); }
+
+    // Returns a world-space ray through the given pixel, originating at the camera
+    linalg::aliases::float3 get_ray_direction(int _x, int _y, int w, int h)
+    {
+        const float x = 2 * (float)_x / w - 1;
+        const float y = 1 - 2 * (float)_y / h;
+        auto aspect_ratio = w / (float)h;
+        const linalg::aliases::float4x4 inv_view_proj = inverse(this->get_viewproj_matrix(aspect_ratio));
+        const linalg::aliases::float4 p0 = mul(inv_view_proj, linalg::aliases::float4(x, y, -1, 1)), p1 = mul(inv_view_proj, linalg::aliases::float4(x, y, +1, 1));
+        return p1.xyz() * p0.w - p0.xyz() * p1.w;
+    }
+};
+
+} // namespace util
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
@@ -138,10 +180,12 @@ int main(int argc, char *argv[])
     gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
 
     util::camera cam{
-        .yfov = 1.0f,
-        .near_clip = 0.01f,
-        .far_clip = 32.0f,
-        .position = {0, 1.5f, 4},
+        .params{
+            .yfov = 1.0f,
+            .near_clip = 0.01f,
+            .far_clip = 32.0f,
+            .position = {0, 1.5f, 4},
+        },
     };
 
     // teapot a
@@ -159,13 +203,13 @@ int main(int argc, char *argv[])
     WindowState lastState;
     for (int i = 0; win.loop(&state); ++i)
     {
+        const auto orientation = castalg::ref_cast<linalg::aliases::float4>(cam.get_orientation());
         if (i == 0)
         {
             // skip
         }
         else if (state.mouseRightDown)
         {
-            const auto orientation = cam.get_orientation();
             linalg::aliases::float3 move;
             if (state.keycode['W'])
                 move -= qzdir(orientation);
@@ -178,15 +222,21 @@ int main(int argc, char *argv[])
             float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
 
             if (length2(move) > 0)
-                cam.position += normalize(move) * (timestep * 10);
+            {
+                move = normalize(move) * (timestep * 10);
+                cam.params.position[0] += move.x;
+                cam.params.position[1] += move.y;
+                cam.params.position[2] += move.z;
+            }
 
             cam.yaw -= (state.mouseX - lastState.mouseX) * 0.01f;
             cam.pitch -= (state.mouseY - lastState.mouseY) * 0.01f;
         }
         lastState = state;
 
-        const auto cameraOrientation = cam.get_orientation();
-        const auto rayDir = cam.get_ray_from_pixel({(float)state.mouseX, (float)state.mouseY}, {0, 0, state.windowWidth, state.windowHeight}).direction;
+        cam.params.orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
+        const auto rayDir = cam.get_ray_direction(
+            state.mouseX, state.mouseY, state.windowWidth, state.windowHeight);
         tinygizmo::gizmo_application_state gizmo_state{
             .mouse_left = state.mouseLeftDown,
             .hotkey_translate = state.keycode['T'],
@@ -195,15 +245,10 @@ int main(int argc, char *argv[])
             .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
-            .ray_origin = {cam.position.x, cam.position.y, cam.position.z},
+            .ray_origin = cam.params.position,
             .ray_direction = {rayDir.x, rayDir.y, rayDir.z},
-            .cam = {
-                .yfov = cam.yfov,
-                .near_clip = cam.near_clip,
-                .far_clip = cam.far_clip,
-                .position = castalg::ref_cast<std::array<float, 3>>(cam.position),
-                .orientation = castalg::ref_cast<std::array<float, 4>>(cameraOrientation),
-            }};
+            .cam = cam.params,
+        };
         gizmo_ctx.update(gizmo_state);
 
         auto viewProjMatrix = cam.get_viewproj_matrix(state.aspectRatio());
@@ -216,12 +261,12 @@ int main(int argc, char *argv[])
         // teapot a
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
-        teapot.draw(cam.position, viewProjMatrix, teapotModelMatrix_a);
+        teapot.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, teapotModelMatrix_a);
 
         // teapot a
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
-        teapot.draw(cam.position, viewProjMatrix, teapotModelMatrix_b);
+        teapot.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, teapotModelMatrix_b);
 
         {
             //
@@ -250,7 +295,7 @@ int main(int argc, char *argv[])
         //
         // gizmo after xform user draw
         //
-        gizmo.draw(cam.position, viewProjMatrix, identity4x4, true);
+        gizmo.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, identity4x4, true);
 
         //
         // present
