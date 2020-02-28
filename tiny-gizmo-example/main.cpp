@@ -261,12 +261,12 @@ int main(int argc, char *argv[])
         // teapot a
         auto teapotModelMatrix_a_tmp = xform_a.matrix();
         auto teapotModelMatrix_a = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_a_tmp);
-        teapot.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, teapotModelMatrix_a);
+        teapot.draw(cam.params.position.data(), viewProjMatrix, teapotModelMatrix_a);
 
         // teapot a
         auto teapotModelMatrix_b_tmp = xform_b.matrix();
         auto teapotModelMatrix_b = reinterpret_cast<const linalg::aliases::float4x4 &>(teapotModelMatrix_b_tmp);
-        teapot.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, teapotModelMatrix_b);
+        teapot.draw(cam.params.position.data(), viewProjMatrix, teapotModelMatrix_b);
 
         {
             //
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
         //
         // gizmo after xform user draw
         //
-        gizmo.draw(castalg::ref_cast<linalg::aliases::float3>(cam.params.position), viewProjMatrix, identity4x4, true);
+        gizmo.draw(cam.params.position.data(), viewProjMatrix, identity4x4, true);
 
         //
         // present
