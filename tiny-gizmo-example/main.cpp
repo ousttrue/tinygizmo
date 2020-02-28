@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
             .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
             .ray_origin = cam.params.position,
-            .ray_direction = {rayDir.x, rayDir.y, rayDir.z},
+            .ray_direction = rayDir,
             .cam = cam.params,
         };
         gizmo_ctx.update(gizmo_state);

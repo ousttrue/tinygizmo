@@ -3,6 +3,7 @@ add_executable(${TARGET_NAME}
     main.cpp
     gl-api.cpp
     window.cpp
+    GuiCamera.cpp
     )
 set_property(TARGET ${TARGET_NAME}
     PROPERTY CXX_STANDARD 20
