@@ -7,6 +7,7 @@
 #include "window.h"
 #include <rigid_transform.h>
 #include <castalg.h>
+#include <tiny-gizmo.hpp>
 
 const linalg::aliases::float4x4 identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
     GlModel gizmo;
     gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
 
-    camera cam{
+    util::camera cam{
         .yfov = 1.0f,
         .near_clip = 0.01f,
         .far_clip = 32.0f,
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
         lastState = state;
 
         const auto cameraOrientation = cam.get_orientation();
-        const auto rayDir = get_ray_from_pixel({(float)state.mouseX, (float)state.mouseY}, {0, 0, state.windowWidth, state.windowHeight}, cam).direction;
+        const auto rayDir = cam.get_ray_from_pixel({(float)state.mouseX, (float)state.mouseY}, {0, 0, state.windowWidth, state.windowHeight}).direction;
         tinygizmo::gizmo_application_state gizmo_state{
             .mouse_left = state.mouseLeftDown,
             .hotkey_translate = state.keycode['T'],
