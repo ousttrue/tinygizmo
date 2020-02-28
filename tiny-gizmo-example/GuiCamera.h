@@ -1,15 +1,20 @@
 #pragma once
-#include <tiny-gizmo.hpp>
-#include <castalg.h>
-#include <linalg.h>
+#include "window.h"
+#include <array>
+
+namespace tinygizmo
+{
+struct camera_parameters;
+}
 
 struct GuiCamera
 {
-    tinygizmo::camera_parameters params;
-    float pitch;
-    float yaw;
-    std::array<float, 4> get_orientation() const;
-    std::array<float, 16> get_viewproj_matrix(const float aspectRatio) const;
-    // Returns a world-space ray through the given pixel, originating at the camera
-    std::array<float, 3> get_ray_direction(int _x, int _y, int w, int h);
+    float pitch = 0;
+    float yaw = 0;
+    std::array<float, 3> ray_dir{};
+    std::array<float, 16> view_proj_matrix{};
+
+    WindowState lastState{};
+    void update(WindowState &state,
+                tinygizmo::camera_parameters &params);
 };

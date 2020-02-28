@@ -6,9 +6,7 @@
 #include "window.h"
 #include "GuiCamera.h"
 #include <rigid_transform.h>
-#include <castalg.h>
 #include <tiny-gizmo.hpp>
-// #include <linalg.h>
 
 constexpr const char gizmo_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
@@ -117,14 +115,13 @@ int main(int argc, char *argv[])
     gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
 
     // camera
-    GuiCamera cam{
-        .params{
-            .yfov = 1.0f,
-            .near_clip = 0.01f,
-            .far_clip = 32.0f,
-            .position = {0, 1.5f, 4},
-        },
+    tinygizmo::camera_parameters cam{
+        .yfov = 1.0f,
+        .near_clip = 0.01f,
+        .far_clip = 32.0f,
+        .position = {0, 1.5f, 4},
     };
+    GuiCamera view{};
 
     // create teapot
     GlModel teapot;
@@ -160,43 +157,12 @@ int main(int argc, char *argv[])
     // main loop
     //
     WindowState state;
-    WindowState lastState;
     for (int i = 0; win.loop(&state); ++i)
     {
-        const auto orientation = castalg::ref_cast<linalg::aliases::float4>(cam.get_orientation());
-        if (i == 0)
-        {
-            // skip
-        }
-        else if (state.mouseRightDown)
-        {
-            linalg::aliases::float3 move;
-            if (state.keycode['W'])
-                move -= qzdir(orientation);
-            if (state.keycode['A'])
-                move -= qxdir(orientation);
-            if (state.keycode['S'])
-                move += qzdir(orientation);
-            if (state.keycode['D'])
-                move += qxdir(orientation);
-            float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
+        // update camera
+        view.update(state, cam);
 
-            if (length2(move) > 0)
-            {
-                move = normalize(move) * (timestep * 10);
-                cam.params.position[0] += move.x;
-                cam.params.position[1] += move.y;
-                cam.params.position[2] += move.z;
-            }
-
-            cam.yaw -= (state.mouseX - lastState.mouseX) * 0.01f;
-            cam.pitch -= (state.mouseY - lastState.mouseY) * 0.01f;
-        }
-        lastState = state;
-
-        cam.params.orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
-        const auto rayDir = cam.get_ray_direction(
-            state.mouseX, state.mouseY, state.windowWidth, state.windowHeight);
+        // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
             .mouse_left = state.mouseLeftDown,
             .hotkey_translate = state.keycode['T'],
@@ -205,13 +171,11 @@ int main(int argc, char *argv[])
             .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
-            .ray_origin = cam.params.position,
-            .ray_direction = rayDir,
-            .cam = cam.params,
+            .ray_origin = cam.position,
+            .ray_direction = view.ray_dir,
+            .cam = cam,
         };
         gizmo_ctx.update(gizmo_state);
-
-        auto viewProjMatrix = cam.get_viewproj_matrix(state.aspectRatio());
 
         //
         // draw
@@ -220,11 +184,11 @@ int main(int argc, char *argv[])
 
         // teapot a
         auto ma = xform_a.matrix();
-        teapot.draw(cam.params.position.data(), viewProjMatrix.data(), ma.data());
+        teapot.draw(cam.position.data(), view.view_proj_matrix.data(), ma.data());
 
         // teapot a
         auto mb = xform_b.matrix();
-        teapot.draw(cam.params.position.data(), viewProjMatrix.data(), mb.data());
+        teapot.draw(cam.position.data(), view.view_proj_matrix.data(), mb.data());
 
         {
             //
@@ -259,7 +223,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo.draw(cam.params.position.data(), viewProjMatrix.data(), identity4x4, true);
+        gizmo.draw(cam.position.data(), view.view_proj_matrix.data(), identity4x4, true);
 
         //
         // present
