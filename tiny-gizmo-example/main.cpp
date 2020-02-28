@@ -5,6 +5,7 @@
 #include "gl-api.hpp"
 #include "teapot.h"
 #include "window.h"
+#include <rigid_transform.h>
 
 const linalg::aliases::float4x4 identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 

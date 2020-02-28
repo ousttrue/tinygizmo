@@ -2,6 +2,7 @@
 // For more information, please refer to <http://unlicense.org>
 
 #include "tiny-gizmo.hpp"
+#include "rigid_transform.h"
 
 #include <assert.h>
 #include <memory>
