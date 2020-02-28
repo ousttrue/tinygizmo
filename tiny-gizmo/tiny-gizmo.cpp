@@ -143,7 +143,7 @@ public:
 float scale_screenspace(gizmo_context::gizmo_context_impl &g, const float3 position, const float pixel_scale)
 {
     float dist = length(position - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
-    return std::tan(g.active_state.cam.yfov) * dist * (pixel_scale / g.active_state.viewport_size.y);
+    return std::tan(g.active_state.cam.yfov) * dist * (pixel_scale / g.active_state.viewport_size[1]);
 }
 
 // The only purpose of this is readability: to reduce the total column width of the intersect(...) statements in every gizmo
@@ -157,6 +157,12 @@ bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, f
 ///////////////////////////////////
 // Private Gizmo Implementations //
 ///////////////////////////////////
+static ray get_ray(const gizmo_application_state &state)
+{
+    return {
+        castalg::ref_cast<minalg::float3>(state.ray_origin),
+        castalg::ref_cast<minalg::float3>(state.ray_direction)};
+}
 
 void axis_rotation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl &g, const float3 &axis, const float3 &center, const float4 &start_orientation, float4 &orientation)
 {
@@ -167,7 +173,7 @@ void axis_rotation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl 
         rigid_transform original_pose = {start_orientation, interaction.original_position};
         float3 the_axis = original_pose.transform_vector(axis);
         float4 the_plane = {the_axis, -dot(the_axis, interaction.click_offset)};
-        const ray r = {g.active_state.ray_origin, g.active_state.ray_direction};
+        const ray r = get_ray(g.active_state);
 
         float t;
         if (intersect_ray_plane(r, the_plane, &t))
@@ -216,7 +222,7 @@ void plane_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_i
     {
         // Define the plane to contain the original position of the object
         const float3 plane_point = interaction.original_position;
-        const ray r = {g.active_state.ray_origin, g.active_state.ray_direction};
+        const ray r = get_ray(g.active_state);
 
         // If an intersection exists between the ray and the plane, place the object at that point
         const float denom = dot(r.direction, plane_normal);
@@ -266,7 +272,7 @@ void position_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &
 
     {
         interact updated_state = interact::none;
-        auto ray = detransform(p, {g.active_state.ray_origin, g.active_state.ray_direction});
+        auto ray = detransform(p, get_ray(g.active_state));
         detransform(draw_scale, ray);
 
         float best_t = std::numeric_limits<float>::infinity(), t;
@@ -403,7 +409,7 @@ void orientation_gizmo(const std::string &name, gizmo_context::gizmo_context_imp
     {
         interact updated_state = interact::none;
 
-        auto ray = detransform(p, {g.active_state.ray_origin, g.active_state.ray_direction});
+        auto ray = detransform(p, get_ray(g.active_state));
         detransform(draw_scale, ray);
         float best_t = std::numeric_limits<float>::infinity(), t;
 
@@ -533,7 +539,7 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
         {
             // Define the plane to contain the original position of the object
             const float3 plane_point = center;
-            const ray ray = {g.active_state.ray_origin, g.active_state.ray_direction};
+            const ray ray = get_ray(g.active_state);
 
             // If an intersection exists between the ray and the plane, place the object at that point
             const float denom = dot(ray.direction, plane_normal);
@@ -571,7 +577,7 @@ void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, 
 
     {
         interact updated_state = interact::none;
-        auto ray = detransform(p, {g.active_state.ray_origin, g.active_state.ray_direction});
+        auto ray = detransform(p, get_ray(g.active_state));
         detransform(draw_scale, ray);
         float best_t = std::numeric_limits<float>::infinity(), t;
         if (intersect(g, ray, interact::scale_x, t, best_t))

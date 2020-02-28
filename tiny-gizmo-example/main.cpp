@@ -193,9 +193,9 @@ int main(int argc, char *argv[])
             .hotkey_scale = state.keycode['S'],
             .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = state.key_left_control,
-            .viewport_size = minalg::float2((float)state.windowWidth, (float)state.windowHeight),
-            .ray_origin = minalg::float3(cam.position.x, cam.position.y, cam.position.z),
-            .ray_direction = minalg::float3(rayDir.x, rayDir.y, rayDir.z),
+            .viewport_size = {state.windowWidth, state.windowHeight},
+            .ray_origin = {cam.position.x, cam.position.y, cam.position.z},
+            .ray_direction = {rayDir.x, rayDir.y, rayDir.z},
             .cam = {
                 .yfov = cam.yfov,
                 .near_clip = cam.near_clip,

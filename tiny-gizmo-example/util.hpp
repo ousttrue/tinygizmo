@@ -29,9 +29,12 @@ struct rect
 
 struct camera
 {
-    float yfov, near_clip, far_clip;
+    float yfov;
+    float near_clip;
+    float far_clip;
     linalg::aliases::float3 position;
-    float pitch, yaw;
+    float pitch;
+    float yaw;
     linalg::aliases::float4 get_orientation() const { return qmul(rotation_quat(linalg::aliases::float3(0, 1, 0), yaw), rotation_quat(linalg::aliases::float3(1, 0, 0), pitch)); }
     linalg::aliases::float4x4 get_view_matrix() const { return mul(rotation_matrix(qconj(get_orientation())), translation_matrix(-position)); }
     linalg::aliases::float4x4 get_projection_matrix(const float aspectRatio) const { return linalg::perspective_matrix(yfov, aspectRatio, near_clip, far_clip); }
