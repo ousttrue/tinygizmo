@@ -4,7 +4,7 @@
 #include "gl-api.hpp"
 #include "teapot.h"
 #include "window.h"
-#include "GuiCamera.h"
+#include "CameraView.h"
 #include <rigid_transform.h>
 #include <tiny-gizmo.hpp>
 
@@ -119,9 +119,11 @@ int main(int argc, char *argv[])
         .yfov = 1.0f,
         .near_clip = 0.01f,
         .far_clip = 32.0f,
+    };
+    CameraProjection projection{};
+    CameraView view{
         .position = {0, 1.5f, 4},
     };
-    GuiCamera view{};
 
     // create teapot
     GlModel teapot;
@@ -159,8 +161,16 @@ int main(int argc, char *argv[])
     WindowState state;
     for (int i = 0; win.loop(&state); ++i)
     {
-        // update camera
-        view.update(state, cam);
+        // update view
+        view.update(state);
+        cam.position = view.position;
+        cam.orientation = view.orientation;
+
+        // update projection
+        projection.update(cam.yfov, state.windowWidth / (float)state.windowHeight, cam.near_clip, cam.far_clip);
+
+        // matrix
+        auto view_proj_matrix = cam.get_view_projection_matrix(view.matrix, projection.matrix);
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
@@ -171,8 +181,10 @@ int main(int argc, char *argv[])
             .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
-            .ray_origin = cam.position,
-            .ray_direction = view.ray_dir,
+            .ray_origin = view.position,
+            .ray_direction = cam.get_ray_direction(
+                state.mouseX, state.mouseY, state.windowWidth, state.windowHeight,
+                view_proj_matrix),
             .cam = cam,
         };
         gizmo_ctx.new_frame(gizmo_state);
@@ -184,11 +196,11 @@ int main(int argc, char *argv[])
 
         // teapot a
         auto ma = xform_a.matrix();
-        teapot.draw(cam.position.data(), view.view_proj_matrix.data(), ma.data());
+        teapot.draw(cam.position.data(), view_proj_matrix.data(), ma.data());
 
         // teapot a
         auto mb = xform_b.matrix();
-        teapot.draw(cam.position.data(), view.view_proj_matrix.data(), mb.data());
+        teapot.draw(cam.position.data(), view_proj_matrix.data(), mb.data());
 
         {
             //
@@ -223,7 +235,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo.draw(cam.position.data(), view.view_proj_matrix.data(), identity4x4, true);
+        gizmo.draw(cam.position.data(), view_proj_matrix.data(), identity4x4, true);
 
         //
         // present

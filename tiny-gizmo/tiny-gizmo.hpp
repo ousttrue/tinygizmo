@@ -23,6 +23,10 @@ struct camera_parameters
     // view
     std::array<float, 3> position;
     std::array<float, 4> orientation;
+
+    // ray
+    std::array<float, 16> get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const;
+    std::array<float, 3> get_ray_direction(int _x, int _y, int w, int h, const std::array<float, 16> &viewProjMatrix) const;
 };
 
 struct gizmo_application_state
