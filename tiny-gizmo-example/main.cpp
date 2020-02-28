@@ -6,6 +6,7 @@
 #include "teapot.h"
 #include "window.h"
 #include <rigid_transform.h>
+#include <castalg.h>
 
 const linalg::aliases::float4x4 identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 
@@ -194,8 +195,8 @@ int main(int argc, char *argv[])
                 .yfov = cam.yfov,
                 .near_clip = cam.near_clip,
                 .far_clip = cam.far_clip,
-                .position = minalg::float3(cam.position.x, cam.position.y, cam.position.z),
-                .orientation = minalg::float4(cameraOrientation.x, cameraOrientation.y, cameraOrientation.z, cameraOrientation.w),
+                .position = castalg::ref_cast<std::array<float, 3>>(cam.position),
+                .orientation = castalg::ref_cast<std::array<float, 4>>(cameraOrientation),
             }};
         gizmo_ctx.update(gizmo_state);
 
@@ -229,7 +230,7 @@ int main(int argc, char *argv[])
                 (uint32_t)r.triangles.size(), r.triangles.data(),
                 true);
         }
-        
+
         //
         // gizmo after xform user draw
         //

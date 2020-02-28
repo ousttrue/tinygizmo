@@ -11,6 +11,7 @@ target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/third-party
     ${CMAKE_CURRENT_LIST_DIR}/third-party/glew
     ${CMAKE_CURRENT_LIST_DIR}/third-party/glfw-3.1.2/include
+    ${CMAKE_CURRENT_LIST_DIR}/../castalg/include
     )
 target_compile_definitions(${TARGET_NAME} PRIVATE
     # GLFW_INCLUDE_GLCOREARB

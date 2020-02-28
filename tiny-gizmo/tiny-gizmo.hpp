@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <array>
 
 namespace tinygizmo
 {
@@ -15,8 +16,8 @@ struct camera_parameters
     float yfov;
     float near_clip;
     float far_clip;
-    minalg::float3 position;
-    minalg::float4 orientation;
+    std::array<float, 3> position;
+    std::array<float, 4> orientation;
 };
 
 ///////////////

@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <chrono>
+#include <castalg.h>
 
 using namespace tinygizmo;
 
@@ -140,7 +141,7 @@ public:
 // This will calculate a scale constant based on the number of screenspace pixels passed as pixel_scale.
 float scale_screenspace(gizmo_context::gizmo_context_impl &g, const float3 position, const float pixel_scale)
 {
-    float dist = length(position - g.active_state.cam.position);
+    float dist = length(position - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
     return std::tan(g.active_state.cam.yfov) * dist * (pixel_scale / g.active_state.viewport_size.y);
 }
 
@@ -239,7 +240,7 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
     if (g.active_state.mouse_left)
     {
         // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
-        const float3 plane_tangent = cross(axis, point - g.active_state.cam.position);
+        const float3 plane_tangent = cross(axis, point - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
         const float3 plane_normal = cross(axis, plane_tangent);
         plane_translation_dragger(id, g, plane_normal, point);
 
@@ -351,7 +352,7 @@ void position_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &
             plane_translation_dragger(id, g, axes[2], position);
             break;
         case interact::translate_xyz:
-            plane_translation_dragger(id, g, -minalg::qzdir(g.active_state.cam.orientation), position);
+            plane_translation_dragger(id, g, -minalg::qzdir(castalg::ref_cast<minalg::float4>(g.active_state.cam.orientation)), position);
             break;
         }
         position -= g.gizmos[id].click_offset;
@@ -523,7 +524,7 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
 
     if (g.active_state.mouse_left)
     {
-        const float3 plane_tangent = cross(axis, center - g.active_state.cam.position);
+        const float3 plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
         const float3 plane_normal = cross(axis, plane_tangent);
 
         float3 distance;
