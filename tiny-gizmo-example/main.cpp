@@ -229,10 +229,20 @@ int main(int argc, char *argv[])
             //
             gizmo_ctx.gizmo("first-example-gizmo", xform_a);
             gizmo_ctx.gizmo("second-example-gizmo", xform_b);
-            auto &r = gizmo_ctx.render();
+
+            void *pVertices;
+            uint32_t verticesBytes;
+            uint32_t vertexStride;
+            void *pIndices;
+            uint32_t indicesBytes;
+            uint32_t indexStride;
+            gizmo_ctx.render(
+                &pVertices, &verticesBytes, &vertexStride,
+                &pIndices, &indicesBytes, &indexStride);
+
             gizmo.upload_mesh(
-                (uint32_t)r.vertices.size(), r.vertices.data(),
-                (uint32_t)r.triangles.size(), r.triangles.data(),
+                pVertices, verticesBytes, vertexStride,
+                pIndices, indicesBytes, indexStride,
                 true);
         }
 

@@ -2,6 +2,7 @@
 // For more information, please refer to <http://unlicense.org>
 
 #include "tiny-gizmo.hpp"
+#include "geometry_mesh.h"
 #include "rigid_transform.h"
 
 #include <assert.h>
@@ -653,7 +654,18 @@ void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, 
 gizmo_context::gizmo_context() { impl.reset(new gizmo_context_impl(this)); };
 gizmo_context::~gizmo_context() {}
 void gizmo_context::update(const gizmo_application_state &state) { impl->update(state); }
-const tinygizmo::geometry_mesh &gizmo_context::render() { return impl->render(); }
+void gizmo_context::render(
+    void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
+    void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride)
+{
+    auto &r = impl->render();
+    *pVertices = (void *)r.vertices.data();
+    *veticesBytes = static_cast<uint32_t>(r.vertices.size() * sizeof(r.vertices[0]));
+    *vertexStride = sizeof(r.vertices[0]);
+    *pIndices = (void *)r.triangles.data();
+    *indicesBytes = static_cast<uint32_t>(r.triangles.size() * sizeof(r.triangles[0]));
+    *indexStride = sizeof(r.triangles[0]) / 3;
+}
 transform_mode gizmo_context::get_mode() const { return impl->mode; }
 
 bool tinygizmo::gizmo_context::gizmo(const std::string &name, rigid_transform &t)

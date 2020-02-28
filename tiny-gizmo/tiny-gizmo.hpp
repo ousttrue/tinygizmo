@@ -3,7 +3,6 @@
 
 #pragma once
 #include "minalg.h"
-#include <vector>
 #include <memory>
 #include <string>
 #include <array>
@@ -18,21 +17,6 @@ struct camera_parameters
     float far_clip;
     std::array<float, 3> position;
     std::array<float, 4> orientation;
-};
-
-///////////////
-//   Mesh    //
-///////////////
-
-struct geometry_vertex
-{
-    minalg::float3 position, normal;
-    minalg::float4 color;
-};
-struct geometry_mesh
-{
-    std::vector<geometry_vertex> vertices;
-    std::vector<minalg::uint3> triangles;
 };
 
 ///////////////
@@ -73,7 +57,10 @@ struct gizmo_context
     ~gizmo_context();
 
     void update(const gizmo_application_state &state); // Clear geometry buffer and update internal `gizmo_application_state` data
-    const geometry_mesh &render();                     // Trigger a render callback per call to `update(...)`
+    void render(
+        void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
+        void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride
+    );
     transform_mode get_mode() const;                   // Return the active mode being used by `transform_gizmo(...)`
     bool gizmo(const std::string &name, struct rigid_transform &t);
 };
