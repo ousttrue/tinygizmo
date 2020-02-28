@@ -221,8 +221,8 @@ int main(int argc, char *argv[])
             // after scene, before gizmo draw
             // manipulate and update gizmo
             //
-            tinygizmo::transform_gizmo("first-example-gizmo", gizmo_ctx, xform_a);
-            tinygizmo::transform_gizmo("second-example-gizmo", gizmo_ctx, xform_b);
+            gizmo_ctx.gizmo("first-example-gizmo", xform_a);
+            gizmo_ctx.gizmo("second-example-gizmo", xform_b);
             auto &r = gizmo_ctx.render();
             gizmo.upload_mesh(
                 (uint32_t)r.vertices.size(), r.vertices.data(),

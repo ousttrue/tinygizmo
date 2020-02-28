@@ -2,28 +2,26 @@
 // For more information, please refer to <http://unlicense.org>
 
 #pragma once
-
-#ifndef tinygizmo_hpp
-#define tinygizmo_hpp
-#include <vector> // For ...
 #include "minalg.h"
-// #include "rigid_transform.h"
+#include <vector>
+#include <memory>
+#include <string>
 
 namespace tinygizmo
 {
 
-///////////////////////
-//   Utility Math    //
-///////////////////////
-
-
-
 struct camera_parameters
 {
-    float yfov, near_clip, far_clip;
+    float yfov;
+    float near_clip;
+    float far_clip;
     minalg::float3 position;
     minalg::float4 orientation;
 };
+
+///////////////
+//   Mesh    //
+///////////////
 
 struct geometry_vertex
 {
@@ -76,10 +74,7 @@ struct gizmo_context
     void update(const gizmo_application_state &state); // Clear geometry buffer and update internal `gizmo_application_state` data
     const geometry_mesh &render();                     // Trigger a render callback per call to `update(...)`
     transform_mode get_mode() const;                   // Return the active mode being used by `transform_gizmo(...)`
+    bool gizmo(const std::string &name, struct rigid_transform &t);
 };
 
-bool transform_gizmo(const std::string &name, gizmo_context &g, struct rigid_transform &t);
-
 } // namespace tinygizmo
-
-#endif // end tinygizmo_hpp

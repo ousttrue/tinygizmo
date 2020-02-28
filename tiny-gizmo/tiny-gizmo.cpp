@@ -655,28 +655,28 @@ void gizmo_context::update(const gizmo_application_state &state) { impl->update(
 const tinygizmo::geometry_mesh &gizmo_context::render() { return impl->render(); }
 transform_mode gizmo_context::get_mode() const { return impl->mode; }
 
-bool tinygizmo::transform_gizmo(const std::string &name, gizmo_context &g, rigid_transform &t)
+bool tinygizmo::gizmo_context::gizmo(const std::string &name, rigid_transform &t)
 {
     bool activated = false;
 
-    if (g.impl->active_state.hotkey_ctrl == true)
+    if (this->impl->active_state.hotkey_ctrl == true)
     {
-        if (g.impl->last_state.hotkey_translate == false && g.impl->active_state.hotkey_translate == true)
-            g.impl->mode = transform_mode::translate;
-        else if (g.impl->last_state.hotkey_rotate == false && g.impl->active_state.hotkey_rotate == true)
-            g.impl->mode = transform_mode::rotate;
-        else if (g.impl->last_state.hotkey_scale == false && g.impl->active_state.hotkey_scale == true)
-            g.impl->mode = transform_mode::scale;
+        if (this->impl->last_state.hotkey_translate == false && this->impl->active_state.hotkey_translate == true)
+            this->impl->mode = transform_mode::translate;
+        else if (this->impl->last_state.hotkey_rotate == false && this->impl->active_state.hotkey_rotate == true)
+            this->impl->mode = transform_mode::rotate;
+        else if (this->impl->last_state.hotkey_scale == false && this->impl->active_state.hotkey_scale == true)
+            this->impl->mode = transform_mode::scale;
     }
 
-    if (g.impl->mode == transform_mode::translate)
-        position_gizmo(name, *g.impl, t.orientation, t.position);
-    else if (g.impl->mode == transform_mode::rotate)
-        orientation_gizmo(name, *g.impl, t.position, t.orientation);
-    else if (g.impl->mode == transform_mode::scale)
-        scale_gizmo(name, *g.impl, t.orientation, t.position, t.scale);
+    if (this->impl->mode == transform_mode::translate)
+        position_gizmo(name, *this->impl, t.orientation, t.position);
+    else if (this->impl->mode == transform_mode::rotate)
+        orientation_gizmo(name, *this->impl, t.position, t.orientation);
+    else if (this->impl->mode == transform_mode::scale)
+        scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
 
-    const interaction_state s = g.impl->gizmos[hash_fnv1a(name)];
+    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
     if (s.hover == true || s.active == true)
         activated = true;
 
