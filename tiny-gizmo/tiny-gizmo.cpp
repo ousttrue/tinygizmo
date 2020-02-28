@@ -12,10 +12,11 @@
 #include <string>
 #include <chrono>
 
-using namespace minalg;
 using namespace tinygizmo;
 
 #include "utilmath.h"
+
+using namespace minalg;
 
 struct gizmo_mesh_component
 {

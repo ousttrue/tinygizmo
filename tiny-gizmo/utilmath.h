@@ -2,11 +2,11 @@
 //   Utility Math    //
 ///////////////////////
 
-static const float4x4 Identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-static const float3x3 Identity3x3 = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+static const minalg::float4x4 Identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+static const minalg::float3x3 Identity3x3 = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 static const float tau = 6.28318530718f;
 
-void flush_to_zero(float3 &f)
+void flush_to_zero(minalg::float3 &f)
 {
     if (std::abs(f.x) < 0.02f)
         f.x = 0.f;
@@ -32,19 +32,19 @@ uint32_t hash_fnv1a(const std::string &str)
     return result;
 }
 
-float3 snap(const float3 &value, const float snap)
+minalg::float3 snap(const minalg::float3 &value, const float snap)
 {
     if (snap > 0.0f)
-        return float3(floor(value / snap) * snap);
+        return minalg::float3(floor(value / snap) * snap);
     return value;
 }
 
-float4 make_rotation_quat_axis_angle(const float3 &axis, float angle)
+minalg::float4 make_rotation_quat_axis_angle(const minalg::float3 &axis, float angle)
 {
     return {axis * std::sin(angle / 2), std::cos(angle / 2)};
 }
 
-float4 make_rotation_quat_between_vectors_snapped(const float3 &from, const float3 &to, const float angle)
+minalg::float4 make_rotation_quat_between_vectors_snapped(const minalg::float3 &from, const minalg::float3 &to, const float angle)
 {
     auto a = normalize(from);
     auto b = normalize(to);
@@ -52,22 +52,24 @@ float4 make_rotation_quat_between_vectors_snapped(const float3 &from, const floa
     return make_rotation_quat_axis_angle(normalize(cross(a, b)), snappedAcos);
 }
 
+
 template <typename T>
 T clamp(const T &val, const T &min, const T &max) { return std::min(std::max(val, min), max); }
 
-
 struct ray
 {
-    float3 origin, direction;
+    minalg::float3 origin, direction;
 };
+
 ray transform(const rigid_transform &p, const ray &r) { return {p.transform_point(r.origin), p.transform_vector(r.direction)}; }
 ray detransform(const rigid_transform &p, const ray &r) { return {p.detransform_point(r.origin), p.detransform_vector(r.direction)}; }
-float3 transform_coord(const float4x4 &transform, const float3 &coord)
+
+minalg::float3 transform_coord(const minalg::float4x4 &transform, const minalg::float3 &coord)
 {
-    auto r = mul(transform, float4(coord, 1));
+    auto r = mul(transform, minalg::float4(coord, 1));
     return (r.xyz() / r.w);
 }
-float3 transform_vector(const float4x4 &transform, const float3 &vector) { return mul(transform, float4(vector, 0)).xyz(); }
+minalg::float3 transform_vector(const minalg::float4x4 &transform, const minalg::float3 &vector) { return mul(transform, minalg::float4(vector, 0)).xyz(); }
 void transform(const float scale, ray &r)
 {
     r.origin *= scale;
@@ -83,17 +85,17 @@ void detransform(const float scale, ray &r)
 // Ray-Geometry Intersection Functions //
 /////////////////////////////////////////
 
-bool intersect_ray_plane(const ray &ray, const float4 &plane, float *hit_t)
+bool intersect_ray_plane(const ray &ray, const minalg::float4 &plane, float *hit_t)
 {
     float denom = dot(plane.xyz(), ray.direction);
     if (std::abs(denom) == 0)
         return false;
     if (hit_t)
-        *hit_t = -dot(plane, float4(ray.origin, 1)) / denom;
+        *hit_t = -dot(plane, minalg::float4(ray.origin, 1)) / denom;
     return true;
 }
 
-bool intersect_ray_triangle(const ray &ray, const float3 &v0, const float3 &v1, const float3 &v2, float *hit_t)
+bool intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2, float *hit_t)
 {
     auto e1 = v1 - v0, e2 = v2 - v0, h = cross(ray.direction, e2);
     auto a = dot(e1, h);
@@ -153,10 +155,10 @@ void compute_normals(geometry_mesh &mesh)
         if (uniqueVertIndices[i] == 0)
         {
             uniqueVertIndices[i] = i + 1;
-            const float3 v0 = mesh.vertices[i].position;
+            const minalg::float3 v0 = mesh.vertices[i].position;
             for (auto j = i + 1; j < mesh.vertices.size(); ++j)
             {
-                const float3 v1 = mesh.vertices[j].position;
+                const minalg::float3 v1 = mesh.vertices[j].position;
                 if (length2(v1 - v0) < NORMAL_EPSILON)
                 {
                     uniqueVertIndices[j] = uniqueVertIndices[i];
@@ -173,7 +175,7 @@ void compute_normals(geometry_mesh &mesh)
         idx2 = uniqueVertIndices[t.z] - 1;
 
         geometry_vertex &v0 = mesh.vertices[idx0], &v1 = mesh.vertices[idx1], &v2 = mesh.vertices[idx2];
-        const float3 n = cross(v1.position - v0.position, v2.position - v0.position);
+        const minalg::float3 n = cross(v1.position - v0.position, v2.position - v0.position);
         v0.normal += n;
         v1.normal += n;
         v2.normal += n;
@@ -185,7 +187,7 @@ void compute_normals(geometry_mesh &mesh)
         v.normal = normalize(v.normal);
 }
 
-geometry_mesh make_box_geometry(const float3 &min_bounds, const float3 &max_bounds)
+geometry_mesh make_box_geometry(const minalg::float3 &min_bounds, const minalg::float3 &max_bounds)
 {
     const auto a = min_bounds, b = max_bounds;
     geometry_mesh mesh;
@@ -219,7 +221,7 @@ geometry_mesh make_box_geometry(const float3 &min_bounds, const float3 &max_boun
     return mesh;
 }
 
-geometry_mesh make_cylinder_geometry(const float3 &axis, const float3 &arm1, const float3 &arm2, uint32_t slices)
+geometry_mesh make_cylinder_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, uint32_t slices)
 {
     // Generated curved surface
     geometry_mesh mesh;
@@ -227,7 +229,7 @@ geometry_mesh make_cylinder_geometry(const float3 &axis, const float3 &arm1, con
     for (uint32_t i = 0; i <= slices; ++i)
     {
         const float tex_s = static_cast<float>(i) / slices, angle = (float)(i % slices) * tau / slices;
-        const float3 arm = arm1 * std::cos(angle) + arm2 * std::sin(angle);
+        const minalg::float3 arm = arm1 * std::cos(angle) + arm2 * std::sin(angle);
         mesh.vertices.push_back({arm, normalize(arm)});
         mesh.vertices.push_back({arm + axis, normalize(arm)});
     }
@@ -242,7 +244,7 @@ geometry_mesh make_cylinder_geometry(const float3 &axis, const float3 &arm1, con
     for (uint32_t i = 0; i < slices; ++i)
     {
         const float angle = static_cast<float>(i % slices) * tau / slices, c = std::cos(angle), s = std::sin(angle);
-        const float3 arm = arm1 * c + arm2 * s;
+        const minalg::float3 arm = arm1 * c + arm2 * s;
         mesh.vertices.push_back({arm + axis, normalize(axis)});
         mesh.vertices.push_back({arm, -normalize(axis)});
     }
@@ -254,15 +256,15 @@ geometry_mesh make_cylinder_geometry(const float3 &axis, const float3 &arm1, con
     return mesh;
 }
 
-geometry_mesh make_lathed_geometry(const float3 &axis, const float3 &arm1, const float3 &arm2, int slices, const std::vector<float2> &points, const float eps = 0.0f)
+geometry_mesh make_lathed_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, int slices, const std::vector<minalg::float2> &points, const float eps = 0.0f)
 {
     geometry_mesh mesh;
     for (int i = 0; i <= slices; ++i)
     {
         const float angle = (static_cast<float>(i % slices) * tau / slices) + (tau / 8.f), c = std::cos(angle), s = std::sin(angle);
-        const float3x2 mat = {axis, arm1 * c + arm2 * s};
+        const minalg::float3x2 mat = {axis, arm1 * c + arm2 * s};
         for (auto &p : points)
-            mesh.vertices.push_back({mul(mat, p) + eps, float3(0.f)});
+            mesh.vertices.push_back({mul(mat, p) + eps, minalg::float3(0.f)});
 
         if (i > 0)
         {
