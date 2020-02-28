@@ -346,13 +346,24 @@ struct GlModel
         uint32_t indexCount, const I *pIndices,
         bool isDynamic = false)
     {
-        mesh.set_vertex_data(vertexCount * sizeof(V), pVertices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-        mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, sizeof(V), (GLvoid *)offsetof(V, position));
-        mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, sizeof(V), (GLvoid *)offsetof(V, normal));
-        mesh.set_attribute(2, 4, GL_FLOAT, GL_FALSE, sizeof(V), (GLvoid *)offsetof(V, color));
+        upload_mesh(
+            pVertices, vertexCount * sizeof(V), sizeof(V),
+            pIndices, indexCount * sizeof(I), sizeof(I) / 3,
+            isDynamic);
+    }
+
+    void upload_mesh(
+        const void *pVertices, uint32_t verticesBytes, uint32_t vertexStride,
+        const void *pIndices, uint32_t indicesBytes, uint32_t indexStride,
+        bool isDynamic = false)
+    {
+        mesh.set_vertex_data(verticesBytes, pVertices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, vertexStride, (GLvoid *)0);
+        mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, vertexStride, (GLvoid *)12);
+        mesh.set_attribute(2, 4, GL_FLOAT, GL_FALSE, vertexStride, (GLvoid *)24);
 
         GLenum type;
-        switch (sizeof(I) / 3)
+        switch (indexStride)
         {
         case 2:
             type = GL_UNSIGNED_SHORT;
@@ -363,7 +374,7 @@ struct GlModel
         default:
             throw;
         }
-        mesh.set_index_data(GL_TRIANGLES, type, indexCount * 3, pIndices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        mesh.set_index_data(GL_TRIANGLES, type, indicesBytes / indexStride, pIndices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
     void draw(const linalg::aliases::float3 eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model, bool isGizmo = false)

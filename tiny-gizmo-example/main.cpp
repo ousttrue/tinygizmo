@@ -96,13 +96,6 @@ struct vertex
     std::array<float, 4> color;
 };
 static_assert(sizeof(vertex) == 40, "vertex size");
-struct triangle
-{
-    uint32_t i0;
-    uint32_t i1;
-    uint32_t i2;
-};
-static_assert(sizeof(triangle) == 12, "triangle size");
 
 //////////////////////////
 //   Main Application   //
@@ -134,18 +127,9 @@ int main(int argc, char *argv[])
                 teapot_vertices[i + 5]}};
         vertices.push_back(v);
     }
-    std::vector<triangle> triangles;
-    for (int i = 0; i < 4680; i += 3)
-    {
-        triangle t{
-            teapot_triangles[i + 0],
-            teapot_triangles[i + 1],
-            teapot_triangles[i + 2]};
-        triangles.push_back(t);
-    }
     teapot.upload_mesh(
-        (uint32_t)vertices.size(), vertices.data(),
-        (uint32_t)triangles.size(), triangles.data(),
+        vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(vertex)), sizeof(vertex),
+        teapot_triangles, sizeof(teapot_triangles), sizeof(teapot_triangles[0]),
         false);
 
     tinygizmo::gizmo_context gizmo_ctx;
