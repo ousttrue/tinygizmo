@@ -3,13 +3,12 @@
 #include <linalg.h>
 #include <castalg.h>
 
-static linalg::aliases::float4x4 get_view_matrix(
-    const linalg::aliases::float3 &position,
-    const linalg::aliases::float4 &orientation)
+static std::array<float, 16> get_view_matrix(
+    const std::array<float, 4> &rotation, const std::array<float, 3> &position)
 {
-    return mul(
-        rotation_matrix(qconj(orientation)),
-        translation_matrix(-position));
+    auto t= translation_matrix(-castalg::ref_cast<linalg::aliases::float3>(position));
+    auto r = rotation_matrix(qconj(castalg::ref_cast<linalg::aliases::float4>(rotation)));
+    return castalg::ref_cast<std::array<float, 16>>(mul(t, r));
 }
 
 static std::array<float, 4> get_orientation(float yaw, float pitch)
@@ -26,37 +25,61 @@ void CameraView::update(struct WindowState &state)
     {
         // skip
     }
-    else if (state.mouseRightDown)
+    else
     {
-        linalg::aliases::float3 move;
-        if (state.keycode['W'])
-            move -= qzdir(orientation);
-        if (state.keycode['A'])
-            move -= qxdir(orientation);
-        if (state.keycode['S'])
-            move += qzdir(orientation);
-        if (state.keycode['D'])
-            move += qxdir(orientation);
-        float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
-
-        if (length2(move) > 0)
+        auto dx = state.mouseX - lastState.mouseX;
+        auto dy = state.mouseY - lastState.mouseY;
+        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(state.time - lastState.time).count() * 0.001f;
+        if (state.mouseRightDown)
         {
-            move = normalize(move) * (timestep * 10);
-            position[0] += move.x;
-            position[1] += move.y;
-            position[2] += move.z;
-        }
+            // wasd
+            // linalg::aliases::float3 move;
+            // if (state.keycode['W'])
+            //     move -= qzdir(orientation);
+            // if (state.keycode['A'])
+            //     move -= qxdir(orientation);
+            // if (state.keycode['S'])
+            //     move += qzdir(orientation);
+            // if (state.keycode['D'])
+            //     move += qxdir(orientation);
+            // float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
+            // if (length2(move) > 0)
+            // {
+            //     move = normalize(move) * (timestep * 10);
+            //     position[0] += move.x;
+            //     position[1] += move.y;
+            //     position[2] += move.z;
+            // }
 
-        yaw -= (state.mouseX - lastState.mouseX) * 0.01f;
-        pitch -= (state.mouseY - lastState.mouseY) * 0.01f;
+            yaw -= (dx * dt);
+            pitch -= (dy * dt);
+        }
+        if (state.mouseMiddleDown)
+        {
+            shift[0] -= dx * dt;
+            shift[1] += dy * dt;
+        }
+        if (state.mouseWheel)
+        {
+            // dolly
+            if (state.mouseWheel > 0)
+            {
+                shift[2] *= 0.9f;
+            }
+            else
+            {
+                shift[2] *= 1.1f;
+            }
+        }
     }
     lastState = state;
 
-    matrix = castalg::ref_cast<std::array<float, 16>>(get_view_matrix(
-        castalg::ref_cast<linalg::aliases::float3>(position),
-        castalg::ref_cast<linalg::aliases::float4>(get_orientation(yaw, pitch))));
-
     this->orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
+    matrix = get_view_matrix(this->orientation, shift);
+    auto inv = linalg::inverse(castalg::ref_cast<linalg::aliases::float4x4>(matrix));
+    position[0] = inv.w.x;
+    position[1] = inv.w.y;
+    position[2] = inv.w.z;
 }
 
 void CameraProjection::update(float yfov, float aspectRatio, float near_clip, float far_clip)

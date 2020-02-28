@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     };
     CameraProjection projection{};
     CameraView view{
-        .position = {0, 1.5f, 4},
+        .shift = {0, 1.5f, 4},
     };
 
     // create teapot
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
             .hotkey_rotate = state.keycode['R'],
             .hotkey_scale = state.keycode['S'],
             .hotkey_local = state.keycode['L'],
-            .hotkey_ctrl = state.key_left_control,
+            .hotkey_ctrl = true, //state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
             .ray_origin = view.position,
             .ray_direction = cam.get_ray_direction(

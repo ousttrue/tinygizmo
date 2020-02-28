@@ -10,8 +10,10 @@ struct WindowState
     // mouse state
     int mouseX = 0;
     int mouseY = 0;
-    bool mouseLeftDown = 0;
-    bool mouseRightDown = 0;
+    int mouseWheel = 0;
+    bool mouseLeftDown = false;
+    bool mouseRightDown = false;
+    bool mouseMiddleDown = false;
     // key state
     std::array<bool, 127> keycode{};
     bool key_left_control = false;
