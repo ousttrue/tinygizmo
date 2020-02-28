@@ -89,25 +89,24 @@ constexpr const char lit_frag[] = R"(#version 330
     }
 )";
 
+struct vertex
+{
+    std::array<float, 3> position;
+    std::array<float, 3> normal;
+    std::array<float, 4> color;
+};
+static_assert(sizeof(vertex) == 40, "vertex size");
+struct triangle
+{
+    uint32_t i0;
+    uint32_t i1;
+    uint32_t i2;
+};
+static_assert(sizeof(triangle) == 12, "triangle size");
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
-
-tinygizmo::geometry_mesh make_teapot()
-{
-    tinygizmo::geometry_mesh mesh;
-    for (int i = 0; i < 4974; i += 6)
-    {
-        tinygizmo::geometry_vertex v;
-        v.position = minalg::float3(teapot_vertices[i + 0], teapot_vertices[i + 1], teapot_vertices[i + 2]);
-        v.normal = minalg::float3(teapot_vertices[i + 3], teapot_vertices[i + 4], teapot_vertices[i + 5]);
-        mesh.vertices.push_back(v);
-    }
-    for (int i = 0; i < 4680; i += 3)
-        mesh.triangles.push_back(minalg::uint3(teapot_triangles[i + 0], teapot_triangles[i + 1], teapot_triangles[i + 2]));
-    return mesh;
-}
-
 int main(int argc, char *argv[])
 {
     Window win;
@@ -121,10 +120,32 @@ int main(int argc, char *argv[])
 
     GlModel teapot;
     teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
-    auto teapot_mesh = make_teapot();
+    std::vector<vertex> vertices;
+    for (int i = 0; i < 4974; i += 6)
+    {
+        vertex v{
+            .position{
+                teapot_vertices[i + 0],
+                teapot_vertices[i + 1],
+                teapot_vertices[i + 2]},
+            .normal{
+                teapot_vertices[i + 3],
+                teapot_vertices[i + 4],
+                teapot_vertices[i + 5]}};
+        vertices.push_back(v);
+    }
+    std::vector<triangle> triangles;
+    for (int i = 0; i < 4680; i += 3)
+    {
+        triangle t{
+            teapot_triangles[i + 0],
+            teapot_triangles[i + 1],
+            teapot_triangles[i + 2]};
+        triangles.push_back(t);
+    }
     teapot.upload_mesh(
-        (uint32_t)teapot_mesh.vertices.size(), teapot_mesh.vertices.data(),
-        (uint32_t)teapot_mesh.triangles.size(), teapot_mesh.triangles.data(),
+        (uint32_t)vertices.size(), vertices.data(),
+        (uint32_t)triangles.size(), triangles.data(),
         false);
 
     tinygizmo::gizmo_context gizmo_ctx;
