@@ -15,9 +15,12 @@ namespace tinygizmo
 
 struct camera_parameters
 {
+    // projection
     float yfov;
     float near_clip;
     float far_clip;
+
+    // view
     std::array<float, 3> position;
     std::array<float, 4> orientation;
 };
@@ -67,7 +70,7 @@ struct gizmo_context
     gizmo_context();
     ~gizmo_context();
 
-    void update(const gizmo_application_state &state); // Clear geometry buffer and update internal `gizmo_application_state` data
+    void new_frame(const gizmo_application_state &state); // Clear geometry buffer and update internal `gizmo_application_state` data
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);

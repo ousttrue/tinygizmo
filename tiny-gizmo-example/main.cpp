@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
             .ray_direction = view.ray_dir,
             .cam = cam,
         };
-        gizmo_ctx.update(gizmo_state);
+        gizmo_ctx.new_frame(gizmo_state);
 
         //
         // draw

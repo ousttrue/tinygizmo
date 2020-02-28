@@ -659,7 +659,7 @@ void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, 
 
 gizmo_context::gizmo_context() { impl.reset(new gizmo_context_impl(this)); };
 gizmo_context::~gizmo_context() {}
-void gizmo_context::update(const gizmo_application_state &state) { impl->update(state); }
+void gizmo_context::new_frame(const gizmo_application_state &state) { impl->update(state); }
 void gizmo_context::render(
     void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
     void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride)
