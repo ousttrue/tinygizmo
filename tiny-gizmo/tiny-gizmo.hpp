@@ -9,6 +9,10 @@
 namespace tinygizmo
 {
 
+///////////////
+//   State   //
+///////////////
+
 struct camera_parameters
 {
     float yfov;
@@ -16,17 +20,6 @@ struct camera_parameters
     float far_clip;
     std::array<float, 3> position;
     std::array<float, 4> orientation;
-};
-
-///////////////
-//   Gizmo   //
-///////////////
-
-enum class transform_mode
-{
-    translate,
-    rotate,
-    scale
 };
 
 struct gizmo_application_state
@@ -53,6 +46,17 @@ struct gizmo_application_state
     std::array<float, 3> ray_direction;
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
     camera_parameters cam;
+};
+
+///////////////
+//   Gizmo   //
+///////////////
+
+enum class transform_mode
+{
+    translate,
+    rotate,
+    scale
 };
 
 struct gizmo_context

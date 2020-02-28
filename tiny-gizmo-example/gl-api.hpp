@@ -220,6 +220,7 @@ public:
     void uniform(const std::string &name, const linalg::aliases::float4 &vec) const { glProgramUniform4fv(program, get_uniform_location(name), 1, &vec.x); }
     void uniform(const std::string &name, const linalg::aliases::float3x3 &mat) const { glProgramUniformMatrix3fv(program, get_uniform_location(name), 1, GL_FALSE, &mat.x.x); }
     void uniform(const std::string &name, const linalg::aliases::float4x4 &mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), 1, GL_FALSE, &mat.x.x); }
+    void uniform_float16(const std::string &name, const float *mat) const { glProgramUniformMatrix4fv(program, get_uniform_location(name), 1, GL_FALSE, mat); }
 
     void uniform(const std::string &name, const int elements, const std::vector<int> &scalar) const { glProgramUniform1iv(program, get_uniform_location(name), elements, scalar.data()); }
     void uniform(const std::string &name, const int elements, const std::vector<float> &scalar) const { glProgramUniform1fv(program, get_uniform_location(name), elements, scalar.data()); }
@@ -378,15 +379,15 @@ struct GlModel
         mesh.set_index_data(GL_TRIANGLES, type, indicesBytes / indexStride, pIndices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     }
 
-    void draw(const float *eye, const linalg::aliases::float4x4 &viewProj, const linalg::aliases::float4x4 &model, bool isGizmo = false)
+    void draw(const float *eye, const float *viewProj, const float *model, bool isGizmo = false)
     {
         if (isGizmo)
         {
             glClear(GL_DEPTH_BUFFER_BIT);
         }
         shader->bind();
-        shader->uniform("u_viewProj", viewProj);
-        shader->uniform("u_modelMatrix", model);
+        shader->uniform_float16("u_viewProj", viewProj);
+        shader->uniform_float16("u_modelMatrix", model);
         shader->uniform_float3("u_eye", eye);
         mesh.draw_elements();
         shader->unbind();

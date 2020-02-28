@@ -376,7 +376,7 @@ void position_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &
         interact::translate_yz, interact::translate_zx, interact::translate_xy,
         interact::translate_xyz};
 
-    float4x4 modelMatrix = p.matrix();
+    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
     float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
     modelMatrix = mul(modelMatrix, scaleMatrix);
 
@@ -472,7 +472,7 @@ void orientation_gizmo(const std::string &name, gizmo_context::gizmo_context_imp
         g.gizmos[id].active = false;
     }
 
-    float4x4 modelMatrix = p.matrix();
+    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
     float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
     modelMatrix = mul(modelMatrix, scaleMatrix);
 
@@ -633,7 +633,7 @@ void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, 
         }
     }
 
-    float4x4 modelMatrix = p.matrix();
+    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
     float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
     modelMatrix = mul(modelMatrix, scaleMatrix);
 

@@ -16,7 +16,18 @@ struct rigid_transform
     minalg::float3 scale{1, 1, 1};
 
     bool uniform_scale() const { return scale.x == scale.y && scale.x == scale.z; }
-    minalg::float4x4 matrix() const { return {{qxdir(orientation) * scale.x, 0}, {qydir(orientation) * scale.y, 0}, {qzdir(orientation) * scale.z, 0}, {position, 1}}; }
+    std::array<float, 16> matrix() const
+    {
+        auto x = qxdir(orientation) * scale.x;
+        auto y = qydir(orientation) * scale.y;
+        auto z = qzdir(orientation) * scale.z;
+        return std::array<float, 16>{
+            x.x, x.y, x.z, 0,                      //
+            y.x, y.y, y.z, 0,                      //
+            z.x, z.y, z.z, 0,                      //
+            position.x, position.y, position.z, 1, //
+        };
+    }
     minalg::float3 transform_vector(const minalg::float3 &vec) const { return qrot(orientation, vec * scale); }
     minalg::float3 transform_point(const minalg::float3 &p) const { return position + transform_vector(p); }
     minalg::float3 detransform_point(const minalg::float3 &p) const { return detransform_vector(p - position); }
@@ -31,4 +42,4 @@ inline bool operator!=(const rigid_transform &a, const rigid_transform &b)
     return (!fuzzy_equality(a.position, b.position) || !fuzzy_equality(a.orientation, b.orientation) || !fuzzy_equality(a.scale, b.scale));
 }
 
-} // namespace rigidbody
+} // namespace tinygizmo
