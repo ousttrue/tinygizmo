@@ -55,6 +55,13 @@ enum class interact
     scale_xyz,
 };
 
+static ray get_ray(const gizmo_application_state &state)
+{
+    return {
+        castalg::ref_cast<minalg::float3>(state.ray_origin),
+        castalg::ref_cast<minalg::float3>(state.ray_direction)};
+}
+
 struct interaction_state
 {
     bool active{false};          // Flag to indicate if the gizmo is being actively manipulated
@@ -64,6 +71,65 @@ struct interaction_state
     float3 original_scale;       // Original scale of an object being manipulated with a gizmo
     float3 click_offset;         // Offset from position of grabbed object to coordinates of clicked point
     interact interaction_mode;   // Currently active component
+
+    float4 rotation_dragger(const gizmo_application_state &state,
+                            const float3 &center, bool is_local)
+    {
+        const float4 starting_orientation = is_local ? original_orientation : float4(0, 0, 0, 1);
+        switch (interaction_mode)
+        {
+        case interact::rotate_x:
+            return axis_rotation_dragger(state, {1, 0, 0}, center, starting_orientation);
+        case interact::rotate_y:
+            return axis_rotation_dragger(state, {0, 1, 0}, center, starting_orientation);
+        case interact::rotate_z:
+            return axis_rotation_dragger(state, {0, 0, 1}, center, starting_orientation);
+        }
+        throw;
+    }
+
+    float4 axis_rotation_dragger(const gizmo_application_state &state,
+                                 const float3 &axis, const float3 &center, const float4 &start_orientation)
+    {
+        if (state.mouse_left)
+        {
+            rigid_transform original_pose = {start_orientation, original_position};
+            float3 the_axis = original_pose.transform_vector(axis);
+            float4 the_plane = {the_axis, -dot(the_axis, click_offset)};
+            const ray r = get_ray(state);
+
+            float t;
+            if (intersect_ray_plane(r, the_plane, &t))
+            {
+                float3 center_of_rotation = original_position + the_axis * dot(the_axis, click_offset - original_position);
+                float3 arm1 = normalize(click_offset - center_of_rotation);
+                float3 arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
+
+                float d = dot(arm1, arm2);
+                if (d > 0.999f)
+                {
+                    return start_orientation;
+                }
+
+                float angle = std::acos(d);
+                if (angle < 0.001f)
+                {
+                    return start_orientation;
+                }
+
+                if (state.snap_rotation)
+                {
+                    auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
+                    return qmul(snapped, start_orientation);
+                }
+                else
+                {
+                    auto a = normalize(cross(arm1, arm2));
+                    return qmul(rotation_quat(a, angle), start_orientation);
+                }
+            }
+        }
+    }
 };
 
 struct gizmo_context::gizmo_context_impl
@@ -144,58 +210,6 @@ bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, f
 ///////////////////////////////////
 // Private Gizmo Implementations //
 ///////////////////////////////////
-static ray get_ray(const gizmo_application_state &state)
-{
-    return {
-        castalg::ref_cast<minalg::float3>(state.ray_origin),
-        castalg::ref_cast<minalg::float3>(state.ray_direction)};
-}
-
-void axis_rotation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl &g, const float3 &axis, const float3 &center, const float4 &start_orientation, float4 &orientation)
-{
-    interaction_state &interaction = g.gizmos[id];
-
-    if (g.state.mouse_left)
-    {
-        rigid_transform original_pose = {start_orientation, interaction.original_position};
-        float3 the_axis = original_pose.transform_vector(axis);
-        float4 the_plane = {the_axis, -dot(the_axis, interaction.click_offset)};
-        const ray r = get_ray(g.state);
-
-        float t;
-        if (intersect_ray_plane(r, the_plane, &t))
-        {
-            float3 center_of_rotation = interaction.original_position + the_axis * dot(the_axis, interaction.click_offset - interaction.original_position);
-            float3 arm1 = normalize(interaction.click_offset - center_of_rotation);
-            float3 arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
-
-            float d = dot(arm1, arm2);
-            if (d > 0.999f)
-            {
-                orientation = start_orientation;
-                return;
-            }
-
-            float angle = std::acos(d);
-            if (angle < 0.001f)
-            {
-                orientation = start_orientation;
-                return;
-            }
-
-            if (g.state.snap_rotation)
-            {
-                auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, g.state.snap_rotation);
-                orientation = qmul(snapped, start_orientation);
-            }
-            else
-            {
-                auto a = normalize(cross(arm1, arm2));
-                orientation = qmul(rotation_quat(a, angle), start_orientation);
-            }
-        }
-    }
-}
 
 void plane_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl &g, const float3 &plane_normal, float3 &point)
 {
@@ -431,25 +445,9 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
         }
     }
 
-    float3 activeAxis;
     if (g.gizmos[id].active)
     {
-        const float4 starting_orientation = is_local ? g.gizmos[id].original_orientation : float4(0, 0, 0, 1);
-        switch (g.gizmos[id].interaction_mode)
-        {
-        case interact::rotate_x:
-            axis_rotation_dragger(id, g, {1, 0, 0}, center, starting_orientation, p.orientation);
-            activeAxis = {1, 0, 0};
-            break;
-        case interact::rotate_y:
-            axis_rotation_dragger(id, g, {0, 1, 0}, center, starting_orientation, p.orientation);
-            activeAxis = {0, 1, 0};
-            break;
-        case interact::rotate_z:
-            axis_rotation_dragger(id, g, {0, 0, 1}, center, starting_orientation, p.orientation);
-            activeAxis = {0, 0, 1};
-            break;
-        }
+        p.orientation = g.gizmos[id].rotation_dragger(g.state, center, is_local);
     }
 
     if (g.state.has_released)
@@ -485,6 +483,20 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     // and draw an arrow from the center of the gizmo to indicate the degree of rotation
     if (is_local == false && g.gizmos[id].interaction_mode != interact::none)
     {
+        float3 activeAxis;
+        switch (g.gizmos[id].interaction_mode)
+        {
+        case interact::rotate_x:
+            activeAxis = {1, 0, 0};
+            break;
+        case interact::rotate_y:
+            activeAxis = {0, 1, 0};
+            break;
+        case interact::rotate_z:
+            activeAxis = {0, 0, 1};
+            break;
+        }
+
         interaction_state &interaction = g.gizmos[id];
 
         // Create orthonormal basis for drawing the arrow
