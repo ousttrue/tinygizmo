@@ -252,81 +252,6 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     return g.gizmos[id];
 }
 
-interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
-{
-    rigid_transform p = rigid_transform(orientation, center);
-    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
-    const uint32_t id = hash_fnv1a(name);
-
-    if (g.state.has_clicked)
-        g.gizmos[id].interaction_mode = interact::none;
-
-    {
-        interact updated_state = interact::none;
-        auto ray = detransform(p, get_ray(g.state));
-        detransform(draw_scale, ray);
-        float best_t = std::numeric_limits<float>::infinity(), t;
-        if (intersect(g, ray, interact::scale_x, t, best_t))
-        {
-            updated_state = interact::scale_x;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::scale_y, t, best_t))
-        {
-            updated_state = interact::scale_y;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::scale_z, t, best_t))
-        {
-            updated_state = interact::scale_z;
-            best_t = t;
-        }
-
-        if (g.state.has_clicked)
-        {
-            g.gizmos[id].interaction_mode = updated_state;
-            if (g.gizmos[id].interaction_mode != interact::none)
-            {
-                transform(draw_scale, ray);
-                g.gizmos[id].original_scale = scale;
-                g.gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * t);
-                g.gizmos[id].active = true;
-            }
-            else
-                g.gizmos[id].active = false;
-        }
-    }
-
-    if (g.state.has_released)
-    {
-        g.gizmos[id].interaction_mode = interact::none;
-        g.gizmos[id].active = false;
-    }
-
-    g.gizmos[id].scale_dragger(g.state, center, &scale, false);
-
-    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-    float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
-
-    std::vector<interact> draw_components{interact::scale_x, interact::scale_y, interact::scale_z};
-
-    for (auto c : draw_components)
-    {
-        gizmo_renderable r;
-        r.mesh = g.mesh_components[c].mesh;
-        r.color = (c == g.gizmos[id].interaction_mode) ? g.mesh_components[c].base_color : g.mesh_components[c].highlight_color;
-        for (auto &v : r.mesh.vertices)
-        {
-            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-            v.normal = transform_vector(modelMatrix, v.normal);
-        }
-        g.drawlist.push_back(r);
-    }
-
-    return g.gizmos[id];
-}
-
 std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
 {
     auto m = mul(
@@ -526,6 +451,81 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
 
 bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
 {
-    auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
-    return (s.hover || s.active);
+    // auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
+    auto &scale = t.scale;
+    // interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
+    {
+        rigid_transform p = rigid_transform(t.orientation, t.position);
+        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+        const uint32_t id = hash_fnv1a(name);
+
+        if (impl->state.has_clicked)
+            impl->gizmos[id].interaction_mode = interact::none;
+
+        {
+            interact updated_state = interact::none;
+            auto ray = detransform(p, get_ray(impl->state));
+            detransform(draw_scale, ray);
+            float best_t = std::numeric_limits<float>::infinity(), t;
+            if (intersect(*impl, ray, interact::scale_x, t, best_t))
+            {
+                updated_state = interact::scale_x;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::scale_y, t, best_t))
+            {
+                updated_state = interact::scale_y;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::scale_z, t, best_t))
+            {
+                updated_state = interact::scale_z;
+                best_t = t;
+            }
+
+            if (impl->state.has_clicked)
+            {
+                impl->gizmos[id].interaction_mode = updated_state;
+                if (impl->gizmos[id].interaction_mode != interact::none)
+                {
+                    transform(draw_scale, ray);
+                    impl->gizmos[id].original_scale = scale;
+                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * t);
+                    impl->gizmos[id].active = true;
+                }
+                else
+                    impl->gizmos[id].active = false;
+            }
+        }
+
+        if (impl->state.has_released)
+        {
+            impl->gizmos[id].interaction_mode = interact::none;
+            impl->gizmos[id].active = false;
+        }
+
+        impl->gizmos[id].scale_dragger(impl->state, t.position, &scale, false);
+
+        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
+        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        modelMatrix = mul(modelMatrix, scaleMatrix);
+
+        std::vector<interact> draw_components{interact::scale_x, interact::scale_y, interact::scale_z};
+
+        for (auto c : draw_components)
+        {
+            gizmo_renderable r;
+            r.mesh = impl->mesh_components[c].mesh;
+            r.color = (c == impl->gizmos[id].interaction_mode) ? impl->mesh_components[c].base_color : impl->mesh_components[c].highlight_color;
+            for (auto &v : r.mesh.vertices)
+            {
+                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+                v.normal = transform_vector(modelMatrix, v.normal);
+            }
+            impl->drawlist.push_back(r);
+        }
+
+        // return impl->gizmos[id];
+        return (impl->gizmos[id].hover || impl->gizmos[id].active);
+    }
 }
