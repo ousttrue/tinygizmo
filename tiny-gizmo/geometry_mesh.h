@@ -14,6 +14,12 @@ struct geometry_mesh
 {
     std::vector<geometry_vertex> vertices;
     std::vector<minalg::uint3> triangles;
+
+    void clear()
+    {
+        vertices.clear();
+        triangles.clear();
+    }
 };
 
 } // namespace tinygizmo

@@ -69,7 +69,6 @@ struct interaction_state
 struct gizmo_context::gizmo_context_impl
 {
 private:
-    gizmo_context *ctx;
     tinygizmo::geometry_mesh m_r{};
 
 public:
@@ -79,11 +78,8 @@ public:
     std::map<uint32_t, interaction_state> gizmos;
 
     gizmo_application_state active_state;
-    gizmo_application_state last_state;
-    bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
-    bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
 
-    gizmo_context_impl(gizmo_context *ctx) : ctx(ctx)
+    gizmo_context_impl()
     {
         std::vector<float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
         std::vector<float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
@@ -107,17 +103,14 @@ public:
     void gizmo_context_impl::update(const gizmo_application_state &state)
     {
         active_state = state;
-        has_clicked = (!last_state.mouse_left && active_state.mouse_left) ? true : false;
-        has_released = (last_state.mouse_left && !active_state.mouse_left) ? true : false;
+
         drawlist.clear();
     }
 
     const geometry_mesh &render()
     {
-        m_r.vertices.clear();
-        m_r.triangles.clear();
+        m_r.clear();
 
-        // geometry_mesh r;
         // Combine all gizmo sub-meshes into one super-mesh
         for (auto &m : drawlist)
         {
@@ -128,8 +121,6 @@ public:
             for (; it != m_r.vertices.end(); ++it)
                 it->color = m.color; // Take the color and shove it into a per-vertex attribute
         }
-
-        last_state = active_state;
 
         return m_r;
     }
@@ -211,7 +202,7 @@ void plane_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_i
     interaction_state &interaction = g.gizmos[id];
 
     // Mouse clicked
-    if (g.has_clicked)
+    if (g.active_state.has_clicked)
         interaction.original_position = point;
 
     if (g.active_state.mouse_left)
@@ -262,7 +253,7 @@ void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_c
     const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
 
     // interaction_mode will only change on clicked
-    if (g.has_clicked)
+    if (g.active_state.has_clicked)
         self->interaction_mode = interact::none;
 
     {
@@ -307,7 +298,7 @@ void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_c
             best_t = t;
         }
 
-        if (g.has_clicked)
+        if (g.active_state.has_clicked)
         {
             self->interaction_mode = updated_state;
 
@@ -360,7 +351,7 @@ void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_c
         position -= self->click_offset;
     }
 
-    if (g.has_released)
+    if (g.active_state.has_released)
     {
         self->interaction_mode = interact::none;
         self->active = false;
@@ -398,7 +389,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     const uint32_t id = hash_fnv1a(name);
 
     // interaction_mode will only change on clicked
-    if (g.has_clicked)
+    if (g.active_state.has_clicked)
         g.gizmos[id].interaction_mode = interact::none;
 
     {
@@ -424,7 +415,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
             best_t = t;
         }
 
-        if (g.has_clicked)
+        if (g.active_state.has_clicked)
         {
             g.gizmos[id].interaction_mode = updated_state;
             if (g.gizmos[id].interaction_mode != interact::none)
@@ -461,7 +452,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
         }
     }
 
-    if (g.has_released)
+    if (g.active_state.has_released)
     {
         g.gizmos[id].interaction_mode = interact::none;
         g.gizmos[id].active = false;
@@ -569,7 +560,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
     const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
     const uint32_t id = hash_fnv1a(name);
 
-    if (g.has_clicked)
+    if (g.active_state.has_clicked)
         g.gizmos[id].interaction_mode = interact::none;
 
     {
@@ -593,7 +584,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
             best_t = t;
         }
 
-        if (g.has_clicked)
+        if (g.active_state.has_clicked)
         {
             g.gizmos[id].interaction_mode = updated_state;
             if (g.gizmos[id].interaction_mode != interact::none)
@@ -608,7 +599,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
         }
     }
 
-    if (g.has_released)
+    if (g.active_state.has_released)
     {
         g.gizmos[id].interaction_mode = interact::none;
         g.gizmos[id].active = false;
@@ -656,8 +647,14 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
 // Public Gizmo Implementations //
 //////////////////////////////////
 
-gizmo_context::gizmo_context() { impl.reset(new gizmo_context_impl(this)); };
-gizmo_context::~gizmo_context() {}
+gizmo_context::gizmo_context()
+    : impl(new gizmo_context_impl)
+{
+}
+
+gizmo_context::~gizmo_context()
+{
+}
 
 void gizmo_context::new_frame(const gizmo_application_state &state)
 {
@@ -681,7 +678,7 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
 {
     const uint32_t id = hash_fnv1a(name);
     auto &s = impl->gizmos[id];
-    ::position_gizmo(&s, is_local, id, *this->impl, t.orientation, t.position);
+    ::position_gizmo(&s, id, is_local, *this->impl, t.orientation, t.position);
     return (s.hover || s.active);
 }
 

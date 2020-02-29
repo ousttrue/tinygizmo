@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     // main loop
     //
     WindowState state;
-    std::array<bool, 127> lastKeyCode{};
+    WindowState lastState{};
     for (int i = 0; win.loop(&state); ++i)
     {
         // update view
@@ -193,6 +193,9 @@ int main(int argc, char *argv[])
                 view_proj_matrix),
             .cam = cam,
         };
+        gizmo_state.has_clicked = (!lastState.mouseLeftDown && state.mouseLeftDown);
+        gizmo_state.has_released = (lastState.mouseLeftDown && !state.mouseLeftDown);
+
         gizmo_ctx.new_frame(gizmo_state);
 
         if (state.keycode['R'])
@@ -207,11 +210,11 @@ int main(int argc, char *argv[])
         {
             mode = transform_mode::scale;
         }
-        if (!lastKeyCode['Z'] && state.keycode['Z'])
+        if (!lastState.keycode['Z'] && state.keycode['Z'])
         {
             is_local = !is_local;
         }
-        lastKeyCode = state.keycode;
+        lastState = state;
 
         //
         // draw

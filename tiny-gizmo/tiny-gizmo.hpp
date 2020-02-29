@@ -32,6 +32,9 @@ struct camera_parameters
 struct gizmo_application_state
 {
     bool mouse_left{false};
+    bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
+    bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
+
     bool hotkey_ctrl{false};
     // If > 0.f, the gizmos are drawn scale-invariant with a screenspace value defined here
     float screenspace_scale{0.f};
