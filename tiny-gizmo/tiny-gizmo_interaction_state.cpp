@@ -8,6 +8,36 @@
 namespace tinygizmo
 {
 
+void interaction_state::translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 axes[3], minalg::float3 &position)
+{
+    position += this->click_offset;
+    switch (this->interaction_mode)
+    {
+    case interact::translate_x:
+        this->axis_translation_dragger(state, ray, axes[0], position);
+        break;
+    case interact::translate_y:
+        this->axis_translation_dragger(state, ray, axes[1], position);
+        break;
+    case interact::translate_z:
+        this->axis_translation_dragger(state, ray, axes[2], position);
+        break;
+    case interact::translate_yz:
+        this->plane_translation_dragger(state, ray, axes[0], position);
+        break;
+    case interact::translate_zx:
+        this->plane_translation_dragger(state, ray, axes[1], position);
+        break;
+    case interact::translate_xy:
+        this->plane_translation_dragger(state, ray, axes[2], position);
+        break;
+    case interact::translate_xyz:
+        this->plane_translation_dragger(state, ray, -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation)), position);
+        break;
+    }
+    position -= this->click_offset;
+}
+
 void interaction_state::axis_translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 &axis, minalg::float3 &point)
 {
     if (state.mouse_left)

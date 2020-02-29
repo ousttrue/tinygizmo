@@ -39,6 +39,7 @@ struct interaction_state
     // Private Gizmo Implementations //
     ///////////////////////////////////
 
+    void translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 axes[3], minalg::float3 &position);
     void axis_translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 &axis, minalg::float3 &point);
     void plane_translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 &plane_normal, minalg::float3 &point);
 
