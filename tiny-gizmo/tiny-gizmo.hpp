@@ -23,14 +23,15 @@ struct camera_parameters
     // view
     std::array<float, 3> position;
     std::array<float, 4> orientation;
-
-    // ray
-    std::array<float, 16> get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const;
-    std::array<float, 3> get_ray_direction(int _x, int _y, int w, int h, const std::array<float, 16> &viewProjMatrix) const;
 };
 
 struct gizmo_application_state
 {
+    int mouse_x = 0;
+    int mouse_y = 0;
+    int window_width = 0;
+    int window_height = 0;
+
     bool mouse_left{false};
     bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
     bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
@@ -46,10 +47,6 @@ struct gizmo_application_state
     float snap_rotation{0.f};
     // 3d viewport used to render the view
     std::array<int32_t, 2> viewport_size;
-    // world-space ray origin (i.e. the camera position)
-    std::array<float, 3> ray_origin;
-    // world-space ray direction
-    std::array<float, 3> ray_direction;
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
     camera_parameters cam;
 };
@@ -66,7 +63,9 @@ struct gizmo_context
     gizmo_context();
     ~gizmo_context();
 
-    void new_frame(const gizmo_application_state &state); // Clear geometry buffer and update internal `gizmo_application_state` data
+    // Clear geometry buffer and update internal `gizmo_application_state` data
+    void new_frame(const gizmo_application_state &state,
+                   const std::array<float, 16> &view, const std::array<float, 16> &projection);
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);

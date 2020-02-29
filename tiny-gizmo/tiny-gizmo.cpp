@@ -35,13 +35,6 @@ struct gizmo_renderable
 // Gizmo Context Implementation //
 //////////////////////////////////
 
-static ray get_ray(const gizmo_application_state &state)
-{
-    return {
-        castalg::ref_cast<minalg::float3>(state.ray_origin),
-        castalg::ref_cast<minalg::float3>(state.ray_direction)};
-}
-
 struct gizmo_context::gizmo_context_impl
 {
 private:
@@ -54,6 +47,16 @@ public:
     std::map<uint32_t, interaction_state> gizmos;
 
     gizmo_application_state state;
+
+    // world-space ray origin (i.e. the camera position)
+    minalg::float3 ray_origin;
+    // world-space ray direction
+    minalg::float3 ray_direction;
+
+    ray get_ray() const
+    {
+        return {ray_origin, ray_direction};
+    }
 
     gizmo_context_impl()
     {
@@ -75,12 +78,36 @@ public:
         mesh_components[interact::scale_z] = {geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
     }
 
+    // Returns a world-space ray through the given pixel, originating at the camera
+    float3 get_ray_direction(int _x, int _y, int w, int h, const float4x4 &viewProjMatrix) const
+    {
+        const float x = 2 * (float)_x / w - 1;
+        const float y = 1 - 2 * (float)_y / h;
+        auto aspect_ratio = w / (float)h;
+        const float4x4 inv_view_proj = inverse(viewProjMatrix);
+        const float4 p0 = mul(inv_view_proj, float4(x, y, -1, 1)), p1 = mul(inv_view_proj, float4(x, y, +1, 1));
+        return (p1.xyz() * p0.w - p0.xyz() * p1.w);
+    }
+
     // Public methods
-    void gizmo_context_impl::update(const gizmo_application_state &state)
+    void gizmo_context_impl::update(const gizmo_application_state &state, const std::array<float, 16> &view, const std::array<float, 16> &projection)
     {
         this->state = state;
-
         drawlist.clear();
+
+        auto inv = inverse(castalg::ref_cast<minalg::float4x4>(view));
+        // position[0] = inv.w.x;
+        // position[1] = inv.w.y;
+        // position[2] = inv.w.z;
+        ray_origin = inv.w.xyz();
+
+        auto m = mul(
+            castalg::ref_cast<float4x4>(projection),
+            castalg::ref_cast<float4x4>(view));
+
+        ray_direction = get_ray_direction(
+            state.mouse_x, state.mouse_y, state.window_width, state.window_height,
+            m);
     }
 
     const geometry_mesh &render()
@@ -121,29 +148,6 @@ bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, f
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
-{
-    auto m = mul(
-        castalg::ref_cast<float4x4>(projection),
-        castalg::ref_cast<float4x4>(view));
-    return castalg::ref_cast<std::array<float, 16>>(m);
-}
-
-// Returns a world-space ray through the given pixel, originating at the camera
-std::array<float, 3> camera_parameters::get_ray_direction(int _x, int _y, int w, int h, const std::array<float, 16> &viewProjMatrix) const
-{
-    const float x = 2 * (float)_x / w - 1;
-    const float y = 1 - 2 * (float)_y / h;
-    auto aspect_ratio = w / (float)h;
-    const float4x4 inv_view_proj = inverse(castalg::ref_cast<float4x4>(viewProjMatrix));
-    const float4 p0 = mul(inv_view_proj, float4(x, y, -1, 1)), p1 = mul(inv_view_proj, float4(x, y, +1, 1));
-    return castalg::ref_cast<std::array<float, 3>>(p1.xyz() * p0.w - p0.xyz() * p1.w);
-}
-
-//////////////////////////////////
-// Public Gizmo Implementations //
-//////////////////////////////////
-
 gizmo_context::gizmo_context()
     : impl(new gizmo_context_impl)
 {
@@ -153,9 +157,10 @@ gizmo_context::~gizmo_context()
 {
 }
 
-void gizmo_context::new_frame(const gizmo_application_state &state)
+void gizmo_context::new_frame(const gizmo_application_state &state,
+                              const std::array<float, 16> &view, const std::array<float, 16> &projection)
 {
-    impl->update(state);
+    impl->update(state, view, projection);
 }
 
 void gizmo_context::render(
@@ -187,7 +192,7 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
 
         {
             interact updated_state = interact::none;
-            auto ray = detransform(p, get_ray(impl->state));
+            auto ray = detransform(p, impl->get_ray());
             detransform(draw_scale, ray);
 
             float best_t = std::numeric_limits<float>::infinity(), t;
@@ -256,25 +261,25 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
             switch (self->interaction_mode)
             {
             case interact::translate_x:
-                self->axis_translation_dragger(impl->state, axes[0], t.position);
+                self->axis_translation_dragger(impl->state, impl->get_ray(), axes[0], t.position);
                 break;
             case interact::translate_y:
-                self->axis_translation_dragger(impl->state, axes[1], t.position);
+                self->axis_translation_dragger(impl->state, impl->get_ray(), axes[1], t.position);
                 break;
             case interact::translate_z:
-                self->axis_translation_dragger(impl->state, axes[2], t.position);
+                self->axis_translation_dragger(impl->state, impl->get_ray(), axes[2], t.position);
                 break;
             case interact::translate_yz:
-                self->plane_translation_dragger(impl->state, axes[0], t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), axes[0], t.position);
                 break;
             case interact::translate_zx:
-                self->plane_translation_dragger(impl->state, axes[1], t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), axes[1], t.position);
                 break;
             case interact::translate_xy:
-                self->plane_translation_dragger(impl->state, axes[2], t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), axes[2], t.position);
                 break;
             case interact::translate_xyz:
-                self->plane_translation_dragger(impl->state, -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.cam.orientation)), t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.cam.orientation)), t.position);
                 break;
             }
             t.position -= self->click_offset;
@@ -330,7 +335,7 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
         {
             interact updated_state = interact::none;
 
-            auto ray = detransform(p, get_ray(impl->state));
+            auto ray = detransform(p, impl->get_ray());
             detransform(draw_scale, ray);
             float best_t = std::numeric_limits<float>::infinity(), f;
 
@@ -368,7 +373,7 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
 
         if (impl->gizmos[id].active)
         {
-            p.orientation = impl->gizmos[id].rotation_dragger(impl->state, t.position, is_local);
+            p.orientation = impl->gizmos[id].rotation_dragger(impl->state, impl->get_ray(), t.position, is_local);
         }
 
         if (impl->state.has_released)
@@ -462,7 +467,7 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
 
         {
             interact updated_state = interact::none;
-            auto ray = detransform(p, get_ray(impl->state));
+            auto ray = detransform(p, impl->get_ray());
             detransform(draw_scale, ray);
             float best_t = std::numeric_limits<float>::infinity(), t;
             if (intersect(*impl, ray, interact::scale_x, t, best_t))
@@ -502,7 +507,7 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
             impl->gizmos[id].active = false;
         }
 
-        impl->gizmos[id].scale_dragger(impl->state, t.position, &scale, false);
+        impl->gizmos[id].scale_dragger(impl->state, impl->get_ray(), t.position, &scale, false);
 
         float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
         float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));

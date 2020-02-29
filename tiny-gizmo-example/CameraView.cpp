@@ -32,25 +32,6 @@ void CameraView::update(struct WindowState &state)
         auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(state.time - lastState.time).count() * 0.001f;
         if (state.mouseRightDown)
         {
-            // wasd
-            // linalg::aliases::float3 move;
-            // if (state.keycode['W'])
-            //     move -= qzdir(orientation);
-            // if (state.keycode['A'])
-            //     move -= qxdir(orientation);
-            // if (state.keycode['S'])
-            //     move += qzdir(orientation);
-            // if (state.keycode['D'])
-            //     move += qxdir(orientation);
-            // float timestep = std::chrono::duration<float>(state.time - lastState.time).count();
-            // if (length2(move) > 0)
-            // {
-            //     move = normalize(move) * (timestep * 10);
-            //     position[0] += move.x;
-            //     position[1] += move.y;
-            //     position[2] += move.z;
-            // }
-
             yaw -= (dx * dt);
             pitch -= (dy * dt);
         }

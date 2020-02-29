@@ -102,6 +102,31 @@ enum class transform_mode
     scale
 };
 
+static std::array<float, 16> mul(const std::array<float, 16> &lhs, const std::array<float, 16> &rhs)
+{
+    return {
+        lhs[0] * rhs[0] + lhs[1] * rhs[4] + lhs[2] * rhs[8] + lhs[3] * rhs[12],
+        lhs[0] * rhs[1] + lhs[1] * rhs[5] + lhs[2] * rhs[9] + lhs[3] * rhs[13],
+        lhs[0] * rhs[2] + lhs[1] * rhs[6] + lhs[2] * rhs[10] + lhs[3] * rhs[14],
+        lhs[0] * rhs[3] + lhs[1] * rhs[7] + lhs[2] * rhs[11] + lhs[3] * rhs[15],
+
+        lhs[4] * rhs[0] + lhs[5] * rhs[4] + lhs[6] * rhs[8] + lhs[7] * rhs[12],
+        lhs[4] * rhs[1] + lhs[5] * rhs[5] + lhs[6] * rhs[9] + lhs[7] * rhs[13],
+        lhs[4] * rhs[2] + lhs[5] * rhs[6] + lhs[6] * rhs[10] + lhs[7] * rhs[14],
+        lhs[4] * rhs[3] + lhs[5] * rhs[7] + lhs[6] * rhs[11] + lhs[7] * rhs[15],
+
+        lhs[8] * rhs[0] + lhs[9] * rhs[4] + lhs[10] * rhs[8] + lhs[11] * rhs[12],
+        lhs[8] * rhs[1] + lhs[9] * rhs[5] + lhs[10] * rhs[9] + lhs[11] * rhs[13],
+        lhs[8] * rhs[2] + lhs[9] * rhs[6] + lhs[10] * rhs[10] + lhs[11] * rhs[14],
+        lhs[8] * rhs[3] + lhs[9] * rhs[7] + lhs[10] * rhs[11] + lhs[11] * rhs[15],
+
+        lhs[12] * rhs[0] + lhs[13] * rhs[4] + lhs[14] * rhs[8] + lhs[15] * rhs[12],
+        lhs[12] * rhs[1] + lhs[13] * rhs[5] + lhs[14] * rhs[9] + lhs[15] * rhs[13],
+        lhs[12] * rhs[2] + lhs[13] * rhs[6] + lhs[14] * rhs[10] + lhs[15] * rhs[14],
+        lhs[12] * rhs[3] + lhs[13] * rhs[7] + lhs[14] * rhs[11] + lhs[15] * rhs[15],
+    };
+}
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
@@ -180,23 +205,23 @@ int main(int argc, char *argv[])
         projection.update(cam.yfov, state.windowWidth / (float)state.windowHeight, cam.near_clip, cam.far_clip);
 
         // matrix
-        auto view_proj_matrix = cam.get_view_projection_matrix(view.matrix, projection.matrix);
+        auto view_proj_matrix = mul(view.matrix, projection.matrix);
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
+            .mouse_x = state.mouseX,
+            .mouse_y = state.mouseY,
+            .window_width = state.windowWidth,
+            .window_height = state.windowHeight,
             .mouse_left = state.mouseLeftDown,
             .hotkey_ctrl = true, //state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
-            .ray_origin = view.position,
-            .ray_direction = cam.get_ray_direction(
-                state.mouseX, state.mouseY, state.windowWidth, state.windowHeight,
-                view_proj_matrix),
             .cam = cam,
         };
         gizmo_state.has_clicked = (!lastState.mouseLeftDown && state.mouseLeftDown);
         gizmo_state.has_released = (lastState.mouseLeftDown && !state.mouseLeftDown);
 
-        gizmo_ctx.new_frame(gizmo_state);
+        gizmo_ctx.new_frame(gizmo_state, view.matrix, projection.matrix);
 
         if (state.keycode['R'])
         {

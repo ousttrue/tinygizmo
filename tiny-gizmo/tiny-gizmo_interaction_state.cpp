@@ -7,30 +7,22 @@
 
 namespace tinygizmo
 {
-// using namespace minalg;
 
-static ray get_ray(const gizmo_application_state &state)
-{
-    auto origin = castalg::ref_cast<minalg::float3>(state.ray_origin);
-    auto dir = castalg::ref_cast<minalg::float3>(state.ray_direction);
-    return {origin, dir};
-}
-
-void interaction_state::axis_translation_dragger(const gizmo_application_state &state, const minalg::float3 &axis, minalg::float3 &point)
+void interaction_state::axis_translation_dragger(const gizmo_application_state &state, const ray &ray, const minalg::float3 &axis, minalg::float3 &point)
 {
     if (state.mouse_left)
     {
         // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
         auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(state.cam.position));
         auto plane_normal = cross(axis, plane_tangent);
-        this->plane_translation_dragger(state, plane_normal, point);
+        this->plane_translation_dragger(state, ray, plane_normal, point);
 
         // Constrain object motion to be along the desired axis
         point = this->original_position + axis * dot(point - this->original_position, axis);
     }
 }
 
-void interaction_state::plane_translation_dragger(const gizmo_application_state &state, const minalg::float3 &plane_normal, minalg::float3 &point)
+void interaction_state::plane_translation_dragger(const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)
 {
     // Mouse clicked
     if (state.has_clicked)
@@ -40,7 +32,6 @@ void interaction_state::plane_translation_dragger(const gizmo_application_state 
     {
         // Define the plane to contain the original position of the object
         auto plane_point = this->original_position;
-        const ray r = get_ray(state);
 
         // If an intersection exists between the ray and the plane, place the object at that point
         const float denom = dot(r.direction, plane_normal);
@@ -58,23 +49,7 @@ void interaction_state::plane_translation_dragger(const gizmo_application_state 
     }
 }
 
-minalg::float4 interaction_state::rotation_dragger(const gizmo_application_state &state,
-                                                   const minalg::float3 &center, bool is_local)
-{
-    auto starting_orientation = is_local ? original_orientation : minalg::float4(0, 0, 0, 1);
-    switch (interaction_mode)
-    {
-    case interact::rotate_x:
-        return axis_rotation_dragger(state, {1, 0, 0}, center, starting_orientation);
-    case interact::rotate_y:
-        return axis_rotation_dragger(state, {0, 1, 0}, center, starting_orientation);
-    case interact::rotate_z:
-        return axis_rotation_dragger(state, {0, 0, 1}, center, starting_orientation);
-    }
-    throw;
-}
-
-minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_state &state,
+minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_state &state, const ray &r,
                                                         const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation)
 {
     if (state.mouse_left)
@@ -82,7 +57,6 @@ minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_
         rigid_transform original_pose = {start_orientation, original_position};
         auto the_axis = original_pose.transform_vector(axis);
         minalg::float4 the_plane = {the_axis, -dot(the_axis, click_offset)};
-        const ray r = get_ray(state);
 
         float t;
         if (intersect_ray_plane(r, the_plane, &t))
@@ -117,7 +91,8 @@ minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_
     }
 }
 
-void interaction_state::axis_scale_dragger(const gizmo_application_state &state, const minalg::float3 &axis, const minalg::float3 &center, const bool uniform,
+void interaction_state::axis_scale_dragger(const gizmo_application_state &state, const ray &ray,
+                                           const minalg::float3 &axis, const minalg::float3 &center, const bool uniform,
                                            minalg::float3 *scale)
 {
     // interaction_state &interaction = g.gizmos[id];
@@ -132,7 +107,6 @@ void interaction_state::axis_scale_dragger(const gizmo_application_state &state,
         {
             // Define the plane to contain the original position of the object
             auto plane_point = center;
-            const ray ray = get_ray(state);
 
             // If an intersection exists between the ray and the plane, place the object at that point
             const float denom = dot(ray.direction, plane_normal);
