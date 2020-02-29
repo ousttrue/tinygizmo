@@ -40,12 +40,4 @@ bool intersect_ray_plane(const ray &ray, const minalg::float4 &plane, float *hit
 bool intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2, float *hit_t);
 bool intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh, float *hit_t);
 
-///////////////////////////////
-// Geometry + Mesh Utilities //
-///////////////////////////////
-void compute_normals(geometry_mesh &mesh);
-geometry_mesh make_box_geometry(const minalg::float3 &min_bounds, const minalg::float3 &max_bounds);
-geometry_mesh make_cylinder_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, uint32_t slices);
-geometry_mesh make_lathed_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, int slices, const std::vector<minalg::float2> &points, const float eps = 0.0f);
-
 } // namespace tinygizmo
