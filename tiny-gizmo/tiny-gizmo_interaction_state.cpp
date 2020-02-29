@@ -59,7 +59,7 @@ void interaction_state::plane_translation_dragger(const gizmo_application_state 
 }
 
 minalg::float4 interaction_state::rotation_dragger(const gizmo_application_state &state,
-                                           const minalg::float3 &center, bool is_local)
+                                                   const minalg::float3 &center, bool is_local)
 {
     auto starting_orientation = is_local ? original_orientation : minalg::float4(0, 0, 0, 1);
     switch (interaction_mode)
@@ -75,7 +75,7 @@ minalg::float4 interaction_state::rotation_dragger(const gizmo_application_state
 }
 
 minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_state &state,
-                                                const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation)
+                                                        const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation)
 {
     if (state.mouse_left)
     {
@@ -114,6 +114,48 @@ minalg::float4 interaction_state::axis_rotation_dragger(const gizmo_application_
                 return qmul(rotation_quat(a, angle), start_orientation);
             }
         }
+    }
+}
+
+void interaction_state::axis_scale_dragger(const gizmo_application_state &state, const minalg::float3 &axis, const minalg::float3 &center, const bool uniform,
+                                           minalg::float3 *scale)
+{
+    // interaction_state &interaction = g.gizmos[id];
+
+    if (state.mouse_left)
+    {
+        auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.cam.position));
+        auto plane_normal = cross(axis, plane_tangent);
+
+        minalg::float3 distance;
+        if (state.mouse_left)
+        {
+            // Define the plane to contain the original position of the object
+            auto plane_point = center;
+            const ray ray = get_ray(state);
+
+            // If an intersection exists between the ray and the plane, place the object at that point
+            const float denom = dot(ray.direction, plane_normal);
+            if (std::abs(denom) == 0)
+                return;
+
+            const float t = dot(plane_point - ray.origin, plane_normal) / denom;
+            if (t < 0)
+                return;
+
+            distance = ray.origin + ray.direction * t;
+        }
+
+        auto offset_on_axis = (distance - this->click_offset) * axis;
+        flush_to_zero(offset_on_axis);
+        auto new_scale = this->original_scale + offset_on_axis;
+
+        if (uniform)
+            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
+        else
+            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
+        if (state.snap_scale)
+            *scale = snap(*scale, state.snap_scale);
     }
 }
 

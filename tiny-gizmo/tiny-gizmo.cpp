@@ -385,46 +385,6 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     return g.gizmos[id];
 }
 
-void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g, const float3 &axis, const float3 &center, float3 &scale, const bool uniform)
-{
-    interaction_state &interaction = g.gizmos[id];
-
-    if (g.state.mouse_left)
-    {
-        const float3 plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(g.state.cam.position));
-        const float3 plane_normal = cross(axis, plane_tangent);
-
-        float3 distance;
-        if (g.state.mouse_left)
-        {
-            // Define the plane to contain the original position of the object
-            const float3 plane_point = center;
-            const ray ray = get_ray(g.state);
-
-            // If an intersection exists between the ray and the plane, place the object at that point
-            const float denom = dot(ray.direction, plane_normal);
-            if (std::abs(denom) == 0)
-                return;
-
-            const float t = dot(plane_point - ray.origin, plane_normal) / denom;
-            if (t < 0)
-                return;
-
-            distance = ray.origin + ray.direction * t;
-        }
-
-        float3 offset_on_axis = (distance - interaction.click_offset) * axis;
-        flush_to_zero(offset_on_axis);
-        float3 new_scale = interaction.original_scale + offset_on_axis;
-
-        if (uniform)
-            scale = float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-        else
-            scale = float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        if (g.state.snap_scale)
-            scale = snap(scale, g.state.snap_scale);
-    }
-}
 
 interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
 {
@@ -477,21 +437,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
         g.gizmos[id].active = false;
     }
 
-    if (g.gizmos[id].active)
-    {
-        switch (g.gizmos[id].interaction_mode)
-        {
-        case interact::scale_x:
-            axis_scale_dragger(id, g, {1, 0, 0}, center, scale, g.state.hotkey_ctrl);
-            break;
-        case interact::scale_y:
-            axis_scale_dragger(id, g, {0, 1, 0}, center, scale, g.state.hotkey_ctrl);
-            break;
-        case interact::scale_z:
-            axis_scale_dragger(id, g, {0, 0, 1}, center, scale, g.state.hotkey_ctrl);
-            break;
-        }
-    }
+    g.gizmos[id].scale_dragger(g.state, center, &scale, false);
 
     float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
     float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));

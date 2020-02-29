@@ -41,9 +41,29 @@ struct interaction_state
     void axis_translation_dragger(const gizmo_application_state &state, const minalg::float3 &axis, minalg::float3 &point);
     void plane_translation_dragger(const gizmo_application_state &state, const minalg::float3 &plane_normal, minalg::float3 &point);
     minalg::float4 rotation_dragger(const gizmo_application_state &state,
-                            const minalg::float3 &center, bool is_local);
+                                    const minalg::float3 &center, bool is_local);
     minalg::float4 axis_rotation_dragger(const gizmo_application_state &state,
-                                 const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation);
+                                         const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation);
+    void scale_dragger(const gizmo_application_state &state,
+                       const minalg::float3 &center, minalg::float3 *scale, bool isUniform)
+    {
+        if (active)
+        {
+            switch (interaction_mode)
+            {
+            case interact::scale_x:
+                axis_scale_dragger(state, {1, 0, 0}, center, isUniform, scale);
+                break;
+            case interact::scale_y:
+                axis_scale_dragger(state, {0, 1, 0}, center, isUniform, scale);
+                break;
+            case interact::scale_z:
+                axis_scale_dragger(state, {0, 0, 1}, center, isUniform, scale);
+                break;
+            }
+        }
+    }
+    void axis_scale_dragger(const gizmo_application_state &state, const minalg::float3 &axis, const minalg::float3 &center, const bool uniform, minalg::float3 *scale);
 };
 
 } // namespace  tinygizmo
