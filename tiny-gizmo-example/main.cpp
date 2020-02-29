@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
             .window_width = state.windowWidth,
             .window_height = state.windowHeight,
             .mouse_left = state.mouseLeftDown,
-            .hotkey_ctrl = true, //state.key_left_control,
+            .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
             .position = view.position,
             .orientation = view.orientation,
