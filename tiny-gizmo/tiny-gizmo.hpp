@@ -32,7 +32,6 @@ struct camera_parameters
 struct gizmo_application_state
 {
     bool mouse_left{false};
-    bool hotkey_local{false};
     bool hotkey_ctrl{false};
     // If > 0.f, the gizmos are drawn scale-invariant with a screenspace value defined here
     float screenspace_scale{0.f};
@@ -69,8 +68,8 @@ struct gizmo_context
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
 
-    bool position_gizmo(const std::string &name, struct rigid_transform &t);
-    bool orientation_gizmo(const std::string &name, rigid_transform &t);
+    bool position_gizmo(const std::string &name, struct rigid_transform &t, bool is_local);
+    bool orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local);
     bool scale_gizmo(const std::string &name, rigid_transform &t);
 };
 

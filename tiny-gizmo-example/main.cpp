@@ -131,6 +131,8 @@ int main(int argc, char *argv[])
     CameraView view{
         .shift = {0, 1.5f, 4},
     };
+    transform_mode mode = transform_mode::translate;
+    bool is_local = false;
 
     // create teapot
     GlModel teapot;
@@ -162,12 +164,11 @@ int main(int argc, char *argv[])
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
-    transform_mode mode = transform_mode::translate;
-
     //
     // main loop
     //
     WindowState state;
+    std::array<bool, 127> lastKeyCode{};
     for (int i = 0; win.loop(&state); ++i)
     {
         // update view
@@ -184,7 +185,6 @@ int main(int argc, char *argv[])
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
             .mouse_left = state.mouseLeftDown,
-            .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = true, //state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
             .ray_origin = view.position,
@@ -207,6 +207,11 @@ int main(int argc, char *argv[])
         {
             mode = transform_mode::scale;
         }
+        if (!lastKeyCode['Z'] && state.keycode['Z'])
+        {
+            is_local = !is_local;
+        }
+        lastKeyCode = state.keycode;
 
         //
         // draw
@@ -229,13 +234,13 @@ int main(int argc, char *argv[])
             switch (mode)
             {
             case transform_mode::translate:
-                gizmo_ctx.position_gizmo("first-example-gizmo", xform_a);
-                gizmo_ctx.position_gizmo("second-example-gizmo", xform_b);
+                gizmo_ctx.position_gizmo("first-example-gizmo", xform_a, is_local);
+                gizmo_ctx.position_gizmo("second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::rotate:
-                gizmo_ctx.orientation_gizmo("first-example-gizmo", xform_a);
-                gizmo_ctx.orientation_gizmo("second-example-gizmo", xform_b);
+                gizmo_ctx.orientation_gizmo("first-example-gizmo", xform_a, is_local);
+                gizmo_ctx.orientation_gizmo("second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::scale:
