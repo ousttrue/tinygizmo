@@ -136,10 +136,10 @@ public:
 };
 
 // This will calculate a scale constant based on the number of screenspace pixels passed as pixel_scale.
-float scale_screenspace(gizmo_context::gizmo_context_impl &g, const float3 position, const float pixel_scale)
+static float scale_screenspace(const camera_parameters &cam, const float3 position, const float pixel_scale, uint32_t viewport_height)
 {
-    float dist = length(position - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
-    return std::tan(g.active_state.cam.yfov) * dist * (pixel_scale / g.active_state.viewport_size[1]);
+    float dist = length(position - castalg::ref_cast<minalg::float3>(cam.position));
+    return std::tan(cam.yfov) * dist * (pixel_scale / viewport_height);
 }
 
 // The only purpose of this is readability: to reduce the total column width of the intersect(...) statements in every gizmo
@@ -256,11 +256,10 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-interaction_state &position_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
+interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
 {
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), position);
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g, p.position, g.active_state.screenspace_scale) : 1.f;
-    const uint32_t id = hash_fnv1a(name);
+    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
 
     // interaction_mode will only change on clicked
     if (g.has_clicked)
@@ -397,7 +396,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     assert(length2(orientation) > float(1e-6));
 
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), center); // Orientation is local by default
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g, p.position, g.active_state.screenspace_scale) : 1.f;
+    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
     const uint32_t id = hash_fnv1a(name);
 
     // interaction_mode will only change on clicked
@@ -569,7 +568,7 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
 interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
 {
     rigid_transform p = rigid_transform(orientation, center);
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g, p.position, g.active_state.screenspace_scale) : 1.f;
+    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
     const uint32_t id = hash_fnv1a(name);
 
     if (g.has_clicked)
@@ -682,7 +681,8 @@ void gizmo_context::render(
 
 bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
-    auto &s = ::position_gizmo(name, is_local, *this->impl, t.orientation, t.position);
+    const uint32_t id = hash_fnv1a(name);
+    auto &s = ::position_gizmo(id, is_local, *this->impl, t.orientation, t.position);
     return (s.hover || s.active);
 }
 
