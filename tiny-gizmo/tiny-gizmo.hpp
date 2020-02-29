@@ -8,10 +8,6 @@
 namespace tinygizmo
 {
 
-///////////////
-//   State   //
-///////////////
-
 struct gizmo_application_state
 {
     int window_width = 0;
@@ -32,21 +28,15 @@ struct gizmo_application_state
     float snap_scale{0.f};
     // Radians used for snapping rotation quaternions (i.e. PI/8 or PI/16)
     float snap_rotation{0.f};
-    // 3d viewport used to render the view
-    std::array<int32_t, 2> viewport_size;
 
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
     std::array<float, 3> camera_position;
     std::array<float, 4> camera_orientation;
 };
 
-///////////////
-//   Gizmo   //
-///////////////
-
 struct gizmo_context
 {
-    struct gizmo_context_impl* m_impl = nullptr;
+    struct gizmo_context_impl *m_impl = nullptr;
 
     gizmo_context();
     ~gizmo_context();
@@ -60,8 +50,8 @@ struct gizmo_context
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
 };
 
-bool position_gizmo(const gizmo_context &context,  const std::string &name, struct rigid_transform &t, bool is_local);
-bool orientation_gizmo(const gizmo_context &context,const std::string &name, rigid_transform &t, bool is_local);
-bool scale_gizmo(const gizmo_context &context,const std::string &name, rigid_transform &t);
+bool position_gizmo(const gizmo_context &context, const std::string &name, struct rigid_transform &t, bool is_local);
+bool orientation_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t, bool is_local);
+bool scale_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t);
 
 } // namespace tinygizmo

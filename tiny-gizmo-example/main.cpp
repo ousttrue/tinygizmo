@@ -202,7 +202,6 @@ int main(int argc, char *argv[])
             .mouse_y = state.mouseY,
             .mouse_left = state.mouseLeftDown,
             .hotkey_ctrl = state.key_left_control,
-            .viewport_size = {state.windowWidth, state.windowHeight},
             .camera_position = view.position,
             .camera_orientation = view.orientation,
         };
