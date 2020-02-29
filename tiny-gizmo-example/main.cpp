@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         .shift = {0, 1.5f, 4},
     };
     transform_mode mode = transform_mode::translate;
-    bool is_local = false;
+    bool is_local = true;
 
     // create teapot
     GlModel teapot;

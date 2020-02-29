@@ -76,13 +76,10 @@ public:
     std::map<interact, gizmo_mesh_component> mesh_components;
     std::vector<gizmo_renderable> drawlist;
 
-    // transform_mode mode{transform_mode::translate};
-
     std::map<uint32_t, interaction_state> gizmos;
 
     gizmo_application_state active_state;
     gizmo_application_state last_state;
-    // bool local_toggle{true};  // State to describe if the gizmo should use transform-local math
     bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
     bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
 
@@ -110,7 +107,6 @@ public:
     void gizmo_context_impl::update(const gizmo_application_state &state)
     {
         active_state = state;
-        // local_toggle = (!last_state.hotkey_local && active_state.hotkey_local && active_state.hotkey_ctrl) ? !local_toggle : local_toggle;
         has_clicked = (!last_state.mouse_left && active_state.mouse_left) ? true : false;
         has_released = (last_state.mouse_left && !active_state.mouse_left) ? true : false;
         drawlist.clear();
@@ -260,7 +256,7 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-void position_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
+interaction_state &position_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
 {
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), position);
     const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g, p.position, g.active_state.screenspace_scale) : 1.f;
@@ -392,9 +388,11 @@ void position_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo
         }
         g.drawlist.push_back(r);
     }
+
+    return g.gizmos[id];
 }
 
-void orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
+interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
 {
     assert(length2(orientation) > float(1e-6));
 
@@ -523,6 +521,8 @@ void orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gi
     }
     else if (is_local == true && g.gizmos[id].interaction_mode != interact::none)
         orientation = p.orientation;
+
+    return g.gizmos[id];
 }
 
 void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g, const float3 &axis, const float3 &center, float3 &scale, const bool uniform)
@@ -566,7 +566,7 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
     }
 }
 
-void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
+interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
 {
     rigid_transform p = rigid_transform(orientation, center);
     const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g, p.position, g.active_state.screenspace_scale) : 1.f;
@@ -651,6 +651,8 @@ void scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, 
         }
         g.drawlist.push_back(r);
     }
+
+    return g.gizmos[id];
 }
 
 //////////////////////////////////
@@ -680,41 +682,20 @@ void gizmo_context::render(
 
 bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
-    bool activated = false;
-
-    ::position_gizmo(name, is_local, *this->impl, t.orientation, t.position);
-
-    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
-    if (s.hover == true || s.active == true)
-        activated = true;
-
-    return activated;
+    auto &s = ::position_gizmo(name, is_local, *this->impl, t.orientation, t.position);
+    return (s.hover || s.active);
 }
 
 bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
-    bool activated = false;
-
-    ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
-
-    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
-    if (s.hover == true || s.active == true)
-        activated = true;
-
-    return activated;
+    auto &s = ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
+    return (s.hover || s.active);
 }
 
 bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
 {
-    bool activated = false;
-
-    ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
-
-    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
-    if (s.hover == true || s.active == true)
-        activated = true;
-
-    return activated;
+    auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
+    return (s.hover || s.active);
 }
 
 std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
