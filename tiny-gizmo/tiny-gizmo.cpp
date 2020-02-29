@@ -16,135 +16,14 @@
 #include <chrono>
 #include <castalg.h>
 #include "utilmath.h"
+#include "impl.h"
 
-using namespace minalg;
+
 
 namespace tinygizmo
 {
-struct gizmo_mesh_component
-{
-    geometry_mesh mesh;
-    float4 base_color, highlight_color;
-};
-struct gizmo_renderable
-{
-    geometry_mesh mesh;
-    float4 color;
-};
 
-//////////////////////////////////
-// Gizmo Context Implementation //
-//////////////////////////////////
 
-struct gizmo_context_impl
-{
-private:
-    tinygizmo::geometry_mesh m_r{};
-
-public:
-    std::map<interact, gizmo_mesh_component> mesh_components;
-    std::vector<gizmo_renderable> drawlist;
-
-    std::map<uint32_t, interaction_state> gizmos;
-
-    gizmo_application_state state;
-
-    // world-space ray origin (i.e. the camera position)
-    minalg::float3 ray_origin;
-    // world-space ray direction
-    minalg::float3 ray_direction;
-
-    ray get_ray() const
-    {
-        return {ray_origin, ray_direction};
-    }
-
-    gizmo_context_impl()
-    {
-        std::vector<float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
-        std::vector<float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
-        std::vector<float2> ring_points = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
-        mesh_components[interact::translate_x] = {geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        mesh_components[interact::translate_y] = {geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        mesh_components[interact::translate_z] = {geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-        mesh_components[interact::translate_yz] = {geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}), {0.5f, 1, 1, 0.5f}, {0, 1, 1, 0.6f}};
-        mesh_components[interact::translate_zx] = {geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}), {1, 0.5f, 1, 0.5f}, {1, 0, 1, 0.6f}};
-        mesh_components[interact::translate_xy] = {geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}), {1, 1, 0.5f, 0.5f}, {1, 1, 0, 0.6f}};
-        mesh_components[interact::translate_xyz] = {geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}), {0.9f, 0.9f, 0.9f, 0.25f}, {1, 1, 1, 0.35f}};
-        mesh_components[interact::rotate_x] = {geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, 0.003f), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        mesh_components[interact::rotate_y] = {geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, -0.003f), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        mesh_components[interact::rotate_z] = {geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-        mesh_components[interact::scale_x] = {geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        mesh_components[interact::scale_y] = {geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        mesh_components[interact::scale_z] = {geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-    }
-
-    // Returns a world-space ray through the given pixel, originating at the camera
-    float3 get_ray_direction(int _x, int _y, int w, int h, const float4x4 &viewProjMatrix) const
-    {
-        const float x = 2 * (float)_x / w - 1;
-        const float y = 1 - 2 * (float)_y / h;
-        auto aspect_ratio = w / (float)h;
-        const float4x4 inv_view_proj = inverse(viewProjMatrix);
-        const float4 p0 = mul(inv_view_proj, float4(x, y, -1, 1)), p1 = mul(inv_view_proj, float4(x, y, +1, 1));
-        return (p1.xyz() * p0.w - p0.xyz() * p1.w);
-    }
-
-    // Public methods
-    void gizmo_context_impl::update(const gizmo_application_state &state, const std::array<float, 16> &view, const std::array<float, 16> &projection)
-    {
-        this->state = state;
-        drawlist.clear();
-
-        auto inv = inverse(castalg::ref_cast<minalg::float4x4>(view));
-        // position[0] = inv.w.x;
-        // position[1] = inv.w.y;
-        // position[2] = inv.w.z;
-        ray_origin = inv.w.xyz();
-
-        auto m = mul(
-            castalg::ref_cast<float4x4>(projection),
-            castalg::ref_cast<float4x4>(view));
-
-        ray_direction = get_ray_direction(
-            state.mouse_x, state.mouse_y, state.window_width, state.window_height,
-            m);
-    }
-
-    float get_gizmo_scale(const float3 &position) const
-    {
-        if (state.screenspace_scale <= 0.0f)
-        {
-            return 1.0f;
-        }
-
-        // float dist = length(position - castalg::ref_cast<minalg::float3>(state.cam.position));
-        // return std::tan(state.cam.yfov) * dist * (state.screenspace_scale / state.viewport_size[1]);
-        return 1.0f;
-    }
-
-    const geometry_mesh &render()
-    {
-        m_r.clear();
-
-        // Combine all gizmo sub-meshes into one super-mesh
-        for (auto &m : drawlist)
-        {
-            uint32_t numVerts = (uint32_t)m_r.vertices.size();
-            auto it = m_r.vertices.insert(m_r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
-            for (auto &f : m.mesh.triangles)
-                m_r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z});
-            for (; it != m_r.vertices.end(); ++it)
-                it->color = m.color; // Take the color and shove it into a per-vertex attribute
-        }
-
-        return m_r;
-    }
-};
-
-///////////////////////////////
-//   Gizmo Implementations   //
-///////////////////////////////
 
 gizmo_context::gizmo_context()
     : m_impl(new gizmo_context_impl)
@@ -190,7 +69,7 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
     auto &impl = ctx.m_impl;
     const uint32_t id = hash_fnv1a(name);
     auto self = &impl->gizmos[id];
-    rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position);
+    rigid_transform p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
 
     {
         const float draw_scale = impl->get_gizmo_scale(t.position);
@@ -234,7 +113,7 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
             self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
         }
 
-        std::vector<float3> axes;
+        std::vector<minalg::float3> axes;
         if (is_local)
             axes = {qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
         else
@@ -281,8 +160,8 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
             interact::translate_yz, interact::translate_zx, interact::translate_xy,
             interact::translate_xyz};
 
-        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
+        auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
         modelMatrix = mul(modelMatrix, scaleMatrix);
 
         for (auto c : draw_interactions)
@@ -314,7 +193,7 @@ bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_
     {
         assert(length2(t.orientation) > float(1e-6));
 
-        rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position); // Orientation is local by default
+        rigid_transform p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position); // Orientation is local by default
         const float draw_scale = impl->get_gizmo_scale(p.position);
         const uint32_t id = hash_fnv1a(name);
 
@@ -366,8 +245,8 @@ bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_
             impl->gizmos[id].active = false;
         }
 
-        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
+        auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
         modelMatrix = mul(modelMatrix, scaleMatrix);
 
         std::vector<interact> draw_interactions;
@@ -393,7 +272,7 @@ bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_
         // and draw an arrow from the center of the gizmo to indicate the degree of rotation
         if (is_local == false && impl->gizmos[id].interaction_mode != interact::none)
         {
-            float3 activeAxis;
+            minalg::float3 activeAxis;
             switch (impl->gizmos[id].interaction_mode)
             {
             case interact::rotate_x:
@@ -410,16 +289,16 @@ bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_
             interaction_state &interaction = impl->gizmos[id];
 
             // Create orthonormal basis for drawing the arrow
-            float3 a = qrot(p.orientation, interaction.click_offset - interaction.original_position);
-            float3 zDir = normalize(activeAxis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+            auto a = qrot(p.orientation, interaction.click_offset - interaction.original_position);
+            auto zDir = normalize(activeAxis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
             // Ad-hoc geometry
-            std::initializer_list<float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
+            std::initializer_list<minalg::float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
             auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points);
 
             gizmo_renderable r;
             r.mesh = geo;
-            r.color = float4(1);
+            r.color = minalg::float4(1);
             for (auto &v : r.mesh.vertices)
             {
                 v.position = transform_coord(modelMatrix, v.position);
@@ -495,8 +374,8 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
 
         impl->gizmos[id].scale_dragger(impl->state, impl->get_ray(), t.position, &scale, false);
 
-        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
+        auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
         modelMatrix = mul(modelMatrix, scaleMatrix);
 
         std::vector<interact> draw_components{interact::scale_x, interact::scale_y, interact::scale_z};
