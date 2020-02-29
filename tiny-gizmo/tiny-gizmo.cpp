@@ -461,6 +461,25 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
     return g.gizmos[id];
 }
 
+std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
+{
+    auto m = mul(
+        castalg::ref_cast<float4x4>(projection),
+        castalg::ref_cast<float4x4>(view));
+    return castalg::ref_cast<std::array<float, 16>>(m);
+}
+
+// Returns a world-space ray through the given pixel, originating at the camera
+std::array<float, 3> camera_parameters::get_ray_direction(int _x, int _y, int w, int h, const std::array<float, 16> &viewProjMatrix) const
+{
+    const float x = 2 * (float)_x / w - 1;
+    const float y = 1 - 2 * (float)_y / h;
+    auto aspect_ratio = w / (float)h;
+    const float4x4 inv_view_proj = inverse(castalg::ref_cast<float4x4>(viewProjMatrix));
+    const float4 p0 = mul(inv_view_proj, float4(x, y, -1, 1)), p1 = mul(inv_view_proj, float4(x, y, +1, 1));
+    return castalg::ref_cast<std::array<float, 3>>(p1.xyz() * p0.w - p0.xyz() * p1.w);
+}
+
 //////////////////////////////////
 // Public Gizmo Implementations //
 //////////////////////////////////
@@ -510,23 +529,4 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
 {
     auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
     return (s.hover || s.active);
-}
-
-std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
-{
-    auto m = mul(
-        castalg::ref_cast<float4x4>(projection),
-        castalg::ref_cast<float4x4>(view));
-    return castalg::ref_cast<std::array<float, 16>>(m);
-}
-
-// Returns a world-space ray through the given pixel, originating at the camera
-std::array<float, 3> camera_parameters::get_ray_direction(int _x, int _y, int w, int h, const std::array<float, 16> &viewProjMatrix) const
-{
-    const float x = 2 * (float)_x / w - 1;
-    const float y = 1 - 2 * (float)_y / h;
-    auto aspect_ratio = w / (float)h;
-    const float4x4 inv_view_proj = inverse(castalg::ref_cast<float4x4>(viewProjMatrix));
-    const float4 p0 = mul(inv_view_proj, float4(x, y, -1, 1)), p1 = mul(inv_view_proj, float4(x, y, +1, 1));
-    return castalg::ref_cast<std::array<float, 3>>(p1.xyz() * p0.w - p0.xyz() * p1.w);
 }
