@@ -110,6 +110,17 @@ public:
             m);
     }
 
+    float get_gizmo_scale(const float3 &position) const
+    {
+        if (state.screenspace_scale <= 0.0f)
+        {
+            return 1.0f;
+        }
+
+        float dist = length(position - castalg::ref_cast<minalg::float3>(state.cam.position));
+        return std::tan(state.cam.yfov) * dist * (state.screenspace_scale / state.viewport_size[1]);
+    }
+
     const geometry_mesh &render()
     {
         m_r.clear();
@@ -128,13 +139,6 @@ public:
         return m_r;
     }
 };
-
-// This will calculate a scale constant based on the number of screenspace pixels passed as pixel_scale.
-static float scale_screenspace(const camera_parameters &cam, const float3 position, const float pixel_scale, uint32_t viewport_height)
-{
-    float dist = length(position - castalg::ref_cast<minalg::float3>(cam.position));
-    return std::tan(cam.yfov) * dist * (pixel_scale / viewport_height);
-}
 
 // The only purpose of this is readability: to reduce the total column width of the intersect(...) statements in every gizmo
 bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, float &t, const float best_t)
@@ -180,11 +184,10 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
 {
     const uint32_t id = hash_fnv1a(name);
     auto self = &impl->gizmos[id];
-    // ::position_gizmo(&s, is_local, *this->impl, t.orientation, t.position);
-    // void position_gizmo(interaction_state *self, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
+    rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position);
+
     {
-        rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position);
-        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+        const float draw_scale = impl->get_gizmo_scale(t.position);
 
         // interaction_mode will only change on clicked
         if (impl->state.has_clicked)
@@ -325,7 +328,7 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
         assert(length2(t.orientation) > float(1e-6));
 
         rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position); // Orientation is local by default
-        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+        const float draw_scale = impl->get_gizmo_scale(p.position);
         const uint32_t id = hash_fnv1a(name);
 
         // interaction_mode will only change on clicked
@@ -459,7 +462,7 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
     // interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
     {
         rigid_transform p = rigid_transform(t.orientation, t.position);
-        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+        const float draw_scale = impl->get_gizmo_scale(p.position);
         const uint32_t id = hash_fnv1a(name);
 
         if (impl->state.has_clicked)
