@@ -121,137 +121,6 @@ bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, f
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
-{
-    assert(length2(orientation) > float(1e-6));
-
-    rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), center); // Orientation is local by default
-    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
-    const uint32_t id = hash_fnv1a(name);
-
-    // interaction_mode will only change on clicked
-    if (g.state.has_clicked)
-        g.gizmos[id].interaction_mode = interact::none;
-
-    {
-        interact updated_state = interact::none;
-
-        auto ray = detransform(p, get_ray(g.state));
-        detransform(draw_scale, ray);
-        float best_t = std::numeric_limits<float>::infinity(), t;
-
-        if (intersect(g, ray, interact::rotate_x, t, best_t))
-        {
-            updated_state = interact::rotate_x;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::rotate_y, t, best_t))
-        {
-            updated_state = interact::rotate_y;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::rotate_z, t, best_t))
-        {
-            updated_state = interact::rotate_z;
-            best_t = t;
-        }
-
-        if (g.state.has_clicked)
-        {
-            g.gizmos[id].interaction_mode = updated_state;
-            if (g.gizmos[id].interaction_mode != interact::none)
-            {
-                transform(draw_scale, ray);
-                g.gizmos[id].original_position = center;
-                g.gizmos[id].original_orientation = orientation;
-                g.gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * t);
-                g.gizmos[id].active = true;
-            }
-            else
-                g.gizmos[id].active = false;
-        }
-    }
-
-    if (g.gizmos[id].active)
-    {
-        p.orientation = g.gizmos[id].rotation_dragger(g.state, center, is_local);
-    }
-
-    if (g.state.has_released)
-    {
-        g.gizmos[id].interaction_mode = interact::none;
-        g.gizmos[id].active = false;
-    }
-
-    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-    float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
-
-    std::vector<interact> draw_interactions;
-    if (!is_local && g.gizmos[id].interaction_mode != interact::none)
-        draw_interactions = {g.gizmos[id].interaction_mode};
-    else
-        draw_interactions = {interact::rotate_x, interact::rotate_y, interact::rotate_z};
-
-    for (auto c : draw_interactions)
-    {
-        gizmo_renderable r;
-        r.mesh = g.mesh_components[c].mesh;
-        r.color = (c == g.gizmos[id].interaction_mode) ? g.mesh_components[c].base_color : g.mesh_components[c].highlight_color;
-        for (auto &v : r.mesh.vertices)
-        {
-            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-            v.normal = transform_vector(modelMatrix, v.normal);
-        }
-        g.drawlist.push_back(r);
-    }
-
-    // For non-local transformations, we only present one rotation ring
-    // and draw an arrow from the center of the gizmo to indicate the degree of rotation
-    if (is_local == false && g.gizmos[id].interaction_mode != interact::none)
-    {
-        float3 activeAxis;
-        switch (g.gizmos[id].interaction_mode)
-        {
-        case interact::rotate_x:
-            activeAxis = {1, 0, 0};
-            break;
-        case interact::rotate_y:
-            activeAxis = {0, 1, 0};
-            break;
-        case interact::rotate_z:
-            activeAxis = {0, 0, 1};
-            break;
-        }
-
-        interaction_state &interaction = g.gizmos[id];
-
-        // Create orthonormal basis for drawing the arrow
-        float3 a = qrot(p.orientation, interaction.click_offset - interaction.original_position);
-        float3 zDir = normalize(activeAxis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
-
-        // Ad-hoc geometry
-        std::initializer_list<float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
-        auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points);
-
-        gizmo_renderable r;
-        r.mesh = geo;
-        r.color = float4(1);
-        for (auto &v : r.mesh.vertices)
-        {
-            v.position = transform_coord(modelMatrix, v.position);
-            v.normal = transform_vector(modelMatrix, v.normal);
-        }
-        g.drawlist.push_back(r);
-
-        orientation = qmul(p.orientation, interaction.original_orientation);
-    }
-    else if (is_local == true && g.gizmos[id].interaction_mode != interact::none)
-        orientation = p.orientation;
-
-    return g.gizmos[id];
-}
-
 std::array<float, 16> camera_parameters::get_view_projection_matrix(const std::array<float, 16> &view, const std::array<float, 16> &projection) const
 {
     auto m = mul(
@@ -445,8 +314,137 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
 
 bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
-    auto &s = ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
-    return (s.hover || s.active);
+    // auto &s = ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
+    // interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
+    {
+        assert(length2(t.orientation) > float(1e-6));
+
+        rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position); // Orientation is local by default
+        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+        const uint32_t id = hash_fnv1a(name);
+
+        // interaction_mode will only change on clicked
+        if (impl->state.has_clicked)
+            impl->gizmos[id].interaction_mode = interact::none;
+
+        {
+            interact updated_state = interact::none;
+
+            auto ray = detransform(p, get_ray(impl->state));
+            detransform(draw_scale, ray);
+            float best_t = std::numeric_limits<float>::infinity(), f;
+
+            if (intersect(*impl, ray, interact::rotate_x, f, best_t))
+            {
+                updated_state = interact::rotate_x;
+                best_t = f;
+            }
+            if (intersect(*impl, ray, interact::rotate_y, f, best_t))
+            {
+                updated_state = interact::rotate_y;
+                best_t = f;
+            }
+            if (intersect(*impl, ray, interact::rotate_z, f, best_t))
+            {
+                updated_state = interact::rotate_z;
+                best_t = f;
+            }
+
+            if (impl->state.has_clicked)
+            {
+                impl->gizmos[id].interaction_mode = updated_state;
+                if (impl->gizmos[id].interaction_mode != interact::none)
+                {
+                    transform(draw_scale, ray);
+                    impl->gizmos[id].original_position = t.position;
+                    impl->gizmos[id].original_orientation = t.orientation;
+                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * f);
+                    impl->gizmos[id].active = true;
+                }
+                else
+                    impl->gizmos[id].active = false;
+            }
+        }
+
+        if (impl->gizmos[id].active)
+        {
+            p.orientation = impl->gizmos[id].rotation_dragger(impl->state, t.position, is_local);
+        }
+
+        if (impl->state.has_released)
+        {
+            impl->gizmos[id].interaction_mode = interact::none;
+            impl->gizmos[id].active = false;
+        }
+
+        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
+        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        modelMatrix = mul(modelMatrix, scaleMatrix);
+
+        std::vector<interact> draw_interactions;
+        if (!is_local && impl->gizmos[id].interaction_mode != interact::none)
+            draw_interactions = {impl->gizmos[id].interaction_mode};
+        else
+            draw_interactions = {interact::rotate_x, interact::rotate_y, interact::rotate_z};
+
+        for (auto c : draw_interactions)
+        {
+            gizmo_renderable r;
+            r.mesh = impl->mesh_components[c].mesh;
+            r.color = (c == impl->gizmos[id].interaction_mode) ? impl->mesh_components[c].base_color : impl->mesh_components[c].highlight_color;
+            for (auto &v : r.mesh.vertices)
+            {
+                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+                v.normal = transform_vector(modelMatrix, v.normal);
+            }
+            impl->drawlist.push_back(r);
+        }
+
+        // For non-local transformations, we only present one rotation ring
+        // and draw an arrow from the center of the gizmo to indicate the degree of rotation
+        if (is_local == false && impl->gizmos[id].interaction_mode != interact::none)
+        {
+            float3 activeAxis;
+            switch (impl->gizmos[id].interaction_mode)
+            {
+            case interact::rotate_x:
+                activeAxis = {1, 0, 0};
+                break;
+            case interact::rotate_y:
+                activeAxis = {0, 1, 0};
+                break;
+            case interact::rotate_z:
+                activeAxis = {0, 0, 1};
+                break;
+            }
+
+            interaction_state &interaction = impl->gizmos[id];
+
+            // Create orthonormal basis for drawing the arrow
+            float3 a = qrot(p.orientation, interaction.click_offset - interaction.original_position);
+            float3 zDir = normalize(activeAxis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+
+            // Ad-hoc geometry
+            std::initializer_list<float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
+            auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points);
+
+            gizmo_renderable r;
+            r.mesh = geo;
+            r.color = float4(1);
+            for (auto &v : r.mesh.vertices)
+            {
+                v.position = transform_coord(modelMatrix, v.position);
+                v.normal = transform_vector(modelMatrix, v.normal);
+            }
+            impl->drawlist.push_back(r);
+
+            t.orientation = qmul(p.orientation, interaction.original_orientation);
+        }
+        else if (is_local == true && impl->gizmos[id].interaction_mode != interact::none)
+            t.orientation = p.orientation;
+
+        return (impl->gizmos[id].hover || impl->gizmos[id].active);
+    }
 }
 
 bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
