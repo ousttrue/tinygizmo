@@ -121,139 +121,6 @@ bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, f
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-void position_gizmo(interaction_state *self, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
-{
-    rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), position);
-    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
-
-    // interaction_mode will only change on clicked
-    if (g.state.has_clicked)
-        self->interaction_mode = interact::none;
-
-    {
-        interact updated_state = interact::none;
-        auto ray = detransform(p, get_ray(g.state));
-        detransform(draw_scale, ray);
-
-        float best_t = std::numeric_limits<float>::infinity(), t;
-        if (intersect(g, ray, interact::translate_x, t, best_t))
-        {
-            updated_state = interact::translate_x;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_y, t, best_t))
-        {
-            updated_state = interact::translate_y;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_z, t, best_t))
-        {
-            updated_state = interact::translate_z;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_yz, t, best_t))
-        {
-            updated_state = interact::translate_yz;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_zx, t, best_t))
-        {
-            updated_state = interact::translate_zx;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_xy, t, best_t))
-        {
-            updated_state = interact::translate_xy;
-            best_t = t;
-        }
-        if (intersect(g, ray, interact::translate_xyz, t, best_t))
-        {
-            updated_state = interact::translate_xyz;
-            best_t = t;
-        }
-
-        if (g.state.has_clicked)
-        {
-            self->interaction_mode = updated_state;
-
-            if (self->interaction_mode != interact::none)
-            {
-                transform(draw_scale, ray);
-                self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * t) : ray.origin + ray.direction * t;
-                self->active = true;
-            }
-            else
-                self->active = false;
-        }
-
-        self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
-    }
-
-    std::vector<float3> axes;
-    if (is_local)
-        axes = {qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-    else
-        axes = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-
-    if (self->active)
-    {
-        position += self->click_offset;
-        switch (self->interaction_mode)
-        {
-        case interact::translate_x:
-            self->axis_translation_dragger(g.state, axes[0], position);
-            break;
-        case interact::translate_y:
-            self->axis_translation_dragger(g.state, axes[1], position);
-            break;
-        case interact::translate_z:
-            self->axis_translation_dragger(g.state, axes[2], position);
-            break;
-        case interact::translate_yz:
-            self->plane_translation_dragger(g.state, axes[0], position);
-            break;
-        case interact::translate_zx:
-            self->plane_translation_dragger(g.state, axes[1], position);
-            break;
-        case interact::translate_xy:
-            self->plane_translation_dragger(g.state, axes[2], position);
-            break;
-        case interact::translate_xyz:
-            self->plane_translation_dragger(g.state, -minalg::qzdir(castalg::ref_cast<minalg::float4>(g.state.cam.orientation)), position);
-            break;
-        }
-        position -= self->click_offset;
-    }
-
-    if (g.state.has_released)
-    {
-        self->interaction_mode = interact::none;
-        self->active = false;
-    }
-
-    std::vector<interact> draw_interactions{
-        interact::translate_x, interact::translate_y, interact::translate_z,
-        interact::translate_yz, interact::translate_zx, interact::translate_xy,
-        interact::translate_xyz};
-
-    float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
-    float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
-
-    for (auto c : draw_interactions)
-    {
-        gizmo_renderable r;
-        r.mesh = g.mesh_components[c].mesh;
-        r.color = (c == self->interaction_mode) ? g.mesh_components[c].base_color : g.mesh_components[c].highlight_color;
-        for (auto &v : r.mesh.vertices)
-        {
-            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-            v.normal = transform_vector(modelMatrix, v.normal);
-        }
-        g.drawlist.push_back(r);
-    }
-}
-
 interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
 {
     assert(length2(orientation) > float(1e-6));
@@ -385,7 +252,6 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     return g.gizmos[id];
 }
 
-
 interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
 {
     rigid_transform p = rigid_transform(orientation, center);
@@ -514,9 +380,142 @@ void gizmo_context::render(
 bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
     const uint32_t id = hash_fnv1a(name);
-    auto &s = impl->gizmos[id];
-    ::position_gizmo(&s, is_local, *this->impl, t.orientation, t.position);
-    return (s.hover || s.active);
+    auto self = &impl->gizmos[id];
+    // ::position_gizmo(&s, is_local, *this->impl, t.orientation, t.position);
+    // void position_gizmo(interaction_state *self, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
+    {
+        rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position);
+        const float draw_scale = (impl->state.screenspace_scale > 0.f) ? scale_screenspace(impl->state.cam, p.position, impl->state.screenspace_scale, impl->state.viewport_size[1]) : 1.f;
+
+        // interaction_mode will only change on clicked
+        if (impl->state.has_clicked)
+            self->interaction_mode = interact::none;
+
+        {
+            interact updated_state = interact::none;
+            auto ray = detransform(p, get_ray(impl->state));
+            detransform(draw_scale, ray);
+
+            float best_t = std::numeric_limits<float>::infinity(), t;
+            if (intersect(*impl, ray, interact::translate_x, t, best_t))
+            {
+                updated_state = interact::translate_x;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_y, t, best_t))
+            {
+                updated_state = interact::translate_y;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_z, t, best_t))
+            {
+                updated_state = interact::translate_z;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_yz, t, best_t))
+            {
+                updated_state = interact::translate_yz;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_zx, t, best_t))
+            {
+                updated_state = interact::translate_zx;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_xy, t, best_t))
+            {
+                updated_state = interact::translate_xy;
+                best_t = t;
+            }
+            if (intersect(*impl, ray, interact::translate_xyz, t, best_t))
+            {
+                updated_state = interact::translate_xyz;
+                best_t = t;
+            }
+
+            if (impl->state.has_clicked)
+            {
+                self->interaction_mode = updated_state;
+
+                if (self->interaction_mode != interact::none)
+                {
+                    transform(draw_scale, ray);
+                    self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * t) : ray.origin + ray.direction * t;
+                    self->active = true;
+                }
+                else
+                    self->active = false;
+            }
+
+            self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
+        }
+
+        std::vector<float3> axes;
+        if (is_local)
+            axes = {qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
+        else
+            axes = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
+        if (self->active)
+        {
+            t.position += self->click_offset;
+            switch (self->interaction_mode)
+            {
+            case interact::translate_x:
+                self->axis_translation_dragger(impl->state, axes[0], t.position);
+                break;
+            case interact::translate_y:
+                self->axis_translation_dragger(impl->state, axes[1], t.position);
+                break;
+            case interact::translate_z:
+                self->axis_translation_dragger(impl->state, axes[2], t.position);
+                break;
+            case interact::translate_yz:
+                self->plane_translation_dragger(impl->state, axes[0], t.position);
+                break;
+            case interact::translate_zx:
+                self->plane_translation_dragger(impl->state, axes[1], t.position);
+                break;
+            case interact::translate_xy:
+                self->plane_translation_dragger(impl->state, axes[2], t.position);
+                break;
+            case interact::translate_xyz:
+                self->plane_translation_dragger(impl->state, -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.cam.orientation)), t.position);
+                break;
+            }
+            t.position -= self->click_offset;
+        }
+
+        if (impl->state.has_released)
+        {
+            self->interaction_mode = interact::none;
+            self->active = false;
+        }
+
+        std::vector<interact> draw_interactions{
+            interact::translate_x, interact::translate_y, interact::translate_z,
+            interact::translate_yz, interact::translate_zx, interact::translate_xy,
+            interact::translate_xyz};
+
+        float4x4 modelMatrix = castalg::ref_cast<float4x4>(p.matrix());
+        float4x4 scaleMatrix = scaling_matrix(float3(draw_scale));
+        modelMatrix = mul(modelMatrix, scaleMatrix);
+
+        for (auto c : draw_interactions)
+        {
+            gizmo_renderable r;
+            r.mesh = impl->mesh_components[c].mesh;
+            r.color = (c == self->interaction_mode) ? impl->mesh_components[c].base_color : impl->mesh_components[c].highlight_color;
+            for (auto &v : r.mesh.vertices)
+            {
+                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+                v.normal = transform_vector(modelMatrix, v.normal);
+            }
+            impl->drawlist.push_back(r);
+        }
+    }
+
+    return (self->hover || self->active);
 }
 
 bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local)
