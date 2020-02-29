@@ -256,14 +256,14 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
 //   Gizmo Implementations   //
 ///////////////////////////////
 
-interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
+void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
 {
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), position);
     const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
 
     // interaction_mode will only change on clicked
     if (g.has_clicked)
-        g.gizmos[id].interaction_mode = interact::none;
+        self->interaction_mode = interact::none;
 
     {
         interact updated_state = interact::none;
@@ -309,19 +309,19 @@ interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::giz
 
         if (g.has_clicked)
         {
-            g.gizmos[id].interaction_mode = updated_state;
+            self->interaction_mode = updated_state;
 
-            if (g.gizmos[id].interaction_mode != interact::none)
+            if (self->interaction_mode != interact::none)
             {
                 transform(draw_scale, ray);
-                g.gizmos[id].click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * t) : ray.origin + ray.direction * t;
-                g.gizmos[id].active = true;
+                self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * t) : ray.origin + ray.direction * t;
+                self->active = true;
             }
             else
-                g.gizmos[id].active = false;
+                self->active = false;
         }
 
-        g.gizmos[id].hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
+        self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
     }
 
     std::vector<float3> axes;
@@ -330,10 +330,10 @@ interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::giz
     else
         axes = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
-    if (g.gizmos[id].active)
+    if (self->active)
     {
-        position += g.gizmos[id].click_offset;
-        switch (g.gizmos[id].interaction_mode)
+        position += self->click_offset;
+        switch (self->interaction_mode)
         {
         case interact::translate_x:
             axis_translation_dragger(id, g, axes[0], position);
@@ -357,13 +357,13 @@ interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::giz
             plane_translation_dragger(id, g, -minalg::qzdir(castalg::ref_cast<minalg::float4>(g.active_state.cam.orientation)), position);
             break;
         }
-        position -= g.gizmos[id].click_offset;
+        position -= self->click_offset;
     }
 
     if (g.has_released)
     {
-        g.gizmos[id].interaction_mode = interact::none;
-        g.gizmos[id].active = false;
+        self->interaction_mode = interact::none;
+        self->active = false;
     }
 
     std::vector<interact> draw_interactions{
@@ -379,7 +379,7 @@ interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::giz
     {
         gizmo_renderable r;
         r.mesh = g.mesh_components[c].mesh;
-        r.color = (c == g.gizmos[id].interaction_mode) ? g.mesh_components[c].base_color : g.mesh_components[c].highlight_color;
+        r.color = (c == self->interaction_mode) ? g.mesh_components[c].base_color : g.mesh_components[c].highlight_color;
         for (auto &v : r.mesh.vertices)
         {
             v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
@@ -387,8 +387,6 @@ interaction_state &position_gizmo(uint32_t id, bool is_local, gizmo_context::giz
         }
         g.drawlist.push_back(r);
     }
-
-    return g.gizmos[id];
 }
 
 interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
@@ -682,7 +680,8 @@ void gizmo_context::render(
 bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
     const uint32_t id = hash_fnv1a(name);
-    auto &s = ::position_gizmo(id, is_local, *this->impl, t.orientation, t.position);
+    auto &s = impl->gizmos[id];
+    ::position_gizmo(&s, is_local, id, *this->impl, t.orientation, t.position);
     return (s.hover || s.active);
 }
 
