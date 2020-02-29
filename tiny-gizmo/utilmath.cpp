@@ -92,40 +92,39 @@ bool intersect_ray_plane(const ray &ray, const minalg::float4 &plane, float *hit
     return true;
 }
 
-bool intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2, float *hit_t)
+float intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2)
 {
     auto e1 = v1 - v0, e2 = v2 - v0, h = cross(ray.direction, e2);
     auto a = dot(e1, h);
     if (std::abs(a) == 0)
-        return false;
+        return std::numeric_limits<float>::infinity();
 
     float f = 1 / a;
     auto s = ray.origin - v0;
     auto u = f * dot(s, h);
     if (u < 0 || u > 1)
-        return false;
+        return std::numeric_limits<float>::infinity();
 
     auto q = cross(s, e1);
     auto v = f * dot(ray.direction, q);
     if (v < 0 || u + v > 1)
-        return false;
+        return std::numeric_limits<float>::infinity();
 
     auto t = f * dot(e2, q);
     if (t < 0)
-        return false;
+        return std::numeric_limits<float>::infinity();
 
-    if (hit_t)
-        *hit_t = t;
-    return true;
+    return t;
 }
 
 bool intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh, float *hit_t)
 {
-    float best_t = std::numeric_limits<float>::infinity(), t;
+    float best_t = std::numeric_limits<float>::infinity();
     int32_t best_tri = -1;
     for (auto &tri : mesh.triangles)
     {
-        if (intersect_ray_triangle(ray, mesh.vertices[tri[0]].position, mesh.vertices[tri[1]].position, mesh.vertices[tri[2]].position, &t) && t < best_t)
+        auto t = intersect_ray_triangle(ray, mesh.vertices[tri[0]].position, mesh.vertices[tri[1]].position, mesh.vertices[tri[2]].position);
+        if (t < best_t)
         {
             best_t = t;
             best_tri = uint32_t(&tri - mesh.triangles.data());
