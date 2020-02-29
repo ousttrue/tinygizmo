@@ -77,7 +77,7 @@ public:
 
     std::map<uint32_t, interaction_state> gizmos;
 
-    gizmo_application_state active_state;
+    gizmo_application_state state;
 
     gizmo_context_impl()
     {
@@ -102,7 +102,7 @@ public:
     // Public methods
     void gizmo_context_impl::update(const gizmo_application_state &state)
     {
-        active_state = state;
+        this->state = state;
 
         drawlist.clear();
     }
@@ -155,12 +155,12 @@ void axis_rotation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl 
 {
     interaction_state &interaction = g.gizmos[id];
 
-    if (g.active_state.mouse_left)
+    if (g.state.mouse_left)
     {
         rigid_transform original_pose = {start_orientation, interaction.original_position};
         float3 the_axis = original_pose.transform_vector(axis);
         float4 the_plane = {the_axis, -dot(the_axis, interaction.click_offset)};
-        const ray r = get_ray(g.active_state);
+        const ray r = get_ray(g.state);
 
         float t;
         if (intersect_ray_plane(r, the_plane, &t))
@@ -183,9 +183,9 @@ void axis_rotation_dragger(const uint32_t id, gizmo_context::gizmo_context_impl 
                 return;
             }
 
-            if (g.active_state.snap_rotation)
+            if (g.state.snap_rotation)
             {
-                auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, g.active_state.snap_rotation);
+                auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, g.state.snap_rotation);
                 orientation = qmul(snapped, start_orientation);
             }
             else
@@ -202,14 +202,14 @@ void plane_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_i
     interaction_state &interaction = g.gizmos[id];
 
     // Mouse clicked
-    if (g.active_state.has_clicked)
+    if (g.state.has_clicked)
         interaction.original_position = point;
 
-    if (g.active_state.mouse_left)
+    if (g.state.mouse_left)
     {
         // Define the plane to contain the original position of the object
         const float3 plane_point = interaction.original_position;
-        const ray r = get_ray(g.active_state);
+        const ray r = get_ray(g.state);
 
         // If an intersection exists between the ray and the plane, place the object at that point
         const float denom = dot(r.direction, plane_normal);
@@ -222,8 +222,8 @@ void plane_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_i
 
         point = r.origin + r.direction * t;
 
-        if (g.active_state.snap_translation)
-            point = snap(point, g.active_state.snap_translation);
+        if (g.state.snap_translation)
+            point = snap(point, g.state.snap_translation);
     }
 }
 
@@ -231,10 +231,10 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
 {
     interaction_state &interaction = g.gizmos[id];
 
-    if (g.active_state.mouse_left)
+    if (g.state.mouse_left)
     {
         // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
-        const float3 plane_tangent = cross(axis, point - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
+        const float3 plane_tangent = cross(axis, point - castalg::ref_cast<minalg::float3>(g.state.cam.position));
         const float3 plane_normal = cross(axis, plane_tangent);
         plane_translation_dragger(id, g, plane_normal, point);
 
@@ -250,15 +250,15 @@ void axis_translation_dragger(const uint32_t id, gizmo_context::gizmo_context_im
 void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_context::gizmo_context_impl &g, const float4 &orientation, float3 &position)
 {
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), position);
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
+    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
 
     // interaction_mode will only change on clicked
-    if (g.active_state.has_clicked)
+    if (g.state.has_clicked)
         self->interaction_mode = interact::none;
 
     {
         interact updated_state = interact::none;
-        auto ray = detransform(p, get_ray(g.active_state));
+        auto ray = detransform(p, get_ray(g.state));
         detransform(draw_scale, ray);
 
         float best_t = std::numeric_limits<float>::infinity(), t;
@@ -298,7 +298,7 @@ void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_c
             best_t = t;
         }
 
-        if (g.active_state.has_clicked)
+        if (g.state.has_clicked)
         {
             self->interaction_mode = updated_state;
 
@@ -345,13 +345,13 @@ void position_gizmo(interaction_state *self, uint32_t id, bool is_local, gizmo_c
             plane_translation_dragger(id, g, axes[2], position);
             break;
         case interact::translate_xyz:
-            plane_translation_dragger(id, g, -minalg::qzdir(castalg::ref_cast<minalg::float4>(g.active_state.cam.orientation)), position);
+            plane_translation_dragger(id, g, -minalg::qzdir(castalg::ref_cast<minalg::float4>(g.state.cam.orientation)), position);
             break;
         }
         position -= self->click_offset;
     }
 
-    if (g.active_state.has_released)
+    if (g.state.has_released)
     {
         self->interaction_mode = interact::none;
         self->active = false;
@@ -385,17 +385,17 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
     assert(length2(orientation) > float(1e-6));
 
     rigid_transform p = rigid_transform(is_local ? orientation : float4(0, 0, 0, 1), center); // Orientation is local by default
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
+    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
     const uint32_t id = hash_fnv1a(name);
 
     // interaction_mode will only change on clicked
-    if (g.active_state.has_clicked)
+    if (g.state.has_clicked)
         g.gizmos[id].interaction_mode = interact::none;
 
     {
         interact updated_state = interact::none;
 
-        auto ray = detransform(p, get_ray(g.active_state));
+        auto ray = detransform(p, get_ray(g.state));
         detransform(draw_scale, ray);
         float best_t = std::numeric_limits<float>::infinity(), t;
 
@@ -415,7 +415,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
             best_t = t;
         }
 
-        if (g.active_state.has_clicked)
+        if (g.state.has_clicked)
         {
             g.gizmos[id].interaction_mode = updated_state;
             if (g.gizmos[id].interaction_mode != interact::none)
@@ -452,7 +452,7 @@ interaction_state &orientation_gizmo(const std::string &name, bool is_local, giz
         }
     }
 
-    if (g.active_state.has_released)
+    if (g.state.has_released)
     {
         g.gizmos[id].interaction_mode = interact::none;
         g.gizmos[id].active = false;
@@ -517,17 +517,17 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
 {
     interaction_state &interaction = g.gizmos[id];
 
-    if (g.active_state.mouse_left)
+    if (g.state.mouse_left)
     {
-        const float3 plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(g.active_state.cam.position));
+        const float3 plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(g.state.cam.position));
         const float3 plane_normal = cross(axis, plane_tangent);
 
         float3 distance;
-        if (g.active_state.mouse_left)
+        if (g.state.mouse_left)
         {
             // Define the plane to contain the original position of the object
             const float3 plane_point = center;
-            const ray ray = get_ray(g.active_state);
+            const ray ray = get_ray(g.state);
 
             // If an intersection exists between the ray and the plane, place the object at that point
             const float denom = dot(ray.direction, plane_normal);
@@ -549,23 +549,23 @@ void axis_scale_dragger(const uint32_t &id, gizmo_context::gizmo_context_impl &g
             scale = float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
         else
             scale = float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        if (g.active_state.snap_scale)
-            scale = snap(scale, g.active_state.snap_scale);
+        if (g.state.snap_scale)
+            scale = snap(scale, g.state.snap_scale);
     }
 }
 
 interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
 {
     rigid_transform p = rigid_transform(orientation, center);
-    const float draw_scale = (g.active_state.screenspace_scale > 0.f) ? scale_screenspace(g.active_state.cam, p.position, g.active_state.screenspace_scale, g.active_state.viewport_size[1]) : 1.f;
+    const float draw_scale = (g.state.screenspace_scale > 0.f) ? scale_screenspace(g.state.cam, p.position, g.state.screenspace_scale, g.state.viewport_size[1]) : 1.f;
     const uint32_t id = hash_fnv1a(name);
 
-    if (g.active_state.has_clicked)
+    if (g.state.has_clicked)
         g.gizmos[id].interaction_mode = interact::none;
 
     {
         interact updated_state = interact::none;
-        auto ray = detransform(p, get_ray(g.active_state));
+        auto ray = detransform(p, get_ray(g.state));
         detransform(draw_scale, ray);
         float best_t = std::numeric_limits<float>::infinity(), t;
         if (intersect(g, ray, interact::scale_x, t, best_t))
@@ -584,7 +584,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
             best_t = t;
         }
 
-        if (g.active_state.has_clicked)
+        if (g.state.has_clicked)
         {
             g.gizmos[id].interaction_mode = updated_state;
             if (g.gizmos[id].interaction_mode != interact::none)
@@ -599,7 +599,7 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
         }
     }
 
-    if (g.active_state.has_released)
+    if (g.state.has_released)
     {
         g.gizmos[id].interaction_mode = interact::none;
         g.gizmos[id].active = false;
@@ -610,13 +610,13 @@ interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_con
         switch (g.gizmos[id].interaction_mode)
         {
         case interact::scale_x:
-            axis_scale_dragger(id, g, {1, 0, 0}, center, scale, g.active_state.hotkey_ctrl);
+            axis_scale_dragger(id, g, {1, 0, 0}, center, scale, g.state.hotkey_ctrl);
             break;
         case interact::scale_y:
-            axis_scale_dragger(id, g, {0, 1, 0}, center, scale, g.active_state.hotkey_ctrl);
+            axis_scale_dragger(id, g, {0, 1, 0}, center, scale, g.state.hotkey_ctrl);
             break;
         case interact::scale_z:
-            axis_scale_dragger(id, g, {0, 0, 1}, center, scale, g.active_state.hotkey_ctrl);
+            axis_scale_dragger(id, g, {0, 0, 1}, center, scale, g.state.hotkey_ctrl);
             break;
         }
     }
