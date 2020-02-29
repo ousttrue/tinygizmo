@@ -10,7 +10,6 @@ namespace tinygizmo
 static const minalg::float4x4 Identity4x4 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 static const minalg::float3x3 Identity3x3 = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
-
 void flush_to_zero(minalg::float3 &f)
 {
     if (std::abs(f.x) < 0.02f)
@@ -56,7 +55,6 @@ minalg::float4 make_rotation_quat_between_vectors_snapped(const minalg::float3 &
     auto snappedAcos = std::floor(std::acos(dot(a, b)) / angle) * angle;
     return make_rotation_quat_axis_angle(normalize(cross(a, b)), snappedAcos);
 }
-
 
 ray transform(const rigid_transform &p, const ray &r) { return {p.transform_point(r.origin), p.transform_vector(r.direction)}; }
 ray detransform(const rigid_transform &p, const ray &r) { return {p.detransform_point(r.origin), p.detransform_vector(r.direction)}; }
@@ -117,26 +115,18 @@ float intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const min
     return t;
 }
 
-bool intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh, float *hit_t)
+float intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh)
 {
     float best_t = std::numeric_limits<float>::infinity();
-    int32_t best_tri = -1;
     for (auto &tri : mesh.triangles)
     {
         auto t = intersect_ray_triangle(ray, mesh.vertices[tri[0]].position, mesh.vertices[tri[1]].position, mesh.vertices[tri[2]].position);
         if (t < best_t)
         {
             best_t = t;
-            best_tri = uint32_t(&tri - mesh.triangles.data());
         }
     }
-    if (best_tri == -1)
-        return false;
-    if (hit_t)
-        *hit_t = best_t;
-    return true;
+    return best_t;
 }
-
-
 
 } // namespace tinygizmo

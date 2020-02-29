@@ -38,6 +38,6 @@ void detransform(const float scale, ray &r);
 
 bool intersect_ray_plane(const ray &ray, const minalg::float4 &plane, float *hit_t);
 float intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2);
-bool intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh, float *hit_t);
+float intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh);
 
 } // namespace tinygizmo

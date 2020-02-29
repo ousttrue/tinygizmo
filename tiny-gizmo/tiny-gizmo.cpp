@@ -140,14 +140,6 @@ public:
     }
 };
 
-// The only purpose of this is readability: to reduce the total column width of the intersect(...) statements in every gizmo
-bool intersect(gizmo_context::gizmo_context_impl &g, const ray &r, interact i, float &t, const float best_t)
-{
-    if (intersect_ray_mesh(r, g.mesh_components[i].mesh, &t) && t < best_t)
-        return true;
-    return false;
-}
-
 ///////////////////////////////
 //   Gizmo Implementations   //
 ///////////////////////////////
@@ -180,6 +172,16 @@ void gizmo_context::render(
     *indexStride = sizeof(r.triangles[0]) / 3;
 }
 
+static const interact translation_components[] = {
+    interact::translate_x,
+    interact::translate_y,
+    interact::translate_z,
+    interact::translate_xy,
+    interact::translate_yz,
+    interact::translate_zx,
+    interact::translate_xyz,
+};
+
 bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
     const uint32_t id = hash_fnv1a(name);
@@ -193,48 +195,22 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
         if (impl->state.has_clicked)
             self->interaction_mode = interact::none;
 
+        interact updated_state = interact::none;
+        auto ray = detransform(p, impl->get_ray());
+        detransform(draw_scale, ray);
+
+        float best_t = std::numeric_limits<float>::infinity();
+        for (auto c : translation_components)
         {
-            interact updated_state = interact::none;
-            auto ray = detransform(p, impl->get_ray());
-            detransform(draw_scale, ray);
+            auto t = intersect_ray_mesh(ray, impl->mesh_components[c].mesh);
+            if (t < best_t)
+            {
+                updated_state = c;
+                best_t = t;
+            }
+        }
 
-            float best_t = std::numeric_limits<float>::infinity(), t;
-            if (intersect(*impl, ray, interact::translate_x, t, best_t))
-            {
-                updated_state = interact::translate_x;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_y, t, best_t))
-            {
-                updated_state = interact::translate_y;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_z, t, best_t))
-            {
-                updated_state = interact::translate_z;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_yz, t, best_t))
-            {
-                updated_state = interact::translate_yz;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_zx, t, best_t))
-            {
-                updated_state = interact::translate_zx;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_xy, t, best_t))
-            {
-                updated_state = interact::translate_xy;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::translate_xyz, t, best_t))
-            {
-                updated_state = interact::translate_xyz;
-                best_t = t;
-            }
-
+        {
             if (impl->state.has_clicked)
             {
                 self->interaction_mode = updated_state;
@@ -242,11 +218,13 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
                 if (self->interaction_mode != interact::none)
                 {
                     transform(draw_scale, ray);
-                    self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * t) : ray.origin + ray.direction * t;
+                    self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
                     self->active = true;
                 }
                 else
+                {
                     self->active = false;
+                }
             }
 
             self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
@@ -320,6 +298,12 @@ bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_tra
     return (self->hover || self->active);
 }
 
+static const interact orientation_components[] = {
+    interact::rotate_x,
+    interact::rotate_y,
+    interact::rotate_z,
+};
+
 bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local)
 {
     // auto &s = ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
@@ -335,29 +319,23 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
         if (impl->state.has_clicked)
             impl->gizmos[id].interaction_mode = interact::none;
 
+        interact updated_state = interact::none;
+
+        auto ray = detransform(p, impl->get_ray());
+        detransform(draw_scale, ray);
+        float best_t = std::numeric_limits<float>::infinity();
+
+        for (auto c : orientation_components)
         {
-            interact updated_state = interact::none;
-
-            auto ray = detransform(p, impl->get_ray());
-            detransform(draw_scale, ray);
-            float best_t = std::numeric_limits<float>::infinity(), f;
-
-            if (intersect(*impl, ray, interact::rotate_x, f, best_t))
+            auto f = intersect_ray_mesh(ray, impl->mesh_components[c].mesh);
+            if (f < best_t)
             {
-                updated_state = interact::rotate_x;
+                updated_state = c;
                 best_t = f;
             }
-            if (intersect(*impl, ray, interact::rotate_y, f, best_t))
-            {
-                updated_state = interact::rotate_y;
-                best_t = f;
-            }
-            if (intersect(*impl, ray, interact::rotate_z, f, best_t))
-            {
-                updated_state = interact::rotate_z;
-                best_t = f;
-            }
+        }
 
+        {
             if (impl->state.has_clicked)
             {
                 impl->gizmos[id].interaction_mode = updated_state;
@@ -366,7 +344,7 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
                     transform(draw_scale, ray);
                     impl->gizmos[id].original_position = t.position;
                     impl->gizmos[id].original_orientation = t.orientation;
-                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * f);
+                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * best_t);
                     impl->gizmos[id].active = true;
                 }
                 else
@@ -455,6 +433,12 @@ bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_
     }
 }
 
+static const interact scale_components[] = {
+    interact::scale_x,
+    interact::scale_y,
+    interact::scale_z,
+};
+
 bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
 {
     // auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
@@ -468,27 +452,22 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
         if (impl->state.has_clicked)
             impl->gizmos[id].interaction_mode = interact::none;
 
-        {
-            interact updated_state = interact::none;
-            auto ray = detransform(p, impl->get_ray());
-            detransform(draw_scale, ray);
-            float best_t = std::numeric_limits<float>::infinity(), t;
-            if (intersect(*impl, ray, interact::scale_x, t, best_t))
-            {
-                updated_state = interact::scale_x;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::scale_y, t, best_t))
-            {
-                updated_state = interact::scale_y;
-                best_t = t;
-            }
-            if (intersect(*impl, ray, interact::scale_z, t, best_t))
-            {
-                updated_state = interact::scale_z;
-                best_t = t;
-            }
+        interact updated_state = interact::none;
+        auto ray = detransform(p, impl->get_ray());
+        detransform(draw_scale, ray);
+        float best_t = std::numeric_limits<float>::infinity();
 
+        for (auto c : scale_components)
+        {
+            auto t = intersect_ray_mesh(ray, impl->mesh_components[c].mesh);
+            if (t < best_t)
+            {
+                updated_state = c;
+                best_t = t;
+            }
+        }
+
+        {
             if (impl->state.has_clicked)
             {
                 impl->gizmos[id].interaction_mode = updated_state;
@@ -496,7 +475,7 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
                 {
                     transform(draw_scale, ray);
                     impl->gizmos[id].original_scale = scale;
-                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * t);
+                    impl->gizmos[id].click_offset = p.transform_point(ray.origin + ray.direction * best_t);
                     impl->gizmos[id].active = true;
                 }
                 else
