@@ -118,8 +118,9 @@ public:
             return 1.0f;
         }
 
-        float dist = length(position - castalg::ref_cast<minalg::float3>(state.cam.position));
-        return std::tan(state.cam.yfov) * dist * (state.screenspace_scale / state.viewport_size[1]);
+        // float dist = length(position - castalg::ref_cast<minalg::float3>(state.cam.position));
+        // return std::tan(state.cam.yfov) * dist * (state.screenspace_scale / state.viewport_size[1]);
+        return 1.0f;
     }
 
     const geometry_mesh &render()
@@ -263,7 +264,7 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
                 self->plane_translation_dragger(impl->state, impl->get_ray(), axes[2], t.position);
                 break;
             case interact::translate_xyz:
-                self->plane_translation_dragger(impl->state, impl->get_ray(), -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.cam.orientation)), t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.orientation)), t.position);
                 break;
             }
             t.position -= self->click_offset;

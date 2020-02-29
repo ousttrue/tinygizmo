@@ -63,7 +63,7 @@ void CameraView::update(struct WindowState &state)
     position[2] = inv.w.z;
 }
 
-void CameraProjection::update(float yfov, float aspectRatio, float near_clip, float far_clip)
+void CameraProjection::update(float aspectRatio)
 {
     matrix = castalg::ref_cast<std::array<float, 16>>(linalg::perspective_matrix(
         yfov, aspectRatio, near_clip, far_clip));
