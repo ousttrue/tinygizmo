@@ -1,5 +1,7 @@
 #pragma once
 #include "minalg.h"
+#include <castalg.h>
+#include <unordered_map>
 
 namespace tinygizmo
 {
@@ -22,10 +24,10 @@ private:
     tinygizmo::geometry_mesh m_r{};
 
 public:
-    std::map<interact, gizmo_mesh_component> mesh_components;
+    std::unordered_map<interact, gizmo_mesh_component> mesh_components;
     std::vector<gizmo_renderable> drawlist;
 
-    std::map<uint32_t, interaction_state> gizmos;
+    std::unordered_map<uint32_t, interaction_state> gizmos;
 
     gizmo_application_state state;
 

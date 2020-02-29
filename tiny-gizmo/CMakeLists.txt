@@ -4,6 +4,7 @@ add_library(${TARGET_NAME}
     tiny-gizmo_interaction_state.cpp
     utilmath.cpp
     geometry_mesh.cpp
+    position_gizmo.cpp
     )
 set_property(TARGET ${TARGET_NAME}
     PROPERTY CXX_STANDARD 20
