@@ -143,7 +143,7 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
                 self->plane_translation_dragger(impl->state, impl->get_ray(), axes[2], t.position);
                 break;
             case interact::translate_xyz:
-                self->plane_translation_dragger(impl->state, impl->get_ray(), -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.orientation)), t.position);
+                self->plane_translation_dragger(impl->state, impl->get_ray(), -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.camera_orientation)), t.position);
                 break;
             }
             t.position -= self->click_offset;

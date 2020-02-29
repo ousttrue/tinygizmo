@@ -196,15 +196,15 @@ int main(int argc, char *argv[])
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
-            .mouse_x = state.mouseX,
-            .mouse_y = state.mouseY,
             .window_width = state.windowWidth,
             .window_height = state.windowHeight,
+            .mouse_x = state.mouseX,
+            .mouse_y = state.mouseY,
             .mouse_left = state.mouseLeftDown,
             .hotkey_ctrl = state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
-            .position = view.position,
-            .orientation = view.orientation,
+            .camera_position = view.position,
+            .camera_orientation = view.orientation,
         };
         gizmo_state.has_clicked = (!lastState.mouseLeftDown && state.mouseLeftDown);
         gizmo_state.has_released = (lastState.mouseLeftDown && !state.mouseLeftDown);

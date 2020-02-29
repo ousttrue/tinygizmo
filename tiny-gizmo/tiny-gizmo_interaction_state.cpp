@@ -13,7 +13,7 @@ void interaction_state::axis_translation_dragger(const gizmo_application_state &
     if (state.mouse_left)
     {
         // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
-        auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(state.position));
+        auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(state.camera_position));
         auto plane_normal = cross(axis, plane_tangent);
         this->plane_translation_dragger(state, ray, plane_normal, point);
 
@@ -99,7 +99,7 @@ void interaction_state::axis_scale_dragger(const gizmo_application_state &state,
 
     if (state.mouse_left)
     {
-        auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.position));
+        auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.camera_position));
         auto plane_normal = cross(axis, plane_tangent);
 
         minalg::float3 distance;

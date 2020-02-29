@@ -14,10 +14,10 @@ namespace tinygizmo
 
 struct gizmo_application_state
 {
-    int mouse_x = 0;
-    int mouse_y = 0;
     int window_width = 0;
     int window_height = 0;
+    int mouse_x = 0;
+    int mouse_y = 0;
 
     bool mouse_left{false};
     bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
@@ -36,8 +36,8 @@ struct gizmo_application_state
     std::array<int32_t, 2> viewport_size;
 
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
-    std::array<float, 3> position;
-    std::array<float, 4> orientation;
+    std::array<float, 3> camera_position;
+    std::array<float, 4> camera_orientation;
 };
 
 ///////////////
