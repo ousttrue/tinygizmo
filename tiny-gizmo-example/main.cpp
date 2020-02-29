@@ -95,6 +95,13 @@ struct vertex
 };
 static_assert(sizeof(vertex) == 40, "vertex size");
 
+enum class transform_mode
+{
+    translate,
+    rotate,
+    scale
+};
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
@@ -155,6 +162,8 @@ int main(int argc, char *argv[])
     tinygizmo::rigid_transform xform_b;
     xform_b.position = {+2, 0, 0};
 
+    transform_mode mode = transform_mode::translate;
+
     //
     // main loop
     //
@@ -175,9 +184,6 @@ int main(int argc, char *argv[])
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
             .mouse_left = state.mouseLeftDown,
-            .hotkey_translate = state.keycode['T'],
-            .hotkey_rotate = state.keycode['R'],
-            .hotkey_scale = state.keycode['S'],
             .hotkey_local = state.keycode['L'],
             .hotkey_ctrl = true, //state.key_left_control,
             .viewport_size = {state.windowWidth, state.windowHeight},
@@ -188,6 +194,19 @@ int main(int argc, char *argv[])
             .cam = cam,
         };
         gizmo_ctx.new_frame(gizmo_state);
+
+        if (state.keycode['R'])
+        {
+            mode = transform_mode::rotate;
+        }
+        if (state.keycode['T'])
+        {
+            mode = transform_mode::translate;
+        }
+        if (state.keycode['S'])
+        {
+            mode = transform_mode::scale;
+        }
 
         //
         // draw
@@ -207,8 +226,23 @@ int main(int argc, char *argv[])
             // after scene, before gizmo draw
             // manipulate and update gizmo
             //
-            gizmo_ctx.gizmo("first-example-gizmo", xform_a);
-            gizmo_ctx.gizmo("second-example-gizmo", xform_b);
+            switch (mode)
+            {
+            case transform_mode::translate:
+                gizmo_ctx.position_gizmo("first-example-gizmo", xform_a);
+                gizmo_ctx.position_gizmo("second-example-gizmo", xform_b);
+                break;
+
+            case transform_mode::rotate:
+                gizmo_ctx.orientation_gizmo("first-example-gizmo", xform_a);
+                gizmo_ctx.orientation_gizmo("second-example-gizmo", xform_b);
+                break;
+
+            case transform_mode::scale:
+                gizmo_ctx.scale_gizmo("first-example-gizmo", xform_a);
+                gizmo_ctx.scale_gizmo("second-example-gizmo", xform_b);
+                break;
+            }
 
             void *pVertices;
             uint32_t verticesBytes;

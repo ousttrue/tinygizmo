@@ -32,9 +32,6 @@ struct camera_parameters
 struct gizmo_application_state
 {
     bool mouse_left{false};
-    bool hotkey_translate{false};
-    bool hotkey_rotate{false};
-    bool hotkey_scale{false};
     bool hotkey_local{false};
     bool hotkey_ctrl{false};
     // If > 0.f, the gizmos are drawn scale-invariant with a screenspace value defined here
@@ -59,13 +56,6 @@ struct gizmo_application_state
 //   Gizmo   //
 ///////////////
 
-enum class transform_mode
-{
-    translate,
-    rotate,
-    scale
-};
-
 struct gizmo_context
 {
     struct gizmo_context_impl;
@@ -78,8 +68,10 @@ struct gizmo_context
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
-    transform_mode get_mode() const; // Return the active mode being used by `transform_gizmo(...)`
-    bool gizmo(const std::string &name, struct rigid_transform &t);
+
+    bool position_gizmo(const std::string &name, struct rigid_transform &t);
+    bool orientation_gizmo(const std::string &name, rigid_transform &t);
+    bool scale_gizmo(const std::string &name, rigid_transform &t);
 };
 
 } // namespace tinygizmo

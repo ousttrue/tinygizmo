@@ -76,7 +76,7 @@ public:
     std::map<interact, gizmo_mesh_component> mesh_components;
     std::vector<gizmo_renderable> drawlist;
 
-    transform_mode mode{transform_mode::translate};
+    // transform_mode mode{transform_mode::translate};
 
     std::map<uint32_t, interaction_state> gizmos;
 
@@ -677,28 +677,38 @@ void gizmo_context::render(
     *indicesBytes = static_cast<uint32_t>(r.triangles.size() * sizeof(r.triangles[0]));
     *indexStride = sizeof(r.triangles[0]) / 3;
 }
-transform_mode gizmo_context::get_mode() const { return impl->mode; }
 
-bool tinygizmo::gizmo_context::gizmo(const std::string &name, rigid_transform &t)
+bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t)
 {
     bool activated = false;
 
-    if (this->impl->active_state.hotkey_ctrl == true)
-    {
-        if (this->impl->last_state.hotkey_translate == false && this->impl->active_state.hotkey_translate == true)
-            this->impl->mode = transform_mode::translate;
-        else if (this->impl->last_state.hotkey_rotate == false && this->impl->active_state.hotkey_rotate == true)
-            this->impl->mode = transform_mode::rotate;
-        else if (this->impl->last_state.hotkey_scale == false && this->impl->active_state.hotkey_scale == true)
-            this->impl->mode = transform_mode::scale;
-    }
+    ::position_gizmo(name, *this->impl, t.orientation, t.position);
 
-    if (this->impl->mode == transform_mode::translate)
-        position_gizmo(name, *this->impl, t.orientation, t.position);
-    else if (this->impl->mode == transform_mode::rotate)
-        orientation_gizmo(name, *this->impl, t.position, t.orientation);
-    else if (this->impl->mode == transform_mode::scale)
-        scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
+    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
+    if (s.hover == true || s.active == true)
+        activated = true;
+
+    return activated;
+}
+
+bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t)
+{
+    bool activated = false;
+
+    ::orientation_gizmo(name, *this->impl, t.position, t.orientation);
+
+    const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
+    if (s.hover == true || s.active == true)
+        activated = true;
+
+    return activated;
+}
+
+bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
+{
+    bool activated = false;
+
+    ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
 
     const interaction_state s = this->impl->gizmos[hash_fnv1a(name)];
     if (s.hover == true || s.active == true)
