@@ -2,7 +2,6 @@
 // For more information, please refer to <http://unlicense.org>
 
 #pragma once
-#include <memory>
 #include <string>
 #include <array>
 
@@ -57,8 +56,7 @@ struct gizmo_application_state
 
 struct gizmo_context
 {
-    struct gizmo_context_impl;
-    std::unique_ptr<gizmo_context_impl> impl;
+    struct gizmo_context_impl* m_impl = nullptr;
 
     gizmo_context();
     ~gizmo_context();
@@ -66,13 +64,14 @@ struct gizmo_context
     // Clear geometry buffer and update internal `gizmo_application_state` data
     void new_frame(const gizmo_application_state &state,
                    const std::array<float, 16> &view, const std::array<float, 16> &projection);
+                   
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
-
-    bool position_gizmo(const std::string &name, struct rigid_transform &t, bool is_local);
-    bool orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local);
-    bool scale_gizmo(const std::string &name, rigid_transform &t);
 };
+
+bool position_gizmo(const gizmo_context &context,  const std::string &name, struct rigid_transform &t, bool is_local);
+bool orientation_gizmo(const gizmo_context &context,const std::string &name, rigid_transform &t, bool is_local);
+bool scale_gizmo(const gizmo_context &context,const std::string &name, rigid_transform &t);
 
 } // namespace tinygizmo

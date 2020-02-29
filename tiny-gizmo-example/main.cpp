@@ -262,18 +262,18 @@ int main(int argc, char *argv[])
             switch (mode)
             {
             case transform_mode::translate:
-                gizmo_ctx.position_gizmo("first-example-gizmo", xform_a, is_local);
-                gizmo_ctx.position_gizmo("second-example-gizmo", xform_b, is_local);
+                tinygizmo::position_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::position_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::rotate:
-                gizmo_ctx.orientation_gizmo("first-example-gizmo", xform_a, is_local);
-                gizmo_ctx.orientation_gizmo("second-example-gizmo", xform_b, is_local);
+                tinygizmo::orientation_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::orientation_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::scale:
-                gizmo_ctx.scale_gizmo("first-example-gizmo", xform_a);
-                gizmo_ctx.scale_gizmo("second-example-gizmo", xform_b);
+                tinygizmo::scale_gizmo(gizmo_ctx, "first-example-gizmo", xform_a);
+                tinygizmo::scale_gizmo(gizmo_ctx, "second-example-gizmo", xform_b);
                 break;
             }
 

@@ -17,9 +17,10 @@
 #include <castalg.h>
 #include "utilmath.h"
 
-using namespace tinygizmo;
 using namespace minalg;
 
+namespace tinygizmo
+{
 struct gizmo_mesh_component
 {
     geometry_mesh mesh;
@@ -35,7 +36,7 @@ struct gizmo_renderable
 // Gizmo Context Implementation //
 //////////////////////////////////
 
-struct gizmo_context::gizmo_context_impl
+struct gizmo_context_impl
 {
 private:
     tinygizmo::geometry_mesh m_r{};
@@ -145,25 +146,26 @@ public:
 ///////////////////////////////
 
 gizmo_context::gizmo_context()
-    : impl(new gizmo_context_impl)
+    : m_impl(new gizmo_context_impl)
 {
 }
 
 gizmo_context::~gizmo_context()
 {
+    delete m_impl;
 }
 
 void gizmo_context::new_frame(const gizmo_application_state &state,
                               const std::array<float, 16> &view, const std::array<float, 16> &projection)
 {
-    impl->update(state, view, projection);
+    m_impl->update(state, view, projection);
 }
 
 void gizmo_context::render(
     void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
     void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride)
 {
-    auto &r = impl->render();
+    auto &r = m_impl->render();
     *pVertices = (void *)r.vertices.data();
     *veticesBytes = static_cast<uint32_t>(r.vertices.size() * sizeof(r.vertices[0]));
     *vertexStride = sizeof(r.vertices[0]);
@@ -182,8 +184,9 @@ static const interact translation_components[] = {
     interact::translate_xyz,
 };
 
-bool tinygizmo::gizmo_context::position_gizmo(const std::string &name, rigid_transform &t, bool is_local)
+bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
+    auto &impl = ctx.m_impl;
     const uint32_t id = hash_fnv1a(name);
     auto self = &impl->gizmos[id];
     rigid_transform p = rigid_transform(is_local ? t.orientation : float4(0, 0, 0, 1), t.position);
@@ -304,10 +307,9 @@ static const interact orientation_components[] = {
     interact::rotate_z,
 };
 
-bool tinygizmo::gizmo_context::orientation_gizmo(const std::string &name, rigid_transform &t, bool is_local)
+bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
-    // auto &s = ::orientation_gizmo(name, is_local, *this->impl, t.position, t.orientation);
-    // interaction_state &orientation_gizmo(const std::string &name, bool is_local, gizmo_context::gizmo_context_impl &g, const float3 &center, float4 &orientation)
+    auto &impl = ctx.m_impl;
     {
         assert(length2(t.orientation) > float(1e-6));
 
@@ -439,8 +441,9 @@ static const interact scale_components[] = {
     interact::scale_z,
 };
 
-bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transform &t)
+bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t)
 {
+    auto &impl = ctx.m_impl;
     // auto &s = ::scale_gizmo(name, *this->impl, t.orientation, t.position, t.scale);
     auto &scale = t.scale;
     // interaction_state &scale_gizmo(const std::string &name, gizmo_context::gizmo_context_impl &g, const float4 &orientation, const float3 &center, float3 &scale)
@@ -514,3 +517,5 @@ bool tinygizmo::gizmo_context::scale_gizmo(const std::string &name, rigid_transf
         return (impl->gizmos[id].hover || impl->gizmos[id].active);
     }
 }
+
+} // namespace tinygizmo
