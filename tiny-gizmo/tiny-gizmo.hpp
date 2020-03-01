@@ -52,6 +52,6 @@ struct gizmo_context
 
 bool position_gizmo(const gizmo_context &context, const std::string &name, struct rigid_transform &t, bool is_local);
 bool orientation_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t, bool is_local);
-bool scale_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t);
+bool scale_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t, bool is_uniform);
 
 } // namespace tinygizmo

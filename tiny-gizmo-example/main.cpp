@@ -259,8 +259,8 @@ int main(int argc, char *argv[])
                 break;
 
             case transform_mode::scale:
-                tinygizmo::scale_gizmo(gizmo_ctx, "first-example-gizmo", xform_a);
-                tinygizmo::scale_gizmo(gizmo_ctx, "second-example-gizmo", xform_b);
+                tinygizmo::scale_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::scale_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
                 break;
             }
 

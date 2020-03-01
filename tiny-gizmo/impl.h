@@ -25,7 +25,6 @@ private:
     tinygizmo::geometry_mesh m_r{};
 
 public:
-    std::unordered_map<interact, gizmo_mesh_component> mesh_components;
     std::vector<gizmo_renderable> drawlist;
 
     std::unordered_map<uint32_t, interaction_state> gizmos;
@@ -40,14 +39,6 @@ public:
     ray get_ray() const
     {
         return {ray_origin, ray_direction};
-    }
-
-    gizmo_context_impl()
-    {
-        std::vector<minalg::float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
-        mesh_components[interact::scale_x] = {geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        mesh_components[interact::scale_y] = {geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        mesh_components[interact::scale_z] = {geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
     }
 
     // Returns a world-space ray through the given pixel, originating at the camera

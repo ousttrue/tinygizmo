@@ -15,7 +15,7 @@ static const interact orientation_components[] = {
     interact::rotate_z,
 };
 
-gizmo_mesh_component &get_mesh(interact c)
+static gizmo_mesh_component &get_mesh(interact c)
 {
     static std::vector<minalg::float2> ring_points = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
