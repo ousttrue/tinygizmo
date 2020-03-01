@@ -5,6 +5,7 @@ add_library(${TARGET_NAME}
     utilmath.cpp
     geometry_mesh.cpp
     position_gizmo.cpp
+    orientation_gizmo.cpp
     )
 set_property(TARGET ${TARGET_NAME}
     PROPERTY CXX_STANDARD 20

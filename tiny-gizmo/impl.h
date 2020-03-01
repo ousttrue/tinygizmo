@@ -1,5 +1,6 @@
 #pragma once
 #include "minalg.h"
+#include "geometry_mesh.h"
 #include <castalg.h>
 #include <unordered_map>
 
