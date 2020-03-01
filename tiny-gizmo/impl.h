@@ -3,6 +3,7 @@
 #include "geometry_mesh.h"
 #include <castalg.h>
 #include <unordered_map>
+#include <functional>
 
 namespace tinygizmo
 {
@@ -10,8 +11,12 @@ namespace tinygizmo
 struct gizmo_mesh_component
 {
     geometry_mesh mesh;
-    minalg::float4 base_color, highlight_color;
+    minalg::float4 base_color;
+    minalg::float4 highlight_color;
     minalg::float3 axis;
+
+    std::function<void(struct interaction_state &gizmo,
+                         const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)> dragger;
 };
 
 struct interaction_state
