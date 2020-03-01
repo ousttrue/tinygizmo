@@ -5,6 +5,14 @@
 
 namespace tinygizmo
 {
+enum class interact
+{
+    none,
+    scale_x,
+    scale_y,
+    scale_z,
+    scale_xyz,
+};
 
 static const interact scale_components[] = {
     interact::scale_x,
@@ -12,7 +20,7 @@ static const interact scale_components[] = {
     interact::scale_z,
 };
 
-static gizmo_mesh_component &get_mesh(interact c)
+static gizmo_mesh_component *get_mesh(interact c)
 {
     static std::vector<minalg::float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
 
@@ -20,41 +28,45 @@ static gizmo_mesh_component &get_mesh(interact c)
     {
     case interact::scale_x:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points),
+            {1, 0.5f, 0.5f, 1.f},
+            {1, 0, 0, 1.f},
+            {1, 0, 0},
+        };
+        return &component;
     }
     case interact::scale_y:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points),
+            {0.5f, 1, 0.5f, 1.f},
+            {0, 1, 0, 1.f},
+            {0, 1, 0},
+        };
+        return &component;
     }
     case interact::scale_z:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points),
+            {0.5f, 0.5f, 1, 1.f},
+            {0, 0, 1, 1.f},
+            {0, 0, 1},
+        };
+        return &component;
     }
     }
 
-    throw;
+    return nullptr;
 }
 
 static void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
-                    const minalg::float3 &center, minalg::float3 *scale, bool isUniform)
+                    const minalg::float3 &center, minalg::float3 *scale, bool is_uniform)
 {
     if (gizmo.active)
     {
-        switch (gizmo.interaction_mode)
-        {
-        case interact::scale_x:
-            gizmo.axis_scale_dragger(state, ray, {1, 0, 0}, center, isUniform, scale);
-            break;
-        case interact::scale_y:
-            gizmo.axis_scale_dragger(state, ray, {0, 1, 0}, center, isUniform, scale);
-            break;
-        case interact::scale_z:
-            gizmo.axis_scale_dragger(state, ray, {0, 0, 1}, center, isUniform, scale);
-            break;
-        }
+        gizmo.axis_scale_dragger(state, ray, gizmo.mesh->axis, center, is_uniform, scale);
     }
 }
 
@@ -74,7 +86,7 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : scale_components)
     {
-        auto t = intersect_ray_mesh(ray, get_mesh(c).mesh);
+        auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
         if (t < best_t)
         {
             updated_state = c;
@@ -83,8 +95,8 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
     }
     if (impl->state.has_clicked)
     {
-        gizmo.interaction_mode = updated_state;
-        if (gizmo.interaction_mode != interact::none)
+        gizmo.mesh = get_mesh(updated_state);
+        if (gizmo.mesh)
         {
             transform(draw_scale, ray);
             gizmo.original_scale = scale;
@@ -96,7 +108,7 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
     }
     if (impl->state.has_released)
     {
-        gizmo.interaction_mode = interact::none;
+        gizmo.mesh = nullptr;
         gizmo.active = false;
     }
 
@@ -112,10 +124,10 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
 
     for (auto c : draw_components)
     {
-        auto &mesh = get_mesh(c);
+        auto mesh = get_mesh(c);
         gizmo_renderable r{
-            .mesh = mesh.mesh,
-            .color = (c == gizmo.interaction_mode) ? mesh.base_color : mesh.highlight_color,
+            .mesh = mesh->mesh,
+            .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {

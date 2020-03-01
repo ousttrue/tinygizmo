@@ -11,6 +11,7 @@ struct gizmo_mesh_component
 {
     geometry_mesh mesh;
     minalg::float4 base_color, highlight_color;
+    minalg::float3 axis;
 };
 
 struct gizmo_renderable

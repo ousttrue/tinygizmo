@@ -6,6 +6,18 @@
 
 namespace tinygizmo
 {
+enum class interact
+{
+    none,
+    translate_x,
+    translate_y,
+    translate_z,
+    translate_yz,
+    translate_zx,
+    translate_xy,
+    translate_xyz,
+};
+
 static const interact translation_components[] = {
     interact::translate_x,
     interact::translate_y,
@@ -16,7 +28,7 @@ static const interact translation_components[] = {
     interact::translate_xyz,
 };
 
-static gizmo_mesh_component &get_mesh(interact component)
+static gizmo_mesh_component *get_mesh(interact component)
 {
     static std::vector<minalg::float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
 
@@ -24,46 +36,80 @@ static gizmo_mesh_component &get_mesh(interact component)
     {
     case interact::translate_x:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points),
+            {1, 0.5f, 0.5f, 1.f},
+            {1, 0, 0, 1.f},
+            {1, 0, 0},
+        };
+        return &component;
     }
     case interact::translate_y:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points),
+            {0.5f, 1, 0.5f, 1.f},
+            {0, 1, 0, 1.f},
+            {0, 1, 0},
+        };
+        return &component;
     }
     case interact::translate_z:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points),
+            {0.5f, 0.5f, 1, 1.f},
+            {0, 0, 1, 1.f},
+            {0, 0, 1},
+        };
+        return &component;
     }
     case interact::translate_xy:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}), {1, 1, 0.5f, 0.5f}, {1, 1, 0, 0.6f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
+            {1, 1, 0.5f, 0.5f},
+            {1, 1, 0, 0.6f},
+            {0, 0, 1},
+        };
+        return &component;
     }
     case interact::translate_yz:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}), {0.5f, 1, 1, 0.5f}, {0, 1, 1, 0.6f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
+            {0.5f, 1, 1, 0.5f},
+            {0, 1, 1, 0.6f},
+            {1, 0, 0},
+        };
+        return &component;
     }
     case interact::translate_zx:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}), {1, 0.5f, 1, 0.5f}, {1, 0, 1, 0.6f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
+            {1, 0.5f, 1, 0.5f},
+            {1, 0, 1, 0.6f},
+            {0, 1, 0},
+        };
+        return &component;
     }
     case interact::translate_xyz:
     {
-        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}), {0.9f, 0.9f, 0.9f, 0.25f}, {1, 1, 1, 0.35f}};
-        return component;
+        static gizmo_mesh_component component{
+            geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
+            {0.9f, 0.9f, 0.9f, 0.25f},
+            {1, 1, 1, 0.35f},
+        };
+        return &component;
     }
     }
 
-    throw;
+    return nullptr;
 }
 
 // check hit
-void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_transform &p, float draw_scale, bool is_local)
+void raycast(gizmo_context_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, float draw_scale, bool is_local)
 {
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
@@ -72,7 +118,7 @@ void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_tran
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
     {
-        auto t = intersect_ray_mesh(ray, get_mesh(c).mesh);
+        auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
         if (t < best_t)
         {
             updated_state = c;
@@ -82,60 +128,78 @@ void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_tran
 
     if (impl->state.has_clicked)
     {
-        self->interaction_mode = updated_state;
+        gizmo.mesh = get_mesh(updated_state);
 
-        if (self->interaction_mode != interact::none)
+        if (gizmo.mesh)
         {
             transform(draw_scale, ray);
-            self->click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
-            self->active = true;
+            gizmo.click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
+            gizmo.active = true;
+            if (updated_state == interact::translate_xyz)
+            {
+                gizmo.axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation));
+            }
+            else
+            {
+                if (is_local)
+                {
+                    // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
+                    gizmo.axis = p.transform_vector(gizmo.mesh->axis);
+                }
+                else
+                {
+                    gizmo.axis = gizmo.mesh->axis;
+                }
+            }
         }
         else
         {
-            self->active = false;
+            gizmo.active = false;
         }
     }
 
-    self->hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
+    gizmo.hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
 
     if (impl->state.has_released)
     {
-        self->interaction_mode = interact::none;
-        self->active = false;
+        gizmo.mesh = nullptr;
+        gizmo.active = false;
     }
 }
 
-void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, const minalg::float3 axes[3], minalg::float3 &position)
+void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
 {
     position += gizmo.click_offset;
-    switch (gizmo.interaction_mode)
-    {
-    case interact::translate_x:
-        gizmo.axis_translation_dragger(state, ray, axes[0], position);
-        break;
-    case interact::translate_y:
-        gizmo.axis_translation_dragger(state, ray, axes[1], position);
-        break;
-    case interact::translate_z:
-        gizmo.axis_translation_dragger(state, ray, axes[2], position);
-        break;
-    case interact::translate_yz:
-        gizmo.plane_translation_dragger(state, ray, axes[0], position);
-        break;
-    case interact::translate_zx:
-        gizmo.plane_translation_dragger(state, ray, axes[1], position);
-        break;
-    case interact::translate_xy:
-        gizmo.plane_translation_dragger(state, ray, axes[2], position);
-        break;
-    case interact::translate_xyz:
-        gizmo.plane_translation_dragger(state, ray, -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation)), position);
-        break;
-    }
+    // switch (gizmo.interaction_mode)
+    // {
+    // case interact::translate_x:
+    //     gizmo.axis_translation_dragger(state, ray, axes[0], position);
+    //     break;
+    // case interact::translate_y:
+    //     gizmo.axis_translation_dragger(state, ray, axes[1], position);
+    //     break;
+    // case interact::translate_z:
+    //     gizmo.axis_translation_dragger(state, ray, axes[2], position);
+    //     break;
+    // case interact::translate_yz:
+    //     gizmo.plane_translation_dragger(state, ray, axes[0], position);
+    //     break;
+    // case interact::translate_zx:
+    //     gizmo.plane_translation_dragger(state, ray, axes[1], position);
+    //     break;
+    // case interact::translate_xy:
+    //     gizmo.plane_translation_dragger(state, ray, axes[2], position);
+    //     break;
+    // case interact::translate_xyz:
+    //     gizmo.plane_translation_dragger(state, ray, -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation)), position);
+    //     break;
+    // }
+    gizmo.plane_translation_dragger(state, ray, gizmo.axis, position);
+
     position -= gizmo.click_offset;
 }
 
-void draw(gizmo_context_impl *impl, const rigid_transform &p, float draw_scale, interact mode)
+void draw(interaction_state &gizmo, gizmo_context_impl *impl, const rigid_transform &p, float draw_scale)
 {
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
     auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
@@ -143,10 +207,10 @@ void draw(gizmo_context_impl *impl, const rigid_transform &p, float draw_scale, 
 
     for (auto c : translation_components)
     {
-        auto &mesh = get_mesh(c);
+        auto mesh = get_mesh(c);
         gizmo_renderable r{
-            .mesh = mesh.mesh,
-            .color = (c == mode) ? mesh.base_color : mesh.highlight_color,
+            .mesh = mesh->mesh,
+            .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -165,18 +229,16 @@ bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_tra
     const float draw_scale = impl->get_gizmo_scale(t.position);
 
     // update
-    raycast(impl, &gizmo, p, draw_scale, is_local);
+    raycast(impl, gizmo, impl->state, p, draw_scale, is_local);
 
     // drag
     if (gizmo.active)
     {
-        minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-        static minalg::float3 world_axes[3]{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        dragger(gizmo, impl->state, impl->get_ray(), is_local ? local_axes : world_axes, t.position);
+        dragger(gizmo, impl->state, impl->get_ray(), t.position);
     }
 
     // draw
-    draw(impl, p, draw_scale, gizmo.interaction_mode);
+    draw(gizmo, impl, p, draw_scale);
 
     return (gizmo.hover || gizmo.active);
 }
