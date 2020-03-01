@@ -41,6 +41,22 @@ static gizmo_mesh_component &get_mesh(interact c)
     throw;
 }
 
+static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
+                              const minalg::float3 &center, bool is_local)
+{
+    auto starting_orientation = is_local ? gizmo.original_orientation : minalg::float4(0, 0, 0, 1);
+    switch (gizmo.interaction_mode)
+    {
+    case interact::rotate_x:
+        return gizmo.axis_rotation_dragger(state, ray, {1, 0, 0}, center, starting_orientation);
+    case interact::rotate_y:
+        return gizmo.axis_rotation_dragger(state, ray, {0, 1, 0}, center, starting_orientation);
+    case interact::rotate_z:
+        return gizmo.axis_rotation_dragger(state, ray, {0, 0, 1}, center, starting_orientation);
+    }
+    throw;
+}
+
 bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
     auto &impl = ctx.m_impl;
@@ -87,7 +103,7 @@ bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_
     // drag
     if (gizmo.active)
     {
-        p.orientation = gizmo.rotation_dragger(impl->state, impl->get_ray(), t.position, is_local);
+        p.orientation = dragger(gizmo, impl->state, impl->get_ray(), t.position, is_local);
     }
 
     // draw

@@ -38,6 +38,26 @@ static gizmo_mesh_component &get_mesh(interact c)
     throw;
 }
 
+static void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
+                    const minalg::float3 &center, minalg::float3 *scale, bool isUniform)
+{
+    if (gizmo.active)
+    {
+        switch (gizmo.interaction_mode)
+        {
+        case interact::scale_x:
+            gizmo.axis_scale_dragger(state, ray, {1, 0, 0}, center, isUniform, scale);
+            break;
+        case interact::scale_y:
+            gizmo.axis_scale_dragger(state, ray, {0, 1, 0}, center, isUniform, scale);
+            break;
+        case interact::scale_z:
+            gizmo.axis_scale_dragger(state, ray, {0, 0, 1}, center, isUniform, scale);
+            break;
+        }
+    }
+}
+
 bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_uniform)
 {
     auto &impl = ctx.m_impl;
@@ -81,7 +101,7 @@ bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transf
     }
 
     // drag
-    gizmo.scale_dragger(impl->state, impl->get_ray(), t.position, &scale, is_uniform);
+    dragger(gizmo, impl->state, impl->get_ray(), t.position, &scale, is_uniform);
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());

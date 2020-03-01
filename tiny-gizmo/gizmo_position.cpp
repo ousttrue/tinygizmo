@@ -105,6 +105,36 @@ void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_tran
     }
 }
 
+void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, const minalg::float3 axes[3], minalg::float3 &position)
+{
+    position += gizmo.click_offset;
+    switch (gizmo.interaction_mode)
+    {
+    case interact::translate_x:
+        gizmo.axis_translation_dragger(state, ray, axes[0], position);
+        break;
+    case interact::translate_y:
+        gizmo.axis_translation_dragger(state, ray, axes[1], position);
+        break;
+    case interact::translate_z:
+        gizmo.axis_translation_dragger(state, ray, axes[2], position);
+        break;
+    case interact::translate_yz:
+        gizmo.plane_translation_dragger(state, ray, axes[0], position);
+        break;
+    case interact::translate_zx:
+        gizmo.plane_translation_dragger(state, ray, axes[1], position);
+        break;
+    case interact::translate_xy:
+        gizmo.plane_translation_dragger(state, ray, axes[2], position);
+        break;
+    case interact::translate_xyz:
+        gizmo.plane_translation_dragger(state, ray, -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation)), position);
+        break;
+    }
+    position -= gizmo.click_offset;
+}
+
 void draw(gizmo_context_impl *impl, const rigid_transform &p, float draw_scale, interact mode)
 {
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
@@ -130,25 +160,25 @@ void draw(gizmo_context_impl *impl, const rigid_transform &p, float draw_scale, 
 bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
     auto &impl = ctx.m_impl;
-    auto self = &impl->gizmos[hash_fnv1a(name)];
+    auto &gizmo = impl->gizmos[hash_fnv1a(name)];
     auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     const float draw_scale = impl->get_gizmo_scale(t.position);
 
     // update
-    raycast(impl, self, p, draw_scale, is_local);
+    raycast(impl, &gizmo, p, draw_scale, is_local);
 
     // drag
-    if (self->active)
+    if (gizmo.active)
     {
         minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
         static minalg::float3 world_axes[3]{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        self->translation_dragger(impl->state, impl->get_ray(), is_local ? local_axes : world_axes, t.position);
+        dragger(gizmo, impl->state, impl->get_ray(), is_local ? local_axes : world_axes, t.position);
     }
 
     // draw
-    draw(impl, p, draw_scale, self->interaction_mode);
+    draw(impl, p, draw_scale, gizmo.interaction_mode);
 
-    return (self->hover || self->active);
+    return (gizmo.hover || gizmo.active);
 }
 
 } // namespace tinygizmo
