@@ -16,6 +16,52 @@ static const interact translation_components[] = {
     interact::translate_xyz,
 };
 
+static gizmo_mesh_component &get_mesh(interact component)
+{
+    static std::vector<minalg::float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+
+    switch (component)
+    {
+    case interact::translate_x:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points), {1, 0.5f, 0.5f, 1.f}, {1, 0, 0, 1.f}};
+        return component;
+    }
+    case interact::translate_y:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points), {0.5f, 1, 0.5f, 1.f}, {0, 1, 0, 1.f}};
+        return component;
+    }
+    case interact::translate_z:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points), {0.5f, 0.5f, 1, 1.f}, {0, 0, 1, 1.f}};
+        return component;
+    }
+    case interact::translate_xy:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}), {1, 1, 0.5f, 0.5f}, {1, 1, 0, 0.6f}};
+        return component;
+    }
+    case interact::translate_yz:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}), {0.5f, 1, 1, 0.5f}, {0, 1, 1, 0.6f}};
+        return component;
+    }
+    case interact::translate_zx:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}), {1, 0.5f, 1, 0.5f}, {1, 0, 1, 0.6f}};
+        return component;
+    }
+    case interact::translate_xyz:
+    {
+        static gizmo_mesh_component component{geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}), {0.9f, 0.9f, 0.9f, 0.25f}, {1, 1, 1, 0.35f}};
+        return component;
+    }
+    }
+
+    throw;
+}
+
 // check hit
 void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_transform &p, float draw_scale, bool is_local)
 {
@@ -26,7 +72,7 @@ void raycast(gizmo_context_impl *impl, interaction_state *self, const rigid_tran
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
     {
-        auto t = intersect_ray_mesh(ray, impl->mesh_components[c].mesh);
+        auto t = intersect_ray_mesh(ray, get_mesh(c).mesh);
         if (t < best_t)
         {
             updated_state = c;
@@ -67,9 +113,11 @@ void draw(gizmo_context_impl *impl, const rigid_transform &p, float draw_scale, 
 
     for (auto c : translation_components)
     {
-        gizmo_renderable r;
-        r.mesh = impl->mesh_components[c].mesh;
-        r.color = (c == mode) ? impl->mesh_components[c].base_color : impl->mesh_components[c].highlight_color;
+        auto &mesh = get_mesh(c);
+        gizmo_renderable r{
+            .mesh = mesh.mesh,
+            .color = (c == mode) ? mesh.base_color : mesh.highlight_color,
+        };
         for (auto &v : r.mesh.vertices)
         {
             v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
