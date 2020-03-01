@@ -1,5 +1,4 @@
 #include "tiny-gizmo.hpp"
-#include "tiny-gizmo_interaction_state.h"
 #include "utilmath.h"
 #include "impl.h"
 #include "assert.h"
@@ -64,11 +63,54 @@ static gizmo_mesh_component *get_mesh(interact c)
     return nullptr;
 }
 
+minalg::float4 axis_rotation_dragger(interaction_state &gizmo,
+                                     const gizmo_application_state &state, const ray &r,
+                                     const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation)
+{
+    if (state.mouse_left)
+    {
+        rigid_transform original_pose = {start_orientation, gizmo.original_position};
+        auto the_axis = original_pose.transform_vector(axis);
+        minalg::float4 the_plane = {the_axis, -dot(the_axis, gizmo.click_offset)};
+
+        float t;
+        if (intersect_ray_plane(r, the_plane, &t))
+        {
+            auto center_of_rotation = gizmo.original_position + the_axis * dot(the_axis, gizmo.click_offset - gizmo.original_position);
+            auto arm1 = normalize(gizmo.click_offset - center_of_rotation);
+            auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
+
+            float d = dot(arm1, arm2);
+            if (d > 0.999f)
+            {
+                return start_orientation;
+            }
+
+            float angle = std::acos(d);
+            if (angle < 0.001f)
+            {
+                return start_orientation;
+            }
+
+            if (state.snap_rotation)
+            {
+                auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
+                return qmul(snapped, start_orientation);
+            }
+            else
+            {
+                auto a = normalize(cross(arm1, arm2));
+                return qmul(rotation_quat(a, angle), start_orientation);
+            }
+        }
+    }
+}
+
 static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
                               const minalg::float3 &center, bool is_local)
 {
     auto starting_orientation = is_local ? gizmo.original_orientation : minalg::float4(0, 0, 0, 1);
-    return gizmo.axis_rotation_dragger(state, ray, gizmo.mesh->axis, center, starting_orientation);
+    return axis_rotation_dragger(gizmo, state, ray, gizmo.mesh->axis, center, starting_orientation);
 }
 
 bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)

@@ -14,6 +14,18 @@ struct gizmo_mesh_component
     minalg::float3 axis;
 };
 
+struct interaction_state
+{
+    bool active{false};                   // Flag to indicate if the gizmo is being actively manipulated
+    bool hover{false};                    // Flag to indicate if the gizmo is being hovered
+    minalg::float3 original_position;     // Original position of an object being manipulated with a gizmo
+    minalg::float4 original_orientation;  // Original orientation of an object being manipulated with a gizmo
+    minalg::float3 original_scale;        // Original scale of an object being manipulated with a gizmo
+    minalg::float3 click_offset;          // Offset from position of grabbed object to coordinates of clicked point
+    gizmo_mesh_component *mesh = nullptr; // Currently active component
+    minalg::float3 axis;
+};
+
 struct gizmo_renderable
 {
     geometry_mesh mesh;

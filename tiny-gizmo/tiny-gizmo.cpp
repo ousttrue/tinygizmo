@@ -4,7 +4,6 @@
 #include "tiny-gizmo.hpp"
 #include "geometry_mesh.h"
 #include "rigid_transform.h"
-#include "tiny-gizmo_interaction_state.h"
 
 #include <assert.h>
 #include <memory>

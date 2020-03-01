@@ -1,5 +1,4 @@
 #include "tiny-gizmo.hpp"
-#include "tiny-gizmo_interaction_state.h"
 #include "utilmath.h"
 #include "minalg.h"
 #include "impl.h"
@@ -167,6 +166,49 @@ void raycast(gizmo_context_impl *impl, interaction_state &gizmo, const gizmo_app
     }
 }
 
+void plane_translation_dragger(interaction_state &gizmo,
+                               const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)
+{
+    // Mouse clicked
+    if (state.has_clicked)
+        gizmo.original_position = point;
+
+    if (state.mouse_left)
+    {
+        // Define the plane to contain the original position of the object
+        auto plane_point = gizmo.original_position;
+
+        // If an intersection exists between the ray and the plane, place the object at that point
+        const float denom = dot(r.direction, plane_normal);
+        if (std::abs(denom) == 0)
+            return;
+
+        const float t = dot(plane_point - r.origin, plane_normal) / denom;
+        if (t < 0)
+            return;
+
+        point = r.origin + r.direction * t;
+
+        if (state.snap_translation)
+            point = snap(point, state.snap_translation);
+    }
+}
+
+void axis_translation_dragger(interaction_state &gizmo,
+                              const gizmo_application_state &state, const ray &ray, const minalg::float3 &axis, minalg::float3 &point)
+{
+    if (state.mouse_left)
+    {
+        // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
+        auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(state.camera_position));
+        auto plane_normal = cross(axis, plane_tangent);
+        plane_translation_dragger(gizmo, state, ray, plane_normal, point);
+
+        // Constrain object motion to be along the desired axis
+        point = gizmo.original_position + axis * dot(point - gizmo.original_position, axis);
+    }
+}
+
 void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
 {
     position += gizmo.click_offset;
@@ -194,7 +236,7 @@ void dragger(interaction_state &gizmo, const gizmo_application_state &state, con
     //     gizmo.plane_translation_dragger(state, ray, -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation)), position);
     //     break;
     // }
-    gizmo.plane_translation_dragger(state, ray, gizmo.axis, position);
+    plane_translation_dragger(gizmo, state, ray, gizmo.axis, position);
 
     position -= gizmo.click_offset;
 }
