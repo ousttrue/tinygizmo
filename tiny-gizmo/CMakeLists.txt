@@ -1,6 +1,6 @@
 set(TARGET_NAME tiny-gizmo)
 add_library(${TARGET_NAME}
-    tiny-gizmo.cpp
+    tinygizmo.cpp
     utilmath.cpp
     geometry_mesh.cpp
     gizmo_position.cpp

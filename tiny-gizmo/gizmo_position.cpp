@@ -1,4 +1,4 @@
-#include "tiny-gizmo.hpp"
+#include "tinygizmo.h"
 #include "utilmath.h"
 #include "minalg.h"
 #include "impl.h"

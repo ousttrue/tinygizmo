@@ -24,7 +24,7 @@
     <ClInclude Include="teapot.h">
       <Filter>extra</Filter>
     </ClInclude>
-    <ClInclude Include="..\tiny-gizmo.hpp">
+    <ClInclude Include="..\tinygizmo.h">
       <Filter>gizmo</Filter>
     </ClInclude>
   </ItemGroup>

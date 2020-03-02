@@ -24,7 +24,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\tiny-gizmo.hpp" />
+    <ClInclude Include="..\tinygizmo.h" />
     <ClInclude Include="gl-api.hpp" />
     <ClInclude Include="teapot.h" />
     <ClInclude Include="util.hpp" />

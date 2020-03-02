@@ -1,5 +1,5 @@
 #include "CameraView.h"
-#include <tiny-gizmo.hpp>
+#include <tinygizmo.h>
 #include <linalg.h>
 #include <castalg.h>
 

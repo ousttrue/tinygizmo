@@ -6,7 +6,7 @@
 #include "window.h"
 #include "CameraView.h"
 #include <rigid_transform.h>
-#include <tiny-gizmo.hpp>
+#include <tinygizmo.h>
 
 constexpr const char gizmo_vert[] = R"(#version 330
     layout(location = 0) in vec3 vertex;
