@@ -4,6 +4,7 @@ add_executable(${TARGET_NAME}
     gl-api.cpp
     window.cpp
     CameraView.cpp
+    renderer_impl_glfw.cpp
     )
 set_property(TARGET ${TARGET_NAME}
     PROPERTY CXX_STANDARD 20

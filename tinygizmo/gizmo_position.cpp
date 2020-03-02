@@ -247,9 +247,10 @@ void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transfo
     }
 }
 
-bool position_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_local)
+bool position_gizmo(const gizmo_system &ctx, const std::string &name, TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
+    auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto &gizmo = impl->gizmos[hash_fnv1a(name)];
     auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     const float draw_scale = impl->get_gizmo_scale(t.position);

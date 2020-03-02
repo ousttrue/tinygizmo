@@ -110,8 +110,9 @@ static void dragger(interaction_state &gizmo, const gizmo_application_state &sta
     }
 }
 
-bool scale_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_uniform)
+bool scale_gizmo(const gizmo_system &ctx, const std::string &name, TRS &trs, bool is_uniform)
 {
+    auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto &impl = ctx.m_impl;
     auto &scale = t.scale;
     rigid_transform p = rigid_transform(t.orientation, t.position);

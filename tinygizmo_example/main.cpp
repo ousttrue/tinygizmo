@@ -1,91 +1,12 @@
 ﻿// This is free and unencumbered software released into the public domain.
 // For more information, please refer to <http://unlicense.org>
 
-#include "gl-api.hpp"
-#include "teapot.h"
 #include "window.h"
+#include "renderer.h"
 #include "CameraView.h"
-#include <rigid_transform.h>
+#include "teapot.h"
+#include <vector>
 #include <tinygizmo.h>
-
-constexpr const char gizmo_vert[] = R"(#version 330
-    layout(location = 0) in vec3 vertex;
-    layout(location = 1) in vec3 normal;
-    layout(location = 2) in vec4 color;
-    out vec4 v_color;
-    out vec3 v_world, v_normal;
-
-    //uniform mat4 u_mvp;
-    uniform mat4 u_modelMatrix;
-    uniform mat4 u_viewProj;
-
-    void main()
-    {
-        gl_Position = u_viewProj * u_modelMatrix * vec4(vertex.xyz, 1);
-        v_color = color;
-        v_world = vertex;
-        v_normal = normal;
-    }
-)";
-
-constexpr const char gizmo_frag[] = R"(#version 330
-    in vec4 v_color;
-    in vec3 v_world, v_normal;
-    out vec4 f_color;
-    uniform vec3 u_eye;
-    void main()
-    {
-        vec3 light = vec3(1) * max(dot(v_normal, normalize(u_eye - v_world)), 0.50) + 0.25;
-        f_color = v_color * vec4(light, 1);
-    }
-)";
-
-constexpr const char lit_vert[] = R"(#version 330
-    uniform mat4 u_modelMatrix;
-    uniform mat4 u_viewProj;
-
-    layout(location = 0) in vec3 inPosition;
-    layout(location = 1) in vec3 inNormal;
-
-    out vec3 v_position, v_normal;
-
-    void main()
-    {
-        vec4 worldPos = u_modelMatrix * vec4(inPosition, 1);
-        v_position = worldPos.xyz;
-        v_normal = normalize((u_modelMatrix * vec4(inNormal,0)).xyz);
-        gl_Position = u_viewProj * worldPos;
-    }
-)";
-
-constexpr const char lit_frag[] = R"(#version 330
-    uniform vec3 u_diffuse = vec3(1, 1, 1);
-    uniform vec3 u_eye;
-
-    in vec3 v_position;
-    in vec3 v_normal;
-
-    out vec4 f_color;
-    
-    vec3 compute_lighting(vec3 eyeDir, vec3 position, vec3 color)
-    {
-        vec3 light = vec3(0, 0, 0);
-        vec3 lightDir = normalize(position - v_position);
-        light += color * u_diffuse * max(dot(v_normal, lightDir), 0);
-        vec3 halfDir = normalize(lightDir + eyeDir);
-        light += color * u_diffuse * pow(max(dot(v_normal, halfDir), 0), 128);
-        return light;
-    }
-
-    void main()
-    {
-        vec3 eyeDir = vec3(0, 1, -2);
-        vec3 light = vec3(0, 0, 0);
-        light += compute_lighting(eyeDir, vec3(+3, 1, 0), vec3(235.0/255.0, 43.0/255.0, 211.0/255.0));
-        light += compute_lighting(eyeDir, vec3(-3, 1, 0), vec3(43.0/255.0, 236.0/255.0, 234.0/255.0));
-        f_color = vec4(light + vec3(0.5, 0.5, 0.5), 1.0);
-    }
-)";
 
 struct vertex
 {
@@ -135,26 +56,23 @@ int main(int argc, char *argv[])
     Window win;
     win.initialize(1280, 800, "tinygizmo_example-app");
 
-    GlRenderer renderer;
-    if (!renderer.initialize())
-    {
-        return 1;
-    }
-
-    // gizmo
-    tinygizmo::gizmo_system gizmo_system;
-    GlModel gizmo_mesh;
-    gizmo_mesh.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
-
     // camera
     CameraProjection projection{};
     CameraView view{};
     transform_mode mode = transform_mode::translate;
     bool is_local = true;
 
+    //
+    // scene
+    //
+    Renderer renderer;
+    if (!renderer.initialize())
+    {
+        return 1;
+    }
+
     // create teapot
-    GlModel teapot;
-    teapot.shader = std::make_shared<GlShader>(lit_vert, lit_frag);
+    auto teapot_mesh = renderer.createMesh();
     std::vector<vertex> vertices;
     for (int i = 0; i < 4974; i += 6)
     {
@@ -169,18 +87,24 @@ int main(int argc, char *argv[])
                 teapot_vertices[i + 5]}};
         vertices.push_back(v);
     }
-    teapot.upload_mesh(
+    teapot_mesh->uploadMesh(
         vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(vertex)), sizeof(vertex),
         teapot_triangles, sizeof(teapot_triangles), sizeof(teapot_triangles[0]),
         false);
 
     // teapot a
-    tinygizmo::rigid_transform xform_a;
-    xform_a.position = {-2, 0, 0};
+    tinygizmo::TRS teapot_a{
+        .translation{-2, 0, 0},
+    };
 
     // teapot b
-    tinygizmo::rigid_transform xform_b;
-    xform_b.position = {+2, 0, 0};
+    tinygizmo::TRS teapot_b{
+        .translation = {+2, 0, 0},
+    };
+
+    // gizmo
+    tinygizmo::gizmo_system gizmo_system;
+    auto gizmo_mesh = renderer.createMeshForGizmo();
 
     //
     // main loop
@@ -232,14 +156,8 @@ int main(int argc, char *argv[])
         // draw
         //
         renderer.beginFrame(state.windowWidth, state.windowHeight);
-
-        // teapot a
-        auto ma = xform_a.matrix();
-        teapot.draw(view.position.data(), view_proj_matrix.data(), ma.data());
-
-        // teapot a
-        auto mb = xform_b.matrix();
-        teapot.draw(view.position.data(), view_proj_matrix.data(), mb.data());
+        teapot_mesh->draw(teapot_a.matrix().data(), view_proj_matrix.data(), view.position.data());
+        teapot_mesh->draw(teapot_b.matrix().data(), view_proj_matrix.data(), view.position.data());
 
         {
             //
@@ -249,18 +167,18 @@ int main(int argc, char *argv[])
             switch (mode)
             {
             case transform_mode::translate:
-                tinygizmo::position_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::position_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::position_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
+                tinygizmo::position_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
                 break;
 
             case transform_mode::rotate:
-                tinygizmo::orientation_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::orientation_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
                 break;
 
             case transform_mode::scale:
-                tinygizmo::scale_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::scale_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
                 break;
             }
 
@@ -274,7 +192,7 @@ int main(int argc, char *argv[])
                 &pVertices, &verticesBytes, &vertexStride,
                 &pIndices, &indicesBytes, &indexStride);
 
-            gizmo_mesh.upload_mesh(
+            gizmo_mesh->uploadMesh(
                 pVertices, verticesBytes, vertexStride,
                 pIndices, indicesBytes, indexStride,
                 true);
@@ -289,7 +207,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo_mesh.draw(view.position.data(), view_proj_matrix.data(), identity4x4, true);
+        gizmo_mesh->draw(identity4x4, view_proj_matrix.data(), view.position.data());
 
         //
         // present

@@ -6,6 +6,7 @@ add_library(${TARGET_NAME}
     gizmo_position.cpp
     gizmo_orientation.cpp
     gizmo_scale.cpp
+    trs.cpp
     )
 set_property(TARGET ${TARGET_NAME}
     PROPERTY CXX_STANDARD 20

@@ -4,6 +4,7 @@
 #include "assert.h"
 #include "minalg.h"
 #include "rigid_transform.h"
+#include "trs.h"
 
 namespace tinygizmo
 {
@@ -113,9 +114,10 @@ static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_
     return axis_rotation_dragger(gizmo, state, ray, gizmo.mesh->axis, center, starting_orientation);
 }
 
-bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_local)
+bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
+    auto &t = castalg::ref_cast<rigid_transform>(trs);
     assert(length2(t.orientation) > float(1e-6));
     rigid_transform p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position); // Orientation is local by default
     const float draw_scale = impl->get_gizmo_scale(p.position);
