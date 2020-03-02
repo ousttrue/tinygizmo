@@ -133,7 +133,7 @@ static std::array<float, 16> mul(const std::array<float, 16> &lhs, const std::ar
 int main(int argc, char *argv[])
 {
     Window win;
-    win.initialize(1280, 800, "tiny-gizmo-example-app");
+    win.initialize(1280, 800, "tinygizmo_example-app");
 
     GlRenderer renderer;
     if (!renderer.initialize())

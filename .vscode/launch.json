@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "tiny-gizmo-example",
+            "name": "tinygizmo_example",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/tiny-gizmo-example/tiny-gizmo-example.exe",
+            "program": "${workspaceFolder}/build/tinygizmo_example/tinygizmo_example.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

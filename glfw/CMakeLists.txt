@@ -1,5 +1,5 @@
 set(TARGET_NAME glfw)
-set(GLFW_DIR ${CMAKE_CURRENT_LIST_DIR}/../tiny-gizmo-example/third-party/glfw-3.1.2)
+set(GLFW_DIR ${CMAKE_CURRENT_LIST_DIR}/../tinygizmo_example/third-party/glfw-3.1.2)
 add_library(${TARGET_NAME}
     ${GLFW_DIR}/src/context.c
     ${GLFW_DIR}/src/init.c

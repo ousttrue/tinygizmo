@@ -1,4 +1,4 @@
-set(TARGET_NAME tiny-gizmo-example)
+set(TARGET_NAME tinygizmo_example)
 add_executable(${TARGET_NAME}
     main.cpp
     gl-api.cpp
@@ -19,7 +19,7 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
     )
 target_link_libraries(${TARGET_NAME} PRIVATE
     glfw
-    tiny-gizmo
+    tinygizmo
     ${CMAKE_CURRENT_LIST_DIR}/third-party/glew/lib/x64/glew32s.lib
     # ${CMAKE_CURRENT_LIST_DIR}/third-party/glew/lib/x64/glew32.lib
     OPENGL32

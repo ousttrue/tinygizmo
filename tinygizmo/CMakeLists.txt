@@ -1,4 +1,4 @@
-set(TARGET_NAME tiny-gizmo)
+set(TARGET_NAME tinygizmo)
 add_library(${TARGET_NAME}
     tinygizmo.cpp
     utilmath.cpp

@@ -10,7 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="example-main.cpp" />
-    <ClCompile Include="..\tiny-gizmo.cpp">
+    <ClCompile Include="..\tinygizmo.cpp">
       <Filter>gizmo</Filter>
     </ClCompile>
   </ItemGroup>
