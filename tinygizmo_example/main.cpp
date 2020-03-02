@@ -142,9 +142,9 @@ int main(int argc, char *argv[])
     }
 
     // gizmo
-    tinygizmo::gizmo_context gizmo_ctx;
-    GlModel gizmo;
-    gizmo.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
+    tinygizmo::gizmo_system gizmo_system;
+    GlModel gizmo_mesh;
+    gizmo_mesh.shader = std::make_shared<GlShader>(gizmo_vert, gizmo_frag);
 
     // camera
     CameraProjection projection{};
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
         gizmo_state.has_clicked = (!lastState.mouseLeftDown && state.mouseLeftDown);
         gizmo_state.has_released = (lastState.mouseLeftDown && !state.mouseLeftDown);
 
-        gizmo_ctx.new_frame(gizmo_state, view.matrix, projection.matrix);
+        gizmo_system.new_frame(gizmo_state, view.matrix, projection.matrix);
 
         if (state.keycode['R'])
         {
@@ -249,18 +249,18 @@ int main(int argc, char *argv[])
             switch (mode)
             {
             case transform_mode::translate:
-                tinygizmo::position_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::position_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::position_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::position_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::rotate:
-                tinygizmo::orientation_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::orientation_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
                 break;
 
             case transform_mode::scale:
-                tinygizmo::scale_gizmo(gizmo_ctx, "first-example-gizmo", xform_a, is_local);
-                tinygizmo::scale_gizmo(gizmo_ctx, "second-example-gizmo", xform_b, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, "first-example-gizmo", xform_a, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, "second-example-gizmo", xform_b, is_local);
                 break;
             }
 
@@ -270,11 +270,11 @@ int main(int argc, char *argv[])
             void *pIndices;
             uint32_t indicesBytes;
             uint32_t indexStride;
-            gizmo_ctx.render(
+            gizmo_system.render(
                 &pVertices, &verticesBytes, &vertexStride,
                 &pIndices, &indicesBytes, &indexStride);
 
-            gizmo.upload_mesh(
+            gizmo_mesh.upload_mesh(
                 pVertices, verticesBytes, vertexStride,
                 pIndices, indicesBytes, indexStride,
                 true);
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo.draw(view.position.data(), view_proj_matrix.data(), identity4x4, true);
+        gizmo_mesh.draw(view.position.data(), view_proj_matrix.data(), identity4x4, true);
 
         //
         // present

@@ -37,7 +37,7 @@ struct gizmo_renderable
     minalg::float4 color;
 };
 
-struct gizmo_context_impl
+struct gizmo_system_impl
 {
 private:
     tinygizmo::geometry_mesh m_r{};
@@ -72,7 +72,7 @@ public:
     }
 
     // Public methods
-    void gizmo_context_impl::update(const gizmo_application_state &state, const std::array<float, 16> &view, const std::array<float, 16> &projection)
+    void gizmo_system_impl::update(const gizmo_application_state &state, const std::array<float, 16> &view, const std::array<float, 16> &projection)
     {
         this->state = state;
         drawlist.clear();

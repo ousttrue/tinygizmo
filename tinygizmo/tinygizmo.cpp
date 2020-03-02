@@ -20,23 +20,23 @@
 namespace tinygizmo
 {
 
-gizmo_context::gizmo_context()
-    : m_impl(new gizmo_context_impl)
+gizmo_system::gizmo_system()
+    : m_impl(new gizmo_system_impl)
 {
 }
 
-gizmo_context::~gizmo_context()
+gizmo_system::~gizmo_system()
 {
     delete m_impl;
 }
 
-void gizmo_context::new_frame(const gizmo_application_state &state,
+void gizmo_system::new_frame(const gizmo_application_state &state,
                               const std::array<float, 16> &view, const std::array<float, 16> &projection)
 {
     m_impl->update(state, view, projection);
 }
 
-void gizmo_context::render(
+void gizmo_system::render(
     void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
     void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride)
 {

@@ -113,7 +113,7 @@ static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_
     return axis_rotation_dragger(gizmo, state, ray, gizmo.mesh->axis, center, starting_orientation);
 }
 
-bool orientation_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
+bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
     auto &impl = ctx.m_impl;
     assert(length2(t.orientation) > float(1e-6));

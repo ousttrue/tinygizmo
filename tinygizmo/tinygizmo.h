@@ -34,12 +34,12 @@ struct gizmo_application_state
     std::array<float, 4> camera_orientation;
 };
 
-struct gizmo_context
+struct gizmo_system
 {
-    struct gizmo_context_impl *m_impl = nullptr;
+    struct gizmo_system_impl *m_impl = nullptr;
 
-    gizmo_context();
-    ~gizmo_context();
+    gizmo_system();
+    ~gizmo_system();
 
     // Clear geometry buffer and update internal `gizmo_application_state` data
     void new_frame(const gizmo_application_state &state,
@@ -50,8 +50,8 @@ struct gizmo_context
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
 };
 
-bool position_gizmo(const gizmo_context &context, const std::string &name, struct rigid_transform &t, bool is_local);
-bool orientation_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t, bool is_local);
-bool scale_gizmo(const gizmo_context &context, const std::string &name, rigid_transform &t, bool is_uniform);
+bool position_gizmo(const gizmo_system &context, const std::string &name, struct rigid_transform &t, bool is_local);
+bool orientation_gizmo(const gizmo_system &context, const std::string &name, rigid_transform &t, bool is_local);
+bool scale_gizmo(const gizmo_system &context, const std::string &name, rigid_transform &t, bool is_uniform);
 
 } // namespace tinygizmo

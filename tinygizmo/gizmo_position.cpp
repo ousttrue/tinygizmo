@@ -160,7 +160,7 @@ get_mesh(interact component)
 }
 
 // check hit
-void raycast(gizmo_context_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, float draw_scale, bool is_local)
+void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, float draw_scale, bool is_local)
 {
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
@@ -225,7 +225,7 @@ void dragger(interaction_state &gizmo, const gizmo_application_state &state, con
     position -= gizmo.click_offset;
 }
 
-void draw(interaction_state &gizmo, gizmo_context_impl *impl, const rigid_transform &p, float draw_scale)
+void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transform &p, float draw_scale)
 {
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
     auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
@@ -247,7 +247,7 @@ void draw(interaction_state &gizmo, gizmo_context_impl *impl, const rigid_transf
     }
 }
 
-bool position_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_local)
+bool position_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_local)
 {
     auto &impl = ctx.m_impl;
     auto &gizmo = impl->gizmos[hash_fnv1a(name)];

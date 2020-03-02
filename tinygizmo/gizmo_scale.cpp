@@ -110,7 +110,7 @@ static void dragger(interaction_state &gizmo, const gizmo_application_state &sta
     }
 }
 
-bool scale_gizmo(const gizmo_context &ctx, const std::string &name, rigid_transform &t, bool is_uniform)
+bool scale_gizmo(const gizmo_system &ctx, const std::string &name, rigid_transform &t, bool is_uniform)
 {
     auto &impl = ctx.m_impl;
     auto &scale = t.scale;
