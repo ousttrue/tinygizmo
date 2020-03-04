@@ -3,24 +3,23 @@
 #include <linalg.h>
 #include <castalg.h>
 
-static std::array<float, 16> get_view_matrix(
-    const std::array<float, 4> &rotation, const std::array<float, 3> &position)
+static castalg::matrix get_view_matrix(
+    const castalg::quaternion &rotation, const std::array<float, 3> &position)
 {
     auto inv_t = castalg::matrix::translation(-castalg::ref_float3(position));
-    auto inv_r = castalg::matrix::rotation(castalg::ref_quaternion(rotation).conjugate());
-    return (inv_r * inv_t).values;
+    auto inv_r = castalg::matrix::rotation(rotation.conjugate());
+    return inv_r * inv_t;
 }
 
-static std::array<float, 4> get_orientation(float yaw, float pitch)
+static castalg::quaternion get_orientation(float yaw, float pitch)
 {
-    return castalg::ref_cast<std::array<float, 4>>(qmul(
-        rotation_quat(linalg::aliases::float3(0, 1, 0), yaw),
-        rotation_quat(linalg::aliases::float3(1, 0, 0), pitch)));
+    auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yaw);
+    auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitch);
+    return q_yaw * q_pitch;
 }
 
 void CameraView::update(struct WindowState &state)
 {
-    const auto orientation = castalg::ref_cast<linalg::aliases::float4>(get_orientation(yaw, pitch));
     if (lastState.windowHeight == 0)
     {
         // skip
@@ -55,8 +54,10 @@ void CameraView::update(struct WindowState &state)
     }
     lastState = state;
 
+    const auto orientation = get_orientation(yaw, pitch);
     this->orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
-    matrix = get_view_matrix(this->orientation, shift);
+    matrix = get_view_matrix(orientation, shift).values;
+
     auto inv = linalg::inverse(castalg::ref_cast<linalg::aliases::float4x4>(matrix));
     position[0] = inv.w.x;
     position[1] = inv.w.y;
