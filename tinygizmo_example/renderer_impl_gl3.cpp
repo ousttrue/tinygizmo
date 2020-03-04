@@ -173,11 +173,6 @@ class RendererImpl
 public:
     bool initialize()
     {
-        if (GLenum err = glewInit())
-        {
-            // throw std::runtime_error(std::string("glewInit() failed - ") + (const char *)glewGetErrorString(err));
-            return false;
-        }
         return true;
     }
 

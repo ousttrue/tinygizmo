@@ -3,7 +3,7 @@ add_executable(${TARGET_NAME}
     main.cpp
     gl-api.cpp
     CameraView.cpp
-    renderer_impl_glfw.cpp
+    renderer_impl_gl3.cpp
     wgl_context.cpp
     )
 set_property(TARGET ${TARGET_NAME}
