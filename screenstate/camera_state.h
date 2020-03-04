@@ -16,7 +16,7 @@ struct CameraState
     float clearDepth = 1.0f;
 
     // projection
-    float fovYRadians = 30.0f / 180.0f * 3.14f;
+    float fovYRadians = 60.0f / 180.0f * 3.14f;
     std::array<float, 16> projection;
 
     // view
@@ -25,7 +25,9 @@ struct CameraState
     int viewportWidth = 1;
     int viewportHeight = 1;
     std::array<float, 16> view;
-    std::array<float, 16> viewInverse;
+    // std::array<float, 16> viewInverse;
+    std::array<float, 3> position;
+    std::array<float, 4> rotation;
 
     // mult
     std::array<float, 16> viewProjection;

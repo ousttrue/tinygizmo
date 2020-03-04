@@ -3,11 +3,11 @@
 
 #include "renderer.h"
 #include "wgl_context.h"
-#include "CameraView.h"
 #include "teapot.h"
 #include <vector>
 #include <tinygizmo.h>
 #include <Win32Window.h>
+#include <orbit_camera.h>
 
 struct vertex
 {
@@ -70,8 +70,7 @@ int main(int argc, char *argv[])
     }    
 
     // camera
-    CameraProjection projection{};
-    CameraView view{};
+    OrbitCamera camera{};
     transform_mode mode = transform_mode::translate;
     bool is_local = true;
 
@@ -127,10 +126,7 @@ int main(int argc, char *argv[])
     for (int i = 0; win.Update(&state); ++i)
     {
         // update camera
-        view.update(state.DeltaSeconds, state.MouseX, state.MouseY,
-                    state.MouseRightDown(), state.MouseMiddleDown(), state.MouseWheel());
-        projection.update(state.AspectRatio());
-        auto view_proj_matrix = mul(view.matrix, projection.matrix);
+        camera.WindowInput(state);
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
@@ -140,13 +136,13 @@ int main(int argc, char *argv[])
             .mouse_y = state.MouseY,
             .mouse_left = state.MouseLeftDown(),
             // .hotkey_ctrl = state.key_left_control,
-            .camera_position = view.position,
-            .camera_orientation = view.orientation,
+            .camera_position = camera.state.position,
+            .camera_orientation = camera.state.rotation,
         };
         gizmo_state.has_clicked = !lastState.MouseLeftDown() && state.MouseLeftDown();
         gizmo_state.has_released = lastState.MouseLeftDown() && !state.MouseLeftDown();
 
-        gizmo_system.new_frame(gizmo_state, view.matrix, projection.matrix);
+        gizmo_system.new_frame(gizmo_state, camera.state.viewProjection);
 
         if (state.KeyCode['R'])
         {
@@ -170,8 +166,8 @@ int main(int argc, char *argv[])
         // draw
         //
         renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(teapot_a.matrix().data(), view_proj_matrix.data(), view.position.data());
-        teapot_mesh->draw(teapot_b.matrix().data(), view_proj_matrix.data(), view.position.data());
+        teapot_mesh->draw(teapot_a.matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(teapot_b.matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
 
         {
             //
@@ -222,7 +218,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo_mesh->draw(identity4x4, view_proj_matrix.data(), view.position.data());
+        gizmo_mesh->draw(identity4x4, camera.state.viewProjection.data(), camera.state.position.data());
 
         //
         // present

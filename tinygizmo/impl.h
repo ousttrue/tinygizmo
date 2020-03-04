@@ -1,7 +1,7 @@
 #pragma once
 #include "minalg.h"
 #include "geometry_mesh.h"
-#include <castalg.h>
+#include "../screenstate/castalg.h"
 #include <unordered_map>
 #include <functional>
 
@@ -72,24 +72,21 @@ public:
     }
 
     // Public methods
-    void gizmo_system_impl::update(const gizmo_application_state &state, const std::array<float, 16> &view, const std::array<float, 16> &projection)
+    void gizmo_system_impl::update(const gizmo_application_state &state, const std::array<float, 16> &m)
     {
         this->state = state;
         drawlist.clear();
 
-        auto inv = inverse(castalg::ref_cast<minalg::float4x4>(view));
+        // auto inv = inverse(castalg::ref_cast<minalg::float4x4>(view));
         // position[0] = inv.w.x;
         // position[1] = inv.w.y;
         // position[2] = inv.w.z;
-        ray_origin = inv.w.xyz();
-
-        auto m = mul(
-            castalg::ref_cast<minalg::float4x4>(projection),
-            castalg::ref_cast<minalg::float4x4>(view));
+        // ray_origin = inv.w.xyz();
+        ray_origin = castalg::ref_cast<minalg::float3>(state.camera_position);
 
         ray_direction = get_ray_direction(
             state.mouse_x, state.mouse_y, state.window_width, state.window_height,
-            m);
+            castalg::ref_cast<minalg::float4x4>(m));
     }
 
     float get_gizmo_scale(const minalg::float3 &position) const

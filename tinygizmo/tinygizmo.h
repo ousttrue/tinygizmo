@@ -43,8 +43,7 @@ struct gizmo_system
     ~gizmo_system();
 
     // Clear geometry buffer and update internal `gizmo_application_state` data
-    void new_frame(const gizmo_application_state &state,
-                   const std::array<float, 16> &view, const std::array<float, 16> &projection);
+    void new_frame(const gizmo_application_state &state, const std::array<float, 16> &viewProjection);
 
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,

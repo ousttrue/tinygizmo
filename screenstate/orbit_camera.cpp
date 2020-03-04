@@ -1,4 +1,5 @@
 #include "orbit_camera.h"
+#include "castalg.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -6,22 +7,36 @@ void OrbitCamera::CalcView()
 {
     using fpalg::operator*;
 
-    auto yaw = fpalg::YawMatrix(yawRadians);
-    auto pitch = fpalg::PitchMatrix(pitchRadians);
-    auto yawPitch = yaw * pitch;
-    auto t = fpalg::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
-    state.view = yawPitch * t;
+    // auto yaw = fpalg::YawMatrix(yawRadians);
+    // auto pitch = fpalg::PitchMatrix(pitchRadians);
+    // auto yawPitch = yaw * pitch;
+    // auto t = fpalg::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
+    // state.view = yawPitch * t;
 
-    t[12] *= -1;
-    t[13] *= -1;
-    t[14] *= -1;
-    fpalg::Transpose(yawPitch);
-    state.viewInverse = t * yawPitch;
+    // t[12] *= -1;
+    // t[13] *= -1;
+    // t[14] *= -1;
+    // fpalg::Transpose(yawPitch);
+    // state.viewInverse = t * yawPitch;
+
+    // view transform
+    auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yawRadians);
+    auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitchRadians);
+    auto transform = castalg::transform{shift, q_pitch * q_yaw};
+    state.view = castalg::ref_cast<std::array<float, 16>>(transform.matrix());
+
+    // inverse view transform
+    {
+        auto inv = transform.inverse();
+        state.rotation = castalg::ref_cast<std::array<float, 4>>(inv.rotation);
+        state.position = castalg::ref_cast<std::array<float, 3>>(inv.position);
+    }
+
 }
 
 void OrbitCamera::CalcPerspective()
 {
-#if 0
+#if 1
     fpalg::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
 #else
     fpalg::PerspectiveRHDX(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
@@ -61,21 +76,21 @@ void OrbitCamera::WindowInput(const screenstate::ScreenState &window)
         if (window.Has(screenstate::MouseButtonFlags::RightDown))
         {
             const auto FACTOR = 1.0f / 180.0f * 1.7f;
-            yawRadians -= deltaX * FACTOR;
+            yawRadians += deltaX * FACTOR;
             pitchRadians += deltaY * FACTOR;
         }
         if (window.Has(screenstate::MouseButtonFlags::MiddleDown))
         {
-            shiftX -= deltaX / (float)state.viewportHeight * shiftZ;
-            shiftY += deltaY / (float)state.viewportHeight * shiftZ;
+            shift[0] -= deltaX / (float)state.viewportHeight * shift[2];
+            shift[1] += deltaY / (float)state.viewportHeight * shift[2];
         }
         if (window.Has(screenstate::WheelPlus))
         {
-            shiftZ *= 0.9f;
+            shift[2] *= 0.9f;
         }
         else if (window.Has(screenstate::WheelMinus))
         {
-            shiftZ *= 1.1f;
+            shift[2] *= 1.1f;
         }
     }
     prevMouseX = window.MouseX;

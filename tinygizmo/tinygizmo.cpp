@@ -13,7 +13,7 @@
 #include <map>
 #include <string>
 #include <chrono>
-#include <castalg.h>
+#include "../screenstate/castalg.h"
 #include "utilmath.h"
 #include "impl.h"
 
@@ -31,9 +31,9 @@ gizmo_system::~gizmo_system()
 }
 
 void gizmo_system::new_frame(const gizmo_application_state &state,
-                              const std::array<float, 16> &view, const std::array<float, 16> &projection)
+                              const std::array<float, 16> &viewProjection)
 {
-    m_impl->update(state, view, projection);
+    m_impl->update(state, viewProjection);
 }
 
 void gizmo_system::render(

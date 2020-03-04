@@ -3,7 +3,6 @@
 #include "camera_state.h"
 #include <array>
 
-
 struct OrbitCamera
 {
     camera::CameraState state;
@@ -15,9 +14,7 @@ struct OrbitCamera
     int prevMouseX = -1;
     int prevMouseY = -1;
 
-    float shiftX = 0;
-    float shiftY = 0;
-    float shiftZ = 2.0f;
+    std::array<float, 3> shift{0, 0.2f, -4};
     float yawRadians = 0;
     float pitchRadians = 0;
 
