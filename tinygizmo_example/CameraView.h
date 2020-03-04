@@ -1,5 +1,4 @@
 #pragma once
-#include "window.h"
 #include <array>
 
 struct CameraView
@@ -13,8 +12,10 @@ struct CameraView
     std::array<float, 16> matrix{};
     std::array<float, 4> orientation{};
 
-    WindowState lastState{};
-    void update(WindowState &state);
+    int m_lastMouseX = -1;
+    int m_lastMouseY = -1;
+    void update(float deltaTime, int mouseX, int mouseY,
+                bool mouseRightDown, bool mouseMiddleDown, int mouseWheel);
 };
 
 struct CameraProjection

@@ -8,7 +8,7 @@
 
 #define GLEW_STATIC
 #define GL_GLEXT_PROTOTYPES
-#include "glew.h"
+#include <GL/glew.h>
 
 #include <map>
 #include <cstring>

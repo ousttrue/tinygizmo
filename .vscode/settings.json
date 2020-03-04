@@ -63,6 +63,7 @@
         "Lvoid",
         "Wwindow",
         "glfw",
+        "hwnd",
         "wasd",
         "yfov"
     ]

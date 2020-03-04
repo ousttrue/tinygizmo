@@ -1,12 +1,13 @@
 ﻿// This is free and unencumbered software released into the public domain.
 // For more information, please refer to <http://unlicense.org>
 
-#include "window.h"
 #include "renderer.h"
+#include "wgl_context.h"
 #include "CameraView.h"
 #include "teapot.h"
 #include <vector>
 #include <tinygizmo.h>
+#include <Win32Window.h>
 
 struct vertex
 {
@@ -48,13 +49,25 @@ static std::array<float, 16> mul(const std::array<float, 16> &lhs, const std::ar
     };
 }
 
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
 int main(int argc, char *argv[])
 {
-    Window win;
-    win.initialize(1280, 800, "tinygizmo_example-app");
+    screenstate::Win32Window win(L"tinygizmo_example_class");
+    auto hwnd = win.Create(L"tinygizmo_example-app", 1280, 800);
+    if (!hwnd)
+    {
+        return 1;
+    }
+    win.Show();
+
+    WGLContext wgl;
+    if (!wgl.Create(hwnd, 3, 0))
+    {
+        return 2;
+    }    
 
     // camera
     CameraProjection projection{};
@@ -68,7 +81,7 @@ int main(int argc, char *argv[])
     Renderer renderer;
     if (!renderer.initialize())
     {
-        return 1;
+        return 3;
     }
 
     // create teapot
@@ -109,44 +122,45 @@ int main(int argc, char *argv[])
     //
     // main loop
     //
-    WindowState state;
-    WindowState lastState{};
-    for (int i = 0; win.loop(&state); ++i)
+    screenstate::ScreenState state;
+    screenstate::ScreenState lastState{};
+    for (int i = 0; win.Update(&state); ++i)
     {
         // update camera
-        view.update(state);
-        projection.update(state.windowWidth / (float)state.windowHeight);
+        view.update(state.DeltaSeconds, state.MouseX, state.MouseY,
+                    state.MouseRightDown(), state.MouseMiddleDown(), state.MouseWheel());
+        projection.update(state.AspectRatio());
         auto view_proj_matrix = mul(view.matrix, projection.matrix);
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
-            .window_width = state.windowWidth,
-            .window_height = state.windowHeight,
-            .mouse_x = state.mouseX,
-            .mouse_y = state.mouseY,
-            .mouse_left = state.mouseLeftDown,
-            .hotkey_ctrl = state.key_left_control,
+            .window_width = state.Width,
+            .window_height = state.Height,
+            .mouse_x = state.MouseX,
+            .mouse_y = state.MouseY,
+            .mouse_left = state.MouseLeftDown(),
+            // .hotkey_ctrl = state.key_left_control,
             .camera_position = view.position,
             .camera_orientation = view.orientation,
         };
-        gizmo_state.has_clicked = (!lastState.mouseLeftDown && state.mouseLeftDown);
-        gizmo_state.has_released = (lastState.mouseLeftDown && !state.mouseLeftDown);
+        gizmo_state.has_clicked = !lastState.MouseLeftDown() && state.MouseLeftDown();
+        gizmo_state.has_released = lastState.MouseLeftDown() && !state.MouseLeftDown();
 
         gizmo_system.new_frame(gizmo_state, view.matrix, projection.matrix);
 
-        if (state.keycode['R'])
+        if (state.KeyCode['R'])
         {
             mode = transform_mode::rotate;
         }
-        if (state.keycode['T'])
+        if (state.KeyCode['T'])
         {
             mode = transform_mode::translate;
         }
-        if (state.keycode['S'])
+        if (state.KeyCode['S'])
         {
             mode = transform_mode::scale;
         }
-        if (!lastState.keycode['Z'] && state.keycode['Z'])
+        if (!lastState.KeyCode['Z'] && state.KeyCode['Z'])
         {
             is_local = !is_local;
         }
@@ -155,7 +169,7 @@ int main(int argc, char *argv[])
         //
         // draw
         //
-        renderer.beginFrame(state.windowWidth, state.windowHeight);
+        renderer.beginFrame(state.Width, state.Height);
         teapot_mesh->draw(teapot_a.matrix().data(), view_proj_matrix.data(), view.position.data());
         teapot_mesh->draw(teapot_b.matrix().data(), view_proj_matrix.data(), view.position.data());
 
@@ -214,7 +228,7 @@ int main(int argc, char *argv[])
         // present
         //
         renderer.endFrame();
-        win.swap_buffers();
+        wgl.Present();
     }
     return EXIT_SUCCESS;
 }

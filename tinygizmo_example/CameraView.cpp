@@ -2,31 +2,28 @@
 #include <tinygizmo.h>
 #include <castalg.h>
 
-void CameraView::update(struct WindowState &state)
+void CameraView::update(float dt, int mouseX, int mouseY,
+                        bool mouseRightDown, bool mouseMiddleDown, int mouseWheel)
 {
-    if (lastState.windowHeight == 0)
+    if (m_lastMouseX >= 0)
     {
-        // skip
-    }
-    else
-    {
-        auto dx = state.mouseX - lastState.mouseX;
-        auto dy = state.mouseY - lastState.mouseY;
-        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(state.time - lastState.time).count() * 0.001f;
-        if (state.mouseRightDown)
+
+        auto dx = mouseX - m_lastMouseX;
+        auto dy = mouseY - m_lastMouseY;
+        if (mouseRightDown)
         {
             yaw += (dx * dt);
             pitch += (dy * dt);
         }
-        if (state.mouseMiddleDown)
+        if (mouseMiddleDown)
         {
             shift[0] += dx * dt;
             shift[1] -= dy * dt;
         }
-        if (state.mouseWheel)
+        if (mouseWheel)
         {
             // dolly
-            if (state.mouseWheel > 0)
+            if (mouseWheel > 0)
             {
                 shift[2] *= 0.9f;
             }
@@ -36,7 +33,9 @@ void CameraView::update(struct WindowState &state)
             }
         }
     }
-    lastState = state;
+    m_lastMouseX = mouseX;
+    m_lastMouseY = mouseY;
+    // lastState = state;
 
     // view transform
     auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yaw);
