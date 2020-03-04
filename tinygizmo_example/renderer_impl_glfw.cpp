@@ -191,6 +191,11 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
+    void clearDepth()
+    {
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+
     void endFrame()
     {
         gl_check_error(__FILE__, __LINE__);
@@ -232,4 +237,9 @@ void Renderer::beginFrame(int width, int height)
 void Renderer::endFrame()
 {
     m_impl->endFrame();
+}
+
+void Renderer::clearDepth()
+{
+    m_impl->clearDepth();
 }

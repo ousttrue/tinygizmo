@@ -28,4 +28,5 @@ public:
     std::shared_ptr<Model> createMesh();
     void beginFrame(int width, int height);
     void endFrame();
+    void clearDepth();
 };

@@ -201,6 +201,7 @@ int main(int argc, char *argv[])
         //
         // gizmo after xform user draw
         //
+        renderer.clearDepth();
         static const float identity4x4[] = {
             1, 0, 0, 0, //
             0, 1, 0, 0, //

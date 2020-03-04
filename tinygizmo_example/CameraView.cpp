@@ -41,7 +41,7 @@ void CameraView::update(struct WindowState &state)
     // view transform
     auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yaw);
     auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitch);
-    auto transform = castalg::transform{shift, q_yaw * q_pitch};
+    auto transform = castalg::transform{shift, q_pitch * q_yaw};
     matrix = castalg::ref_cast<std::array<float, 16>>(transform.matrix());
 
     // inverse view transform
