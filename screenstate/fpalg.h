@@ -17,34 +17,38 @@ inline std::array<float, 3> operator*(const std::array<float, 3> &lhs, float sca
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
 
-inline float Dot(const float *row, const float *col)
+inline float Dot(const float *row, const float *col, int step = 1)
 {
-    auto a = row[0] * col[0];
-    auto b = row[1] * col[4];
-    auto c = row[2] * col[8];
-    auto d = row[3] * col[12];
+    auto i = 0;
+    auto a = row[0] * col[i];
+    i += step;
+    auto b = row[1] * col[i];
+    i += step;
+    auto c = row[2] * col[i];
+    i += step;
+    auto d = row[3] * col[i];
     auto value = a + b + c + d;
     return value;
 }
 
 inline std::array<float, 16> Mul(const float l[16], const float r[16])
 {
-    auto _11 = Dot(&l[0], &r[0]);
-    auto _12 = Dot(&l[0], &r[1]);
-    auto _13 = Dot(&l[0], &r[2]);
-    auto _14 = Dot(&l[0], &r[3]);
-    auto _21 = Dot(&l[4], &r[0]);
-    auto _22 = Dot(&l[4], &r[1]);
-    auto _23 = Dot(&l[4], &r[2]);
-    auto _24 = Dot(&l[4], &r[3]);
-    auto _31 = Dot(&l[8], &r[0]);
-    auto _32 = Dot(&l[8], &r[1]);
-    auto _33 = Dot(&l[8], &r[2]);
-    auto _34 = Dot(&l[8], &r[3]);
-    auto _41 = Dot(&l[12], &r[0]);
-    auto _42 = Dot(&l[12], &r[1]);
-    auto _43 = Dot(&l[12], &r[2]);
-    auto _44 = Dot(&l[12], &r[3]);
+    auto _11 = Dot(&l[0], &r[0], 4);
+    auto _12 = Dot(&l[0], &r[1], 4);
+    auto _13 = Dot(&l[0], &r[2], 4);
+    auto _14 = Dot(&l[0], &r[3], 4);
+    auto _21 = Dot(&l[4], &r[0], 4);
+    auto _22 = Dot(&l[4], &r[1], 4);
+    auto _23 = Dot(&l[4], &r[2], 4);
+    auto _24 = Dot(&l[4], &r[3], 4);
+    auto _31 = Dot(&l[8], &r[0], 4);
+    auto _32 = Dot(&l[8], &r[1], 4);
+    auto _33 = Dot(&l[8], &r[2], 4);
+    auto _34 = Dot(&l[8], &r[3], 4);
+    auto _41 = Dot(&l[12], &r[0], 4);
+    auto _42 = Dot(&l[12], &r[1], 4);
+    auto _43 = Dot(&l[12], &r[2], 4);
+    auto _44 = Dot(&l[12], &r[3], 4);
 
     return std::array<float, 16>{
         _11,
