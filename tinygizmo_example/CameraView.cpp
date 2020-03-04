@@ -1,22 +1,7 @@
 #include "CameraView.h"
 #include <tinygizmo.h>
-#include <linalg.h>
 #include <castalg.h>
 
-static castalg::matrix get_view_matrix(
-    const castalg::quaternion &rotation, const std::array<float, 3> &position)
-{
-    auto inv_t = castalg::matrix::translation(-castalg::ref_float3(position));
-    auto inv_r = castalg::matrix::rotation(rotation.conjugate());
-    return inv_r * inv_t;
-}
-
-static castalg::quaternion get_orientation(float yaw, float pitch)
-{
-    auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yaw);
-    auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitch);
-    return q_yaw * q_pitch;
-}
 
 void CameraView::update(struct WindowState &state)
 {
@@ -54,15 +39,23 @@ void CameraView::update(struct WindowState &state)
     }
     lastState = state;
 
-    const auto orientation = get_orientation(yaw, pitch);
-    this->orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
-    matrix = get_view_matrix(orientation, shift).values;
+    // const auto orientation = get_orientation(yaw, pitch);
+    auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yaw);
+    auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitch);
+    auto orientation =  q_yaw * q_pitch;
 
-    auto inv = linalg::inverse(castalg::ref_cast<linalg::aliases::float4x4>(matrix));
-    position[0] = inv.w.x;
-    position[1] = inv.w.y;
-    position[2] = inv.w.z;
+    this->orientation = castalg::ref_cast<std::array<float, 4>>(orientation);
+    auto inv_t = castalg::matrix::translation(-castalg::ref_float3(shift));
+    auto inv_r = castalg::matrix::rotation(orientation.conjugate());
+    matrix = (inv_r * inv_t).values;
+
+    auto inv = orientation.rotate(shift);
+    position[0] = inv.x;
+    position[1] = inv.y;
+    position[2] = inv.z;
 }
+
+#include <linalg.h>
 
 void CameraProjection::update(float aspectRatio)
 {
