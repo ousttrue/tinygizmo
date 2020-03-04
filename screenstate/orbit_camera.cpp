@@ -4,25 +4,25 @@
 
 void OrbitCamera::CalcView()
 {
-    auto yaw = amth::YawMatrix(yawRadians);
-    auto pitch = amth::PitchMatrix(pitchRadians);
-    auto yawPitch = amth::Mult(yaw, pitch);
-    auto t = amth::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
-    state.view = amth::Mult(yawPitch, t);
+    auto yaw = fpalg::YawMatrix(yawRadians);
+    auto pitch = fpalg::PitchMatrix(pitchRadians);
+    auto yawPitch = fpalg::Mult(yaw, pitch);
+    auto t = fpalg::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
+    state.view = fpalg::Mult(yawPitch, t);
 
     t[12] *= -1;
     t[13] *= -1;
     t[14] *= -1;
-    amth::Transpose(yawPitch);
-    state.viewInverse = amth::Mult(t, yawPitch);
+    fpalg::Transpose(yawPitch);
+    state.viewInverse = fpalg::Mult(t, yawPitch);
 }
 
 void OrbitCamera::CalcPerspective()
 {
 #if 0
-    amth::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
+    fpalg::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
 #else
-    amth::PerspectiveRHDX(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
+    fpalg::PerspectiveRHDX(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
 #endif
 }
 

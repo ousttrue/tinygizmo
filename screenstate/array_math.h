@@ -2,7 +2,7 @@
 #include <array>
 #include <math.h>
 
-namespace amth
+namespace fpalg
 {
 inline float dot(const float *row, const float *col)
 {

@@ -31,12 +31,12 @@ struct CameraState
     std::array<float, 16> viewProjection;
     void CalcViewProjection()
     {
-        viewProjection = amth::Mult(view, projection);
+        viewProjection = fpalg::Mult(view, projection);
     }
 
     std::array<float, 16> CalcModelViewProjection(const std::array<float, 16> &m) const
     {
-        return amth::Mult(m, viewProjection);
+        return fpalg::Mult(m, viewProjection);
     }
 };
 /*
