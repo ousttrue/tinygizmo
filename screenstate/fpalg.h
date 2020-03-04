@@ -4,6 +4,20 @@
 
 namespace fpalg
 {
+template <typename T, typename S>
+inline const T &size_cast(const S &s)
+{
+    static_assert(sizeof(S) == sizeof(T), "must same size");
+    return *((T *)&s);
+}
+
+template <typename T, typename S>
+inline T &size_cast(S &s)
+{
+    static_assert(sizeof(S) == sizeof(T), "must same size");
+    return *((T *)&s);
+}
+
 inline std::array<float, 3> operator-(const std::array<float, 3> &lhs)
 {
     return {-lhs[0], -lhs[1], -lhs[2]};

@@ -1,6 +1,7 @@
 #include "tinygizmo.h"
 #include "utilmath.h"
 #include "impl.h"
+#include "../screenstate/castalg.h"
 
 namespace tinygizmo
 {

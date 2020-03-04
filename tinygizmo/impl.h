@@ -1,9 +1,9 @@
 #pragma once
 #include "minalg.h"
 #include "geometry_mesh.h"
-#include "../screenstate/castalg.h"
 #include <unordered_map>
 #include <functional>
+#include "../screenstate/fpalg.h"
 
 namespace tinygizmo
 {
@@ -77,16 +77,11 @@ public:
         this->state = state;
         drawlist.clear();
 
-        // auto inv = inverse(castalg::ref_cast<minalg::float4x4>(view));
-        // position[0] = inv.w.x;
-        // position[1] = inv.w.y;
-        // position[2] = inv.w.z;
-        // ray_origin = inv.w.xyz();
-        ray_origin = castalg::ref_cast<minalg::float3>(state.camera_position);
+        ray_origin = fpalg::size_cast<minalg::float3>(state.camera_position);
 
         ray_direction = get_ray_direction(
             state.mouse_x, state.mouse_y, state.window_width, state.window_height,
-            castalg::ref_cast<minalg::float4x4>(m));
+            fpalg::size_cast<minalg::float4x4>(m));
     }
 
     float get_gizmo_scale(const minalg::float3 &position) const

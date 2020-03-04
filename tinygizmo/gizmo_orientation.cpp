@@ -5,6 +5,7 @@
 #include "minalg.h"
 #include "rigid_transform.h"
 #include "trs.h"
+#include "../screenstate/castalg.h"
 
 namespace tinygizmo
 {
