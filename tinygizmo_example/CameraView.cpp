@@ -6,9 +6,9 @@
 static std::array<float, 16> get_view_matrix(
     const std::array<float, 4> &rotation, const std::array<float, 3> &position)
 {
-    auto t= translation_matrix(-castalg::ref_cast<linalg::aliases::float3>(position));
-    auto r = rotation_matrix(qconj(castalg::ref_cast<linalg::aliases::float4>(rotation)));
-    return castalg::ref_cast<std::array<float, 16>>(mul(t, r));
+    auto inv_t = castalg::matrix::translation(-castalg::ref_float3(position));
+    auto inv_r = castalg::matrix::rotation(castalg::ref_quaternion(rotation).conjugate());
+    return (inv_r * inv_t).values;
 }
 
 static std::array<float, 4> get_orientation(float yaw, float pitch)
