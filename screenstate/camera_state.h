@@ -1,5 +1,5 @@
 #pragma once
-#include "array_math.h"
+#include "fpalg.h"
 
 namespace camera
 {
