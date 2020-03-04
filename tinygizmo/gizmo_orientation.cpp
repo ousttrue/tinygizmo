@@ -75,34 +75,36 @@ minalg::float4 axis_rotation_dragger(interaction_state &gizmo,
         minalg::float4 the_plane = {the_axis, -dot(the_axis, gizmo.click_offset)};
 
         float t;
-        if (intersect_ray_plane(r, the_plane, &t))
+        if (!intersect_ray_plane(r, the_plane, &t))
         {
-            auto center_of_rotation = gizmo.original_position + the_axis * dot(the_axis, gizmo.click_offset - gizmo.original_position);
-            auto arm1 = normalize(gizmo.click_offset - center_of_rotation);
-            auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
+            return start_orientation;
+        }
 
-            float d = dot(arm1, arm2);
-            if (d > 0.999f)
-            {
-                return start_orientation;
-            }
+        auto center_of_rotation = gizmo.original_position + the_axis * dot(the_axis, gizmo.click_offset - gizmo.original_position);
+        auto arm1 = normalize(gizmo.click_offset - center_of_rotation);
+        auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
 
-            float angle = std::acos(d);
-            if (angle < 0.001f)
-            {
-                return start_orientation;
-            }
+        float d = dot(arm1, arm2);
+        if (d > 0.999f)
+        {
+            return start_orientation;
+        }
 
-            if (state.snap_rotation)
-            {
-                auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
-                return qmul(snapped, start_orientation);
-            }
-            else
-            {
-                auto a = normalize(cross(arm1, arm2));
-                return qmul(rotation_quat(a, angle), start_orientation);
-            }
+        float angle = std::acos(d);
+        if (angle < 0.001f)
+        {
+            return start_orientation;
+        }
+
+        if (state.snap_rotation)
+        {
+            auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
+            return qmul(snapped, start_orientation);
+        }
+        else
+        {
+            auto a = normalize(cross(arm1, arm2));
+            return qmul(rotation_quat(a, angle), start_orientation);
         }
     }
 }
