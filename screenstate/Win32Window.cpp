@@ -49,21 +49,6 @@ LRESULT CALLBACK Win32Window::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
         }
         break;
 
-        // TODO:
-        // case WM_KEYDOWN:
-        //     if (pSample)
-        //     {
-        //         pSample->OnKeyDown(static_cast<UINT8>(wParam));
-        //     }
-        //     return 0;
-
-        // case WM_KEYUP:
-        //     if (pSample)
-        //     {
-        //         pSample->OnKeyUp(static_cast<UINT8>(wParam));
-        //     }
-        //     return 0;
-
     case WM_ERASEBKGND:
         return 1;
 

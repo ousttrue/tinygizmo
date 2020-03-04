@@ -15,8 +15,6 @@ enum MouseButtonFlags : uint32_t
     CursorUpdate = 0x20,
 };
 
-// auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(state.time - lastState.time).count() * 0.001f;
-
 struct ScreenState
 {
     int16_t Width;
@@ -85,16 +83,6 @@ struct ScreenState
     {
         return Width == rhs.Width && Height == rhs.Height;
     }
-
-    // float DeltaSeconds(const ScreenState &rhs) const
-    // {
-    //     auto delta = Time - rhs.Time;
-    //     if (delta == 0)
-    //     {
-    //         return 0.001f;
-    //     }
-    //     return 0.001f * delta;
-    // }
 };
 static_assert(sizeof(ScreenState::KeyCode) == 16, "KeyCode bytes");
 static_assert(sizeof(ScreenState) == 40, "sizeof(WindowMouseState)");

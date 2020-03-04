@@ -25,7 +25,7 @@ struct CameraState
     int viewportWidth = 1;
     int viewportHeight = 1;
     std::array<float, 16> view;
-    // std::array<float, 16> viewInverse;
+    // viewInverse;
     std::array<float, 3> position;
     std::array<float, 4> rotation;
 
