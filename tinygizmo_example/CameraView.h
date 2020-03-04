@@ -8,7 +8,7 @@ struct CameraView
 
     float pitch = 0;
     float yaw = 0;
-    std::array<float, 3> shift{0, 1.5f, 4};
+    std::array<float, 3> shift{0, -1.5f, -4};
 
     std::array<float, 16> matrix{};
     std::array<float, 4> orientation{};
