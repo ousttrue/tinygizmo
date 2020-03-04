@@ -14,7 +14,7 @@ inline float dot(const float *row, const float *col)
     return value;
 }
 
-inline std::array<float, 16> Mult(const std::array<float, 16> &l, const std::array<float, 16> &r)
+inline std::array<float, 16> Mul(const float l[16], const float r[16])
 {
     auto _11 = dot(&l[0], &r[0]);
     auto _12 = dot(&l[0], &r[1]);
@@ -54,6 +54,11 @@ inline std::array<float, 16> Mult(const std::array<float, 16> &l, const std::arr
         _43,
         _44,
     };
+}
+
+inline std::array<float, 16> operator*(const std::array<float, 16> &lhs, const std::array<float, 16> &rhs)
+{
+    return Mul(lhs.data(), rhs.data());
 }
 
 inline void Transpose(std::array<float, 16> &m)

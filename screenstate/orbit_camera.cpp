@@ -4,17 +4,19 @@
 
 void OrbitCamera::CalcView()
 {
+    using fpalg::operator*;
+
     auto yaw = fpalg::YawMatrix(yawRadians);
     auto pitch = fpalg::PitchMatrix(pitchRadians);
-    auto yawPitch = fpalg::Mult(yaw, pitch);
+    auto yawPitch = yaw * pitch;
     auto t = fpalg::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
-    state.view = fpalg::Mult(yawPitch, t);
+    state.view = yawPitch * t;
 
     t[12] *= -1;
     t[13] *= -1;
     t[14] *= -1;
     fpalg::Transpose(yawPitch);
-    state.viewInverse = fpalg::Mult(t, yawPitch);
+    state.viewInverse = t * yawPitch;
 }
 
 void OrbitCamera::CalcPerspective()

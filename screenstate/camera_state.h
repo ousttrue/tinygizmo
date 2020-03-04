@@ -31,39 +31,15 @@ struct CameraState
     std::array<float, 16> viewProjection;
     void CalcViewProjection()
     {
-        viewProjection = fpalg::Mult(view, projection);
+        using fpalg::operator*;
+        viewProjection = view * projection;
     }
 
     std::array<float, 16> CalcModelViewProjection(const std::array<float, 16> &m) const
     {
-        return fpalg::Mult(m, viewProjection);
+        using fpalg::operator*;
+        return m * viewProjection;
     }
 };
-/*
-struct RenderTargetInfo
-{
-public:
-    uint32_t CameraID = 0;
-    dxm::Matrix Projection = dxm::Matrix::Identity;
-    dxm::Matrix View = dxm::Matrix::Identity;
-    dxm::Matrix View2 = dxm::Matrix::Identity;
-    DirectX::XMINT4 Viewport = {0, 0, 100, 100};
-    dxm::Vec4 ClearColor = dxm::Vec4::Zero;
-    float ClearDepth = 1.0f;
-
-    const dxm::Matrix &CalcMvp(const dxm::Matrix &model) const
-    {
-        // glm::mat4 mvp = projection * view * model;
-        auto m = model.Load();
-        auto v = View.Load();
-        auto p = Projection.Load();
-        m_mvp = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(m, v), p);
-        return m_mvp;
-    }
-
-private:
-    mutable dxm::Matrix m_mvp = dxm::Matrix::Identity;
-};
-*/
 
 } // namespace camera
