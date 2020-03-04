@@ -328,25 +328,5 @@ struct matrix
     }
 };
 
-struct transform
-{
-    float3 position;
-    quaternion rotation;
-
-    matrix matrix() const
-    {
-        auto r = castalg::matrix::rotation(rotation);
-        r._30 = position.x;
-        r._31 = position.y;
-        r._32 = position.z;
-        return r;
-    }
-
-    transform inverse() const
-    {
-        auto inv_r = rotation.conjugate();
-        return {inv_r.rotate(-position), inv_r};
-    }
-};
 
 } // namespace castalg

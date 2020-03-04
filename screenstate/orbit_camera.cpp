@@ -7,31 +7,18 @@ void OrbitCamera::CalcView()
 {
     using fpalg::operator*;
 
-    // auto yaw = fpalg::YawMatrix(yawRadians);
-    // auto pitch = fpalg::PitchMatrix(pitchRadians);
-    // auto yawPitch = yaw * pitch;
-    // auto t = fpalg::TranslationMatrix(-shiftX, -shiftY, -shiftZ);
-    // state.view = yawPitch * t;
-
-    // t[12] *= -1;
-    // t[13] *= -1;
-    // t[14] *= -1;
-    // fpalg::Transpose(yawPitch);
-    // state.viewInverse = t * yawPitch;
-
     // view transform
-    auto q_yaw = castalg::quaternion::axisAngle(castalg::float3(0, 1, 0), yawRadians);
-    auto q_pitch = castalg::quaternion::axisAngle(castalg::float3(1, 0, 0), pitchRadians);
-    auto transform = castalg::transform{shift, q_pitch * q_yaw};
-    state.view = castalg::ref_cast<std::array<float, 16>>(transform.matrix());
+    auto q_yaw = fpalg::QuaternionAxisAngle({0, 1, 0}, yawRadians);
+    auto q_pitch = fpalg::QuaternionAxisAngle({1, 0, 0}, pitchRadians);
+    auto transform = fpalg::Transform{shift, q_pitch * q_yaw};
+    state.view = transform.Matrix();
 
     // inverse view transform
     {
-        auto inv = transform.inverse();
-        state.rotation = castalg::ref_cast<std::array<float, 4>>(inv.rotation);
-        state.position = castalg::ref_cast<std::array<float, 3>>(inv.position);
+        auto inv = transform.Inverse();
+        state.rotation = inv.rotation;
+        state.position = inv.position;
     }
-
 }
 
 void OrbitCamera::CalcPerspective()

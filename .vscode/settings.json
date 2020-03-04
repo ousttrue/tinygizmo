@@ -62,6 +62,7 @@
         "Luint",
         "Lvoid",
         "Wwindow",
+        "fpalg",
         "glfw",
         "hwnd",
         "wasd",
