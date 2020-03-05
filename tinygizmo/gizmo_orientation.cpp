@@ -4,7 +4,6 @@
 #include "assert.h"
 #include "minalg.h"
 #include "rigid_transform.h"
-#include "trs.h"
 #include "../screenstate/castalg.h"
 
 namespace tinygizmo
@@ -117,7 +116,7 @@ static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_
     return axis_rotation_dragger(gizmo, state, ray, gizmo.mesh->axis, center, starting_orientation);
 }
 
-bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, TRS &trs, bool is_local)
+bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
     auto &t = castalg::ref_cast<rigid_transform>(trs);

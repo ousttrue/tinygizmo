@@ -3,8 +3,7 @@
 
 #pragma once
 #include <string>
-#include <array>
-#include "trs.h"
+#include "fpalg.h"
 
 namespace tinygizmo
 {
@@ -50,8 +49,8 @@ struct gizmo_system
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
 };
 
-bool position_gizmo(const gizmo_system &context, const std::string &name, TRS &t, bool is_local);
-bool orientation_gizmo(const gizmo_system &context, const std::string &name, TRS &t, bool is_local);
-bool scale_gizmo(const gizmo_system &context, const std::string &name, TRS &t, bool is_uniform);
+bool position_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
+bool orientation_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
+bool scale_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_uniform);
 
 } // namespace tinygizmo

@@ -306,6 +306,15 @@ inline std::array<float, 16> QuaternionMatrix(const std::array<float, 4> &q)
         0, 0, 0, 1};
 }
 
+inline std::array<float, 16> ScaleMatrix(const std::array<float, 3> &s)
+{
+    return {
+        s[0], 0, 0, 0,
+        0, s[1], 0, 0,
+        0, 0, s[2], 0,
+        0, 0, 0, 1};
+}
+
 inline std::array<float, 3> QuaternionRotatePosition(const std::array<float, 4> &q, const std::array<float, 3> &v)
 {
     auto x = QuaternionXDir(q);
@@ -334,8 +343,8 @@ inline std::array<float, 4> operator*(const std::array<float, 4> &lhs, const std
 
 struct Transform
 {
-    std::array<float, 3> position;
-    std::array<float, 4> rotation;
+    std::array<float, 3> position{0, 0, 0};
+    std::array<float, 4> rotation{0, 0, 0, 1};
 
     std::array<float, 16> Matrix() const
     {
@@ -353,5 +362,17 @@ struct Transform
         return {inv_t, inv_r};
     }
 };
+
+struct TRS
+{
+    Transform transform{};
+    std::array<float, 3> scale{1, 1, 1};
+
+    std::array<float, 16> Matrix() const
+    {
+        return ScaleMatrix(scale) * transform.Matrix();
+    }
+};
+static_assert(sizeof(TRS) == 40, "TRS");
 
 } // namespace fpalg

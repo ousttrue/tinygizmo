@@ -105,13 +105,17 @@ int main(int argc, char *argv[])
         false);
 
     // teapot a
-    tinygizmo::TRS teapot_a{
-        .translation{-2, 0, 0},
+    fpalg::TRS teapot_a{
+        {
+            .position{-2, 0, 0}
+        }
     };
 
     // teapot b
-    tinygizmo::TRS teapot_b{
-        .translation = {+2, 0, 0},
+    fpalg::TRS teapot_b{
+        {
+            .position = {+2, 0, 0},
+        }
     };
 
     // gizmo
@@ -166,8 +170,8 @@ int main(int argc, char *argv[])
         // draw
         //
         renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(teapot_a.matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
-        teapot_mesh->draw(teapot_b.matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
 
         {
             //

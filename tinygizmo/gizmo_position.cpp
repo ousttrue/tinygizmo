@@ -248,7 +248,7 @@ void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transfo
     }
 }
 
-bool position_gizmo(const gizmo_system &ctx, const std::string &name, TRS &trs, bool is_local)
+bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
     auto &t = castalg::ref_cast<rigid_transform>(trs);
