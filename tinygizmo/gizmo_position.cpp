@@ -179,46 +179,46 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
 
     if (impl->state.has_clicked)
     {
-        gizmo.mesh = get_mesh(updated_state);
-
-        if (gizmo.mesh)
+        auto mesh = get_mesh(updated_state);
+        if (mesh)
         {
-            gizmo.click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
-            gizmo.active = true;
+            auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
+            minalg::float3 axis;
             if (updated_state == interact::translate_xyz)
             {
-                gizmo.axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation));
+                axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation));
             }
             else
             {
                 if (is_local)
                 {
                     // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-                    gizmo.axis = p.transform_vector(gizmo.mesh->axis);
+                    axis = p.transform_vector(gizmo.mesh->axis);
                 }
                 else
                 {
-                    gizmo.axis = gizmo.mesh->axis;
+                    axis = gizmo.mesh->axis;
                 }
             }
-        }
-        else
-        {
-            gizmo.active = false;
+            gizmo.beginTranslation(mesh, offset, axis);
         }
     }
 
-    gizmo.hover = (best_t == std::numeric_limits<float>::infinity()) ? false : true;
+    gizmo.hover(best_t != std::numeric_limits<float>::infinity());
 
     if (impl->state.has_released)
     {
-        gizmo.mesh = nullptr;
-        gizmo.active = false;
+        gizmo.end();
     }
 }
 
 void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
 {
+    if (!gizmo.isActive())
+    {
+        return;
+    }
+
     position += gizmo.click_offset;
     gizmo.mesh->dragger(gizmo, state, ray, gizmo.axis, position);
     position -= gizmo.click_offset;
@@ -255,15 +255,12 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     raycast(impl, gizmo, impl->state, p, is_local);
 
     // drag
-    if (gizmo.active)
-    {
-        dragger(gizmo, impl->state, impl->get_ray(), t.position);
-    }
+    dragger(gizmo, impl->state, impl->get_ray(), t.position);
 
     // draw
     draw(gizmo, impl, p);
 
-    return (gizmo.hover || gizmo.active);
+    return gizmo.isHoverOrActive();
 }
 
 } // namespace tinygizmo

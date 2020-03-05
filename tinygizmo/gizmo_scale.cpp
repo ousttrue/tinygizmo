@@ -66,7 +66,6 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
 {
     auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto &impl = ctx.m_impl;
-    auto &scale = t.scale;
     rigid_transform p = rigid_transform(t.orientation, t.position);
     const uint32_t id = hash_fnv1a(name);
     auto &gizmo = impl->gizmos[id];
@@ -86,28 +85,19 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     }
     if (impl->state.has_clicked)
     {
-        gizmo.mesh = get_mesh(updated_state);
-        if (gizmo.mesh)
+        auto mesh = get_mesh(updated_state);
+        if (mesh)
         {
-            gizmo.original_scale = scale;
-            gizmo.click_offset = p.transform_point(ray.origin + ray.direction * best_t);
-            std::cout << best_t << gizmo.click_offset << std::endl;
-            gizmo.active = true;
+            gizmo.beginScale(mesh, p.transform_point(ray.origin + ray.direction * best_t), t.scale);
         }
-        else
-            gizmo.active = false;
     }
     if (impl->state.has_released)
     {
-        gizmo.mesh = nullptr;
-        gizmo.active = false;
+        gizmo.end();
     }
 
     // drag
-    if (gizmo.active)
-    {
-        gizmo.axis_scale_dragger(state, ray, center, is_uniform, scale);
-    }
+    gizmo.axisScaleDragger(impl->state, ray, t.position, is_uniform, &t.scale);
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
@@ -129,8 +119,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         impl->drawlist.push_back(r);
     }
 
-    // return gizmo;
-    return (gizmo.hover || gizmo.active);
+    return gizmo.isHoverOrActive();
 }
 
 } // namespace tinygizmo

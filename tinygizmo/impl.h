@@ -22,11 +22,17 @@ struct gizmo_mesh_component
 
 struct interaction_state
 {
+private:
     // Flag to indicate if the gizmo is being actively manipulated
-    bool active{false};
+    bool m_active = false;
     // Flag to indicate if the gizmo is being hovered
-    bool hover{false};
-    
+    bool m_hover = false;
+
+public:
+    bool isHoverOrActive() const { return m_hover || m_active; }
+    void hover(bool enable) { m_hover = enable; }
+    bool isActive() const { return m_active; }
+
     minalg::float3 original_position;     // Original position of an object being manipulated with a gizmo
     minalg::float4 original_orientation;  // Original orientation of an object being manipulated with a gizmo
     minalg::float3 original_scale;        // Original scale of an object being manipulated with a gizmo
@@ -34,11 +40,47 @@ struct interaction_state
     gizmo_mesh_component *mesh = nullptr; // Currently active component
     minalg::float3 axis;
 
-    void axis_scale_dragger(
+    void end()
+    {
+        m_active = false;
+        mesh = nullptr;
+    }
+
+    void beginTranslation(gizmo_mesh_component *pMesh, const minalg::float3 &offset, const minalg::float3 &axis)
+    {
+        m_active = true;
+        mesh = pMesh;
+        click_offset = offset;
+        this->axis = axis;
+    }
+
+    void beginRotation(gizmo_mesh_component *pMesh, const minalg::float3 &offset, const minalg::float3 &position, const minalg::float4 rotation)
+    {
+        m_active = true;
+        mesh = pMesh;
+        click_offset = offset;
+        original_position = position;
+        original_orientation = rotation;
+    }
+
+    void beginScale(gizmo_mesh_component *pMesh, const minalg::float3 &offset, const minalg::float3 &scale)
+    {
+        m_active = true;
+        mesh = pMesh;
+        click_offset = offset;
+        original_scale = scale;
+    }
+
+    void axisScaleDragger(
         const gizmo_application_state &state, const ray &ray,
         const minalg::float3 &center, const bool uniform,
         minalg::float3 *scale)
     {
+        if (!m_active)
+        {
+            return;
+        }
+
         auto axis = mesh->axis;
         auto plane_tangent = cross(axis, center - fpalg::size_cast<minalg::float3>(state.camera_position));
         auto plane_normal = cross(axis, plane_tangent);

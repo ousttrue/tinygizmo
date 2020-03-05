@@ -140,25 +140,19 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     }
     if (impl->state.has_clicked)
     {
-        gizmo.mesh = get_mesh(updated_state);
-        if (gizmo.mesh)
+        auto mesh = get_mesh(updated_state);
+        if (mesh)
         {
-            gizmo.original_position = t.position;
-            gizmo.original_orientation = t.orientation;
-            gizmo.click_offset = p.transform_point(ray.origin + ray.direction * best_t);
-            gizmo.active = true;
+            gizmo.beginRotation(mesh, p.transform_point(ray.origin + ray.direction * best_t), t.position, t.orientation);
         }
-        else
-            gizmo.active = false;
     }
     if (impl->state.has_released)
     {
-        gizmo.mesh = nullptr;
-        gizmo.active = false;
+        gizmo.end();
     }
 
     // drag
-    if (gizmo.active)
+    if (gizmo.isActive())
     {
         p.orientation = dragger(gizmo, impl->state, impl->get_ray(), t.position, is_local);
     }
@@ -236,7 +230,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     else if (is_local == true && gizmo.mesh)
         t.orientation = p.orientation;
 
-    return (gizmo.hover || gizmo.active);
+    return gizmo.isHoverOrActive();
 }
 
 } // namespace tinygizmo
