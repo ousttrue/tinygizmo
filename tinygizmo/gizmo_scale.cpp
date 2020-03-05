@@ -2,6 +2,7 @@
 #include "utilmath.h"
 #include "impl.h"
 #include "../screenstate/castalg.h"
+#include <iostream>
 
 namespace tinygizmo
 {
@@ -69,23 +70,25 @@ void axis_scale_dragger(interaction_state &gizmo,
     auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.camera_position));
     auto plane_normal = cross(axis, plane_tangent);
 
-    // Define the plane to contain the original position of the object
-    auto plane_point = center;
-
     // If an intersection exists between the ray and the plane, place the object at that point
     const float denom = dot(ray.direction, plane_normal);
     if (std::abs(denom) == 0)
+    {
         return;
+    }
 
-    const float t = dot(plane_point - ray.origin, plane_normal) / denom;
+    const float t = dot(center - ray.origin, plane_normal) / denom;
     if (t < 0)
+    {
         return;
+    }
 
     auto distance = ray.origin + ray.direction * t;
 
     auto hoge = (distance - gizmo.click_offset);
     auto offset_on_axis = hoge * axis;
     flush_to_zero(offset_on_axis);
+    // std::cout << offset_on_axis << std::endl;
     auto new_scale = gizmo.original_scale + offset_on_axis;
 
     if (uniform)
@@ -101,7 +104,7 @@ static void dragger(interaction_state &gizmo, const gizmo_application_state &sta
 {
     if (gizmo.active)
     {
-        if (state.mouse_left)
+        // if (state.mouse_left)
         {
             axis_scale_dragger(gizmo, state, ray, gizmo.mesh->axis, center, is_uniform, scale);
         }
@@ -114,14 +117,12 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     auto &impl = ctx.m_impl;
     auto &scale = t.scale;
     rigid_transform p = rigid_transform(t.orientation, t.position);
-    const float draw_scale = impl->get_gizmo_scale(p.position);
     const uint32_t id = hash_fnv1a(name);
     auto &gizmo = impl->gizmos[id];
 
     // update
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
-    detransform(draw_scale, ray);
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : scale_components)
     {
@@ -137,9 +138,9 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         gizmo.mesh = get_mesh(updated_state);
         if (gizmo.mesh)
         {
-            transform(draw_scale, ray);
             gizmo.original_scale = scale;
             gizmo.click_offset = p.transform_point(ray.origin + ray.direction * best_t);
+            std::cout << best_t << gizmo.click_offset << std::endl;
             gizmo.active = true;
         }
         else
@@ -156,8 +157,6 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
-    auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
 
     std::vector<interact> draw_components{interact::scale_x, interact::scale_y, interact::scale_z};
 

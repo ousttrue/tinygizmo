@@ -161,11 +161,10 @@ get_mesh(interact component)
 }
 
 // check hit
-void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, float draw_scale, bool is_local)
+void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, bool is_local)
 {
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
-    detransform(draw_scale, ray);
 
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
@@ -184,7 +183,6 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
 
         if (gizmo.mesh)
         {
-            transform(draw_scale, ray);
             gizmo.click_offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
             gizmo.active = true;
             if (updated_state == interact::translate_xyz)
@@ -226,11 +224,9 @@ void dragger(interaction_state &gizmo, const gizmo_application_state &state, con
     position -= gizmo.click_offset;
 }
 
-void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transform &p, float draw_scale)
+void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 {
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
-    auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
 
     for (auto c : translation_components)
     {
@@ -254,10 +250,9 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto &gizmo = impl->gizmos[hash_fnv1a(name)];
     auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-    const float draw_scale = impl->get_gizmo_scale(t.position);
 
     // update
-    raycast(impl, gizmo, impl->state, p, draw_scale, is_local);
+    raycast(impl, gizmo, impl->state, p, is_local);
 
     // drag
     if (gizmo.active)
@@ -266,7 +261,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // draw
-    draw(gizmo, impl, p, draw_scale);
+    draw(gizmo, impl, p);
 
     return (gizmo.hover || gizmo.active);
 }

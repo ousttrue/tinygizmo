@@ -16,7 +16,8 @@ struct gizmo_mesh_component
     minalg::float3 axis;
 
     std::function<void(struct interaction_state &gizmo,
-                         const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)> dragger;
+                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
+        dragger;
 };
 
 struct interaction_state
@@ -82,18 +83,6 @@ public:
         ray_direction = get_ray_direction(
             state.mouse_x, state.mouse_y, state.window_width, state.window_height,
             fpalg::size_cast<minalg::float4x4>(m));
-    }
-
-    float get_gizmo_scale(const minalg::float3 &position) const
-    {
-        if (state.screenspace_scale <= 0.0f)
-        {
-            return 1.0f;
-        }
-
-        // float dist = length(position - castalg::ref_cast<minalg::float3>(state.cam.position));
-        // return std::tan(state.cam.yfov) * dist * (state.screenspace_scale / state.viewport_size[1]);
-        return 1.0f;
     }
 
     const geometry_mesh &render()

@@ -21,7 +21,7 @@ struct gizmo_application_state
 
     bool hotkey_ctrl{false};
     // If > 0.f, the gizmos are drawn scale-invariant with a screenspace value defined here
-    float screenspace_scale{0.f};
+    // float screenspace_scale{0.f};
     // World-scale units used for snapping translation
     float snap_translation{0.f};
     // World-scale units used for snapping scale

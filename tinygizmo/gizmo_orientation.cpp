@@ -122,14 +122,12 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     auto &t = castalg::ref_cast<rigid_transform>(trs);
     assert(length2(t.orientation) > float(1e-6));
     rigid_transform p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position); // Orientation is local by default
-    const float draw_scale = impl->get_gizmo_scale(p.position);
     const uint32_t id = hash_fnv1a(name);
     auto &gizmo = impl->gizmos[id];
 
     // update
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
-    detransform(draw_scale, ray);
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : orientation_components)
     {
@@ -145,7 +143,6 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         gizmo.mesh = get_mesh(updated_state);
         if (gizmo.mesh)
         {
-            transform(draw_scale, ray);
             gizmo.original_position = t.position;
             gizmo.original_orientation = t.orientation;
             gizmo.click_offset = p.transform_point(ray.origin + ray.direction * best_t);
@@ -168,8 +165,6 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
-    auto scaleMatrix = scaling_matrix(minalg::float3(draw_scale));
-    modelMatrix = mul(modelMatrix, scaleMatrix);
 
     std::array<gizmo_mesh_component *, 1> world_and_active = {
         gizmo.mesh,
