@@ -216,11 +216,23 @@ struct gizmo_system_impl
 {
 private:
     tinygizmo::geometry_mesh m_r{};
+    std::unordered_map<uint32_t, std::unique_ptr<interaction_state>> m_gizmos;
 
 public:
     std::vector<gizmo_renderable> drawlist;
 
-    std::unordered_map<uint32_t, interaction_state> gizmos;
+    std::pair<interaction_state *, bool> get_or_create_gizmo(uint32_t id)
+    {
+        auto found = m_gizmos.find(id);
+        bool created = false;
+        if (found == m_gizmos.end())
+        {
+            // not found
+            found = m_gizmos.insert(std::make_pair(id, std::make_unique<interaction_state>())).first;
+            created = true;
+        }
+        return std::make_pair(found->second.get(), true);
+    }
 
     gizmo_application_state state;
 

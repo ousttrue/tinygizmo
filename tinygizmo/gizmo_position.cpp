@@ -237,19 +237,19 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
 {
     auto &impl = ctx.m_impl;
     auto &t = castalg::ref_cast<rigid_transform>(trs);
-    auto &gizmo = impl->gizmos[hash_fnv1a(name)];
     auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+    auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // update
-    raycast(impl, gizmo, impl->state, p, is_local);
+    raycast(impl, *gizmo, impl->state, p, is_local);
 
     // drag
-    gizmo.translationDragger(impl->state, impl->get_ray(), t.position);
+    gizmo->translationDragger(impl->state, impl->get_ray(), t.position);
 
     // draw
-    draw(gizmo, impl, p);
+    draw(*gizmo, impl, p);
 
-    return gizmo.isHoverOrActive();
+    return gizmo->isHoverOrActive();
 }
 
 } // namespace tinygizmo

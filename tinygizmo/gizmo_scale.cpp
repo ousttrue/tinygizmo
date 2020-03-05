@@ -67,37 +67,42 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto &impl = ctx.m_impl;
     rigid_transform p = rigid_transform(t.orientation, t.position);
-    const uint32_t id = hash_fnv1a(name);
-    auto &gizmo = impl->gizmos[id];
+
+    auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
+    if(!created)
+    {
+    }
+
+    auto ray = detransform(p, impl->get_ray());
 
     // update
-    interact updated_state = interact::none;
-    auto ray = detransform(p, impl->get_ray());
-    float best_t = std::numeric_limits<float>::infinity();
-    for (auto c : scale_components)
-    {
-        auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
-        if (t < best_t)
-        {
-            updated_state = c;
-            best_t = t;
-        }
-    }
     if (impl->state.has_clicked)
     {
+        interact updated_state = interact::none;
+        float best_t = std::numeric_limits<float>::infinity();
+        for (auto c : scale_components)
+        {
+            auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
+            if (t < best_t)
+            {
+                updated_state = c;
+                best_t = t;
+            }
+        }
+
         auto mesh = get_mesh(updated_state);
         if (mesh)
         {
-            gizmo.beginScale(mesh, p.transform_point(ray.origin + ray.direction * best_t), t.scale);
+            gizmo->beginScale(mesh, p.transform_point(ray.origin + ray.direction * best_t), t.scale);
         }
     }
     if (impl->state.has_released)
     {
-        gizmo.end();
+        gizmo->end();
     }
 
     // drag
-    gizmo.axisScaleDragger(impl->state, ray, t.position, is_uniform, &t.scale);
+    gizmo->axisScaleDragger(impl->state, ray, t.position, is_uniform, &t.scale);
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
@@ -109,7 +114,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         auto mesh = get_mesh(c);
         gizmo_renderable r{
             .mesh = mesh->mesh,
-            .color = (mesh == gizmo.mesh()) ? mesh->base_color : mesh->highlight_color,
+            .color = (mesh == gizmo->mesh()) ? mesh->base_color : mesh->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -119,7 +124,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         impl->drawlist.push_back(r);
     }
 
-    return gizmo.isHoverOrActive();
+    return gizmo->isHoverOrActive();
 }
 
 } // namespace tinygizmo
