@@ -20,6 +20,12 @@ struct gizmo_mesh_component
         dragger;
 };
 
+struct gizmo_renderable
+{
+    geometry_mesh mesh;
+    minalg::float4 color;
+};
+
 class interaction_state
 {
     // Flag to indicate if the gizmo is being actively manipulated
@@ -30,6 +36,7 @@ class interaction_state
     minalg::float3 m_click;
     // Currently active component
     gizmo_mesh_component *m_mesh = nullptr;
+    std::list<gizmo_mesh_component *> m_meshes;
 
 public:
     // Original position of an object being manipulated with a gizmo
@@ -47,7 +54,7 @@ public:
     bool isHoverOrActive() const { return m_hover || m_active; }
     void hover(bool enable) { m_hover = enable; }
     // bool isActive() const { return m_active; }
-
+    void addMesh(gizmo_mesh_component *mesh) { m_meshes.push_back(mesh); }
     gizmo_mesh_component *mesh() { return m_mesh; }
 
     minalg::float4 originalOrientation() const
@@ -154,6 +161,46 @@ public:
         }
     }
 
+    void draw(const rigid_transform &t, std::vector<gizmo_renderable> &drawlist)
+    {
+        rigid_transform withoutScale(t.orientation, t.position);
+        auto modelMatrix = fpalg::size_cast<minalg::float4x4>(withoutScale.matrix());
+        for (auto mesh : m_meshes)
+        {
+            gizmo_renderable r{
+                .mesh = mesh->mesh,
+                .color = (mesh == m_mesh) ? mesh->base_color : mesh->highlight_color,
+            };
+            for (auto &v : r.mesh.vertices)
+            {
+                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+                v.normal = transform_vector(modelMatrix, v.normal);
+            }
+            drawlist.push_back(r);
+        }
+    }
+
+    void onClick(const ray &ray, const rigid_transform &t)
+    {
+        gizmo_mesh_component *updated_state = nullptr;
+        float best_t = std::numeric_limits<float>::infinity();
+        for (auto mesh : m_meshes)
+        {
+            auto t = intersect_ray_mesh(ray, mesh->mesh);
+            if (t < best_t)
+            {
+                updated_state = mesh;
+                best_t = t;
+            }
+        }
+
+        if (updated_state)
+        {
+            rigid_transform withoutScale(t.orientation, t.position);
+            beginScale(updated_state, withoutScale.transform_point(ray.origin + ray.direction * best_t), t.scale);
+        }
+    }
+
     void beginScale(gizmo_mesh_component *pMesh, const minalg::float3 &click, const minalg::float3 &scale)
     {
         m_active = true;
@@ -206,12 +253,6 @@ public:
     }
 };
 
-struct gizmo_renderable
-{
-    geometry_mesh mesh;
-    minalg::float4 color;
-};
-
 struct gizmo_system_impl
 {
 private:
@@ -231,7 +272,7 @@ public:
             found = m_gizmos.insert(std::make_pair(id, std::make_unique<interaction_state>())).first;
             created = true;
         }
-        return std::make_pair(found->second.get(), true);
+        return std::make_pair(found->second.get(), created);
     }
 
     gizmo_application_state state;
