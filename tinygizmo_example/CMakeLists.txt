@@ -15,12 +15,9 @@ target_include_directories(${TARGET_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../castalg/include
     )
 target_compile_definitions(${TARGET_NAME} PRIVATE
-    # GLFW_INCLUDE_GLCOREARB
     )
 target_link_libraries(${TARGET_NAME} PRIVATE
     tinygizmo
-    screenstate
     ${CMAKE_CURRENT_LIST_DIR}/third-party/glew/lib/x64/glew32s.lib
-    # ${CMAKE_CURRENT_LIST_DIR}/third-party/glew/lib/x64/glew32.lib
     OPENGL32
     )

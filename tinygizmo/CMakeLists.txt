@@ -16,3 +16,6 @@ target_include_directories(${TARGET_NAME} PUBLIC
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../castalg/include
     )
+target_link_libraries(${TARGET_NAME} PUBLIC
+    screenstate
+    )
