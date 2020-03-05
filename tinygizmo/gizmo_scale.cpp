@@ -66,40 +66,34 @@ void axis_scale_dragger(interaction_state &gizmo,
                         const minalg::float3 &axis, const minalg::float3 &center, const bool uniform,
                         minalg::float3 *scale)
 {
-    if (state.mouse_left)
-    {
-        auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.camera_position));
-        auto plane_normal = cross(axis, plane_tangent);
+    auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.camera_position));
+    auto plane_normal = cross(axis, plane_tangent);
 
-        minalg::float3 distance;
-        if (state.mouse_left)
-        {
-            // Define the plane to contain the original position of the object
-            auto plane_point = center;
+    // Define the plane to contain the original position of the object
+    auto plane_point = center;
 
-            // If an intersection exists between the ray and the plane, place the object at that point
-            const float denom = dot(ray.direction, plane_normal);
-            if (std::abs(denom) == 0)
-                return;
+    // If an intersection exists between the ray and the plane, place the object at that point
+    const float denom = dot(ray.direction, plane_normal);
+    if (std::abs(denom) == 0)
+        return;
 
-            const float t = dot(plane_point - ray.origin, plane_normal) / denom;
-            if (t < 0)
-                return;
+    const float t = dot(plane_point - ray.origin, plane_normal) / denom;
+    if (t < 0)
+        return;
 
-            distance = ray.origin + ray.direction * t;
-        }
+    auto distance = ray.origin + ray.direction * t;
 
-        auto offset_on_axis = (distance - gizmo.click_offset) * axis;
-        flush_to_zero(offset_on_axis);
-        auto new_scale = gizmo.original_scale + offset_on_axis;
+    auto hoge = (distance - gizmo.click_offset);
+    auto offset_on_axis = hoge * axis;
+    flush_to_zero(offset_on_axis);
+    auto new_scale = gizmo.original_scale + offset_on_axis;
 
-        if (uniform)
-            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-        else
-            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        if (state.snap_scale)
-            *scale = snap(*scale, state.snap_scale);
-    }
+    if (uniform)
+        *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
+    else
+        *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
+    if (state.snap_scale)
+        *scale = snap(*scale, state.snap_scale);
 }
 
 static void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
@@ -107,7 +101,10 @@ static void dragger(interaction_state &gizmo, const gizmo_application_state &sta
 {
     if (gizmo.active)
     {
-        axis_scale_dragger(gizmo, state, ray, gizmo.mesh->axis, center, is_uniform, scale);
+        if (state.mouse_left)
+        {
+            axis_scale_dragger(gizmo, state, ray, gizmo.mesh->axis, center, is_uniform, scale);
+        }
     }
 }
 
