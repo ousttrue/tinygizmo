@@ -3,7 +3,7 @@
 #include "geometry_mesh.h"
 #include <unordered_map>
 #include <functional>
-#include "../screenstate/fpalg.h"
+#include <fpalg.h>
 
 namespace tinygizmo
 {
@@ -22,14 +22,55 @@ struct gizmo_mesh_component
 
 struct interaction_state
 {
-    bool active{false};                   // Flag to indicate if the gizmo is being actively manipulated
-    bool hover{false};                    // Flag to indicate if the gizmo is being hovered
+    // Flag to indicate if the gizmo is being actively manipulated
+    bool active{false};
+    // Flag to indicate if the gizmo is being hovered
+    bool hover{false};
+    
     minalg::float3 original_position;     // Original position of an object being manipulated with a gizmo
     minalg::float4 original_orientation;  // Original orientation of an object being manipulated with a gizmo
     minalg::float3 original_scale;        // Original scale of an object being manipulated with a gizmo
     minalg::float3 click_offset;          // Offset from position of grabbed object to coordinates of clicked point
     gizmo_mesh_component *mesh = nullptr; // Currently active component
     minalg::float3 axis;
+
+    void axis_scale_dragger(
+        const gizmo_application_state &state, const ray &ray,
+        const minalg::float3 &center, const bool uniform,
+        minalg::float3 *scale)
+    {
+        auto axis = mesh->axis;
+        auto plane_tangent = cross(axis, center - fpalg::size_cast<minalg::float3>(state.camera_position));
+        auto plane_normal = cross(axis, plane_tangent);
+
+        // If an intersection exists between the ray and the plane, place the object at that point
+        const float denom = dot(ray.direction, plane_normal);
+        if (std::abs(denom) == 0)
+        {
+            return;
+        }
+
+        const float t = dot(center - ray.origin, plane_normal) / denom;
+        if (t < 0)
+        {
+            return;
+        }
+
+        auto distance = ray.origin + ray.direction * t;
+
+        auto hoge = (distance - click_offset);
+        auto offset_on_axis = hoge * axis;
+        flush_to_zero(offset_on_axis);
+        // std::cout << offset_on_axis << std::endl;
+        auto new_scale = original_scale + offset_on_axis;
+
+        if (uniform)
+            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
+        else
+            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
+        if (state.snap_scale)
+            *scale = snap(*scale, state.snap_scale);
+    }
 };
 
 struct gizmo_renderable

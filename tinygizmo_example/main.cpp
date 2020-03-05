@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
     // camera
     OrbitCamera camera{};
-    transform_mode mode = transform_mode::translate;
+    transform_mode mode = transform_mode::scale;
     bool is_local = true;
 
     //

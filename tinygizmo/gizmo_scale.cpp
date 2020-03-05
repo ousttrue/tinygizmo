@@ -62,55 +62,6 @@ static gizmo_mesh_component *get_mesh(interact c)
     return nullptr;
 }
 
-void axis_scale_dragger(interaction_state &gizmo,
-                        const gizmo_application_state &state, const ray &ray,
-                        const minalg::float3 &axis, const minalg::float3 &center, const bool uniform,
-                        minalg::float3 *scale)
-{
-    auto plane_tangent = cross(axis, center - castalg::ref_cast<minalg::float3>(state.camera_position));
-    auto plane_normal = cross(axis, plane_tangent);
-
-    // If an intersection exists between the ray and the plane, place the object at that point
-    const float denom = dot(ray.direction, plane_normal);
-    if (std::abs(denom) == 0)
-    {
-        return;
-    }
-
-    const float t = dot(center - ray.origin, plane_normal) / denom;
-    if (t < 0)
-    {
-        return;
-    }
-
-    auto distance = ray.origin + ray.direction * t;
-
-    auto hoge = (distance - gizmo.click_offset);
-    auto offset_on_axis = hoge * axis;
-    flush_to_zero(offset_on_axis);
-    // std::cout << offset_on_axis << std::endl;
-    auto new_scale = gizmo.original_scale + offset_on_axis;
-
-    if (uniform)
-        *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-    else
-        *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-    if (state.snap_scale)
-        *scale = snap(*scale, state.snap_scale);
-}
-
-static void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
-                    const minalg::float3 &center, minalg::float3 *scale, bool is_uniform)
-{
-    if (gizmo.active)
-    {
-        // if (state.mouse_left)
-        {
-            axis_scale_dragger(gizmo, state, ray, gizmo.mesh->axis, center, is_uniform, scale);
-        }
-    }
-}
-
 bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_uniform)
 {
     auto &t = castalg::ref_cast<rigid_transform>(trs);
@@ -153,7 +104,10 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     }
 
     // drag
-    dragger(gizmo, impl->state, impl->get_ray(), t.position, &scale, is_uniform);
+    if (gizmo.active)
+    {
+        gizmo.axis_scale_dragger(state, ray, center, is_uniform, scale);
+    }
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
