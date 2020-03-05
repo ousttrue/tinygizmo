@@ -109,7 +109,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         auto mesh = get_mesh(c);
         gizmo_renderable r{
             .mesh = mesh->mesh,
-            .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
+            .color = (mesh == gizmo.mesh()) ? mesh->base_color : mesh->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {

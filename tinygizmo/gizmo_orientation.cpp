@@ -64,58 +64,6 @@ static gizmo_mesh_component *get_mesh(interact c)
     return nullptr;
 }
 
-minalg::float4 axis_rotation_dragger(interaction_state &gizmo,
-                                     const gizmo_application_state &state, const ray &r,
-                                     const minalg::float3 &axis, const minalg::float3 &center, const minalg::float4 &start_orientation)
-{
-    if (state.mouse_left)
-    {
-        rigid_transform original_pose = {start_orientation, gizmo.original_position};
-        auto the_axis = original_pose.transform_vector(axis);
-        minalg::float4 the_plane = {the_axis, -dot(the_axis, gizmo.click_offset)};
-
-        float t;
-        if (!intersect_ray_plane(r, the_plane, &t))
-        {
-            return start_orientation;
-        }
-
-        auto center_of_rotation = gizmo.original_position + the_axis * dot(the_axis, gizmo.click_offset - gizmo.original_position);
-        auto arm1 = normalize(gizmo.click_offset - center_of_rotation);
-        auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
-
-        float d = dot(arm1, arm2);
-        if (d > 0.999f)
-        {
-            return start_orientation;
-        }
-
-        float angle = std::acos(d);
-        if (angle < 0.001f)
-        {
-            return start_orientation;
-        }
-
-        if (state.snap_rotation)
-        {
-            auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
-            return qmul(snapped, start_orientation);
-        }
-        else
-        {
-            auto a = normalize(cross(arm1, arm2));
-            return qmul(rotation_quat(a, angle), start_orientation);
-        }
-    }
-}
-
-static minalg::float4 dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray,
-                              const minalg::float3 &center, bool is_local)
-{
-    auto starting_orientation = is_local ? gizmo.original_orientation : minalg::float4(0, 0, 0, 1);
-    return axis_rotation_dragger(gizmo, state, ray, gizmo.mesh->axis, center, starting_orientation);
-}
-
 bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
@@ -152,23 +100,20 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     }
 
     // drag
-    if (gizmo.isActive())
-    {
-        p.orientation = dragger(gizmo, impl->state, impl->get_ray(), t.position, is_local);
-    }
+    gizmo.axisRotationDragger(impl->state, impl->get_ray(), t.position, is_local, &p.orientation);
 
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
 
     std::array<gizmo_mesh_component *, 1> world_and_active = {
-        gizmo.mesh,
+        gizmo.mesh(),
     };
-    if (!is_local && gizmo.mesh)
+    if (!is_local && gizmo.mesh())
     {
-        auto mesh = gizmo.mesh;
+        auto mesh = gizmo.mesh();
         gizmo_renderable r{
             .mesh = mesh->mesh,
-            .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
+            .color = mesh->base_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -190,7 +135,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
             auto mesh = get_mesh(c);
             gizmo_renderable r{
                 .mesh = mesh->mesh,
-                .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
+                .color = (mesh == gizmo.mesh()) ? mesh->base_color : mesh->highlight_color,
             };
             for (auto &v : r.mesh.vertices)
             {
@@ -203,13 +148,13 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
 
     // For non-local transformations, we only present one rotation ring
     // and draw an arrow from the center of the gizmo to indicate the degree of rotation
-    if (!is_local && gizmo.mesh)
+    if (!is_local && gizmo.mesh())
     {
         interaction_state &interaction = gizmo;
 
         // Create orthonormal basis for drawing the arrow
-        auto a = qrot(p.orientation, interaction.click_offset - interaction.original_position);
-        auto zDir = normalize(gizmo.mesh->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+        auto a = qrot(p.orientation, interaction.originalPositionToClick());
+        auto zDir = normalize(gizmo.mesh()->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
         // Ad-hoc geometry
         std::initializer_list<minalg::float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
@@ -225,9 +170,9 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         }
         impl->drawlist.push_back(r);
 
-        t.orientation = qmul(p.orientation, interaction.original_orientation);
+        t.orientation = qmul(p.orientation, interaction.originalOrientation());
     }
-    else if (is_local == true && gizmo.mesh)
+    else if (is_local == true && gizmo.mesh())
         t.orientation = p.orientation;
 
     return gizmo.isHoverOrActive();

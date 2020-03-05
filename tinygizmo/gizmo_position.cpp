@@ -33,12 +33,12 @@ static void plane_translation_dragger(interaction_state &gizmo,
 {
     // Mouse clicked
     if (state.has_clicked)
-        gizmo.original_position = point;
+        gizmo.m_original_position = point;
 
     if (state.mouse_left)
     {
         // Define the plane to contain the original position of the object
-        auto plane_point = gizmo.original_position;
+        auto plane_point = gizmo.m_original_position;
 
         // If an intersection exists between the ray and the plane, place the object at that point
         const float denom = dot(r.direction, plane_normal);
@@ -67,7 +67,7 @@ static void axis_translation_dragger(interaction_state &gizmo,
         plane_translation_dragger(gizmo, state, ray, plane_normal, point);
 
         // Constrain object motion to be along the desired axis
-        point = gizmo.original_position + axis * dot(point - gizmo.original_position, axis);
+        point = gizmo.m_original_position + axis * dot(point - gizmo.m_original_position, axis);
     }
 }
 
@@ -181,7 +181,7 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
     {
         auto mesh = get_mesh(updated_state);
         if (mesh)
-        {
+        {           
             auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
             minalg::float3 axis;
             if (updated_state == interact::translate_xyz)
@@ -193,11 +193,11 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
                 if (is_local)
                 {
                     // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-                    axis = p.transform_vector(gizmo.mesh->axis);
+                    axis = p.transform_vector(mesh->axis);
                 }
                 else
                 {
-                    axis = gizmo.mesh->axis;
+                    axis = mesh->axis;
                 }
             }
             gizmo.beginTranslation(mesh, offset, axis);
@@ -212,17 +212,6 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
     }
 }
 
-void dragger(interaction_state &gizmo, const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
-{
-    if (!gizmo.isActive())
-    {
-        return;
-    }
-
-    position += gizmo.click_offset;
-    gizmo.mesh->dragger(gizmo, state, ray, gizmo.axis, position);
-    position -= gizmo.click_offset;
-}
 
 void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 {
@@ -233,7 +222,7 @@ void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transfo
         auto mesh = get_mesh(c);
         gizmo_renderable r{
             .mesh = mesh->mesh,
-            .color = (mesh == gizmo.mesh) ? mesh->base_color : mesh->highlight_color,
+            .color = (mesh == gizmo.mesh()) ? mesh->base_color : mesh->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -255,7 +244,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     raycast(impl, gizmo, impl->state, p, is_local);
 
     // drag
-    dragger(gizmo, impl->state, impl->get_ray(), t.position);
+    gizmo.translationDragger(impl->state, impl->get_ray(), t.position);
 
     // draw
     draw(gizmo, impl, p);
