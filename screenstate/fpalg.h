@@ -315,7 +315,7 @@ inline std::array<float, 16> ScaleMatrix(const std::array<float, 3> &s)
         0, 0, 0, 1};
 }
 
-inline std::array<float, 3> QuaternionRotatePosition(const std::array<float, 4> &q, const std::array<float, 3> &v)
+inline std::array<float, 3> QuaternionRotateFloat3(const std::array<float, 4> &q, const std::array<float, 3> &v)
 {
     auto x = QuaternionXDir(q);
     auto y = QuaternionYDir(q);
@@ -358,8 +358,13 @@ struct Transform
     Transform Inverse() const
     {
         auto inv_r = QuaternionConjugate(rotation);
-        auto inv_t = QuaternionRotatePosition(inv_r, -position);
+        auto inv_t = QuaternionRotateFloat3(inv_r, -position);
         return {inv_t, inv_r};
+    }
+
+    std::array<float, 3> ApplyPosition(const std::array<float, 3> &v)
+    {
+        return QuaternionRotateFloat3(rotation, v) + position;
     }
 };
 
@@ -374,5 +379,11 @@ struct TRS
     }
 };
 static_assert(sizeof(TRS) == 40, "TRS");
+
+struct Ray
+{
+    std::array<float, 3> origin;
+    std::array<float, 3> direction;
+};
 
 } // namespace fpalg

@@ -2,7 +2,6 @@
 #include "utilmath.h"
 #include "impl.h"
 #include <iostream>
-#include <fpalg.h>
 
 namespace tinygizmo
 {
@@ -44,7 +43,6 @@ static void addMeshes(interaction_state *gizmo)
 
 bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_uniform)
 {
-    auto &t = fpalg::size_cast<rigid_transform>(trs);
     auto &impl = ctx.m_impl;
 
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
@@ -53,21 +51,24 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         addMeshes(gizmo);
     }
 
-    rigid_transform withoutScale = rigid_transform(t.orientation, t.position);
-    auto ray = detransform(withoutScale, impl->get_ray());
+    auto worldRay = impl->get_ray();
+    auto toLocal = trs.transform.Inverse();
+    fpalg::Ray localRay = {
+        toLocal.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(worldRay.origin)),
+        fpalg::QuaternionRotateFloat3(toLocal.rotation, fpalg::size_cast<std::array<float, 3>>(worldRay.direction))};
 
     if (impl->state.has_clicked)
     {
-        gizmo->onClick(ray, t);
+        gizmo->onClick(fpalg::size_cast<ray>(localRay), fpalg::size_cast<rigid_transform>(trs));
     }
     if (impl->state.has_released)
     {
         gizmo->end();
     }
 
-    gizmo->axisScaleDragger(impl->state, ray, t.position, is_uniform, &t.scale);
+    gizmo->axisScaleDragger(impl->state, fpalg::size_cast<ray>(localRay), fpalg::size_cast<minalg::float3>(trs.transform.position), is_uniform, &fpalg::size_cast<minalg::float3>(trs.scale));
 
-    gizmo->draw(t, impl->drawlist);
+    gizmo->draw(fpalg::size_cast<rigid_transform>(trs), impl->drawlist);
 
     return gizmo->isHoverOrActive();
 }
