@@ -27,6 +27,7 @@ struct gizmo_renderable
 
 class Gizmo
 {
+protected:
     // Flag to indicate if the gizmo is being actively manipulated
     bool m_active = false;
     // Flag to indicate if the gizmo is being hovered
@@ -35,13 +36,7 @@ class Gizmo
     minalg::float3 m_click;
     // Currently active component
     gizmo_mesh_component *m_mesh = nullptr;
-    std::list<gizmo_mesh_component *> m_meshes;
 
-public:
-    // Original position of an object being manipulated with a gizmo
-    minalg::float3 m_original_position;
-
-private:
     // Original orientation of an object being manipulated with a gizmo
     minalg::float4 m_original_orientation;
     // Original scale of an object being manipulated with a gizmo
@@ -50,10 +45,12 @@ private:
     minalg::float3 m_axis;
 
 public:
+    // Original position of an object being manipulated with a gizmo
+    minalg::float3 m_original_position;
+
+public:
     bool isHoverOrActive() const { return m_hover || m_active; }
     void hover(bool enable) { m_hover = enable; }
-    // bool isActive() const { return m_active; }
-    void addMesh(gizmo_mesh_component *mesh) { m_meshes.push_back(mesh); }
     gizmo_mesh_component *mesh() { return m_mesh; }
 
     minalg::float4 originalOrientation() const
@@ -70,6 +67,14 @@ public:
     {
         m_active = false;
         m_mesh = nullptr;
+    }
+
+    void begin(gizmo_mesh_component *pMesh, const minalg::float3 &click, const rigid_transform &t)
+    {
+        m_active = true;
+        m_mesh = pMesh;
+        m_click = click;
+        m_original_scale = t.scale;
     }
 
     void beginTranslation(gizmo_mesh_component *pMesh, const minalg::float3 &click, const minalg::float3 &axis)
@@ -160,98 +165,14 @@ public:
         }
     }
 
-    void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist)
-    {
-        // rigid_transform withoutScale(t.orientation, t.position);
-        // auto modelMatrix = fpalg::size_cast<minalg::float4x4>(withoutScale.matrix());
-        // auto modelMatrix = t.Matrix();
-        for (auto mesh : m_meshes)
-        {
-            gizmo_renderable r{
-                .mesh = mesh->mesh,
-                .color = (mesh == m_mesh) ? mesh->base_color : mesh->highlight_color,
-            };
-            for (auto &v : r.mesh.vertices)
-            {
-                // transform local coordinates into worldspace
-                v.position = fpalg::size_cast<minalg::float3>(t.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(v.position)));
-                v.normal = fpalg::size_cast<minalg::float3>(t.ApplyDirection(fpalg::size_cast<std::array<float, 3>>(v.normal)));
-            }
-            drawlist.push_back(r);
-        }
-    }
+    virtual void onClick(const ray &ray, const rigid_transform &t) {}
 
-    void onClick(const ray &ray, const rigid_transform &t)
-    {
-        gizmo_mesh_component *updated_state = nullptr;
-        float best_t = std::numeric_limits<float>::infinity();
-        for (auto mesh : m_meshes)
-        {
-            auto t = intersect_ray_mesh(ray, mesh->mesh);
-            if (t < best_t)
-            {
-                updated_state = mesh;
-                best_t = t;
-            }
-        }
-
-        if (updated_state)
-        {
-            rigid_transform withoutScale(t.orientation, t.position);
-            beginScale(updated_state, withoutScale.transform_point(ray.origin + ray.direction * best_t), t.scale);
-        }
-    }
-
-    void beginScale(gizmo_mesh_component *pMesh, const minalg::float3 &click, const minalg::float3 &scale)
-    {
-        m_active = true;
-        m_mesh = pMesh;
-        m_click = click;
-        m_original_scale = scale;
-    }
-
-    void axisScaleDragger(
+    virtual void axisScaleDragger(
         const gizmo_application_state &state, const ray &ray,
         const minalg::float3 &center, const bool uniform,
-        minalg::float3 *scale)
-    {
-        if (!m_active)
-        {
-            return;
-        }
+        minalg::float3 *scale) {}
 
-        auto axis = m_mesh->axis;
-        auto plane_tangent = cross(axis, center - fpalg::size_cast<minalg::float3>(state.camera_position));
-        auto plane_normal = cross(axis, plane_tangent);
-
-        // If an intersection exists between the ray and the plane, place the object at that point
-        const float denom = dot(ray.direction, plane_normal);
-        if (std::abs(denom) == 0)
-        {
-            return;
-        }
-
-        const float t = dot(center - ray.origin, plane_normal) / denom;
-        if (t < 0)
-        {
-            return;
-        }
-
-        auto distance = ray.origin + ray.direction * t;
-
-        auto hoge = (distance - m_click);
-        auto offset_on_axis = hoge * axis;
-        flush_to_zero(offset_on_axis);
-        // std::cout << offset_on_axis << std::endl;
-        auto new_scale = m_original_scale + offset_on_axis;
-
-        if (uniform)
-            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-        else
-            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        if (state.snap_scale)
-            *scale = snap(*scale, state.snap_scale);
-    }
+    virtual void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) {}
 };
 
 } // namespace tinygizmo
