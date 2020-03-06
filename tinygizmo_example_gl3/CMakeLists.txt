@@ -1,4 +1,4 @@
-set(TARGET_NAME tinygizmo_example)
+set(TARGET_NAME tinygizmo_example_gl3)
 add_executable(${TARGET_NAME}
     main.cpp
     gl-api.cpp
