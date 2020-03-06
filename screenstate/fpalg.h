@@ -362,9 +362,14 @@ struct Transform
         return {inv_t, inv_r};
     }
 
-    std::array<float, 3> ApplyPosition(const std::array<float, 3> &v)
+    std::array<float, 3> ApplyPosition(const std::array<float, 3> &v) const
     {
         return QuaternionRotateFloat3(rotation, v) + position;
+    }
+
+    std::array<float, 3> ApplyDirection(const std::array<float, 3> &v) const
+    {
+        return QuaternionRotateFloat3(rotation, v);
     }
 };
 

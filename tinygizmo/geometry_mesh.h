@@ -7,7 +7,8 @@ namespace tinygizmo
 
 struct geometry_vertex
 {
-    minalg::float3 position, normal;
+    minalg::float3 position;
+    minalg::float3 normal;
     minalg::float4 color;
 };
 

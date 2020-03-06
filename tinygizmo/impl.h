@@ -161,10 +161,11 @@ public:
         }
     }
 
-    void draw(const rigid_transform &t, std::vector<gizmo_renderable> &drawlist)
+    void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist)
     {
-        rigid_transform withoutScale(t.orientation, t.position);
-        auto modelMatrix = fpalg::size_cast<minalg::float4x4>(withoutScale.matrix());
+        // rigid_transform withoutScale(t.orientation, t.position);
+        // auto modelMatrix = fpalg::size_cast<minalg::float4x4>(withoutScale.matrix());
+        // auto modelMatrix = t.Matrix();
         for (auto mesh : m_meshes)
         {
             gizmo_renderable r{
@@ -173,8 +174,9 @@ public:
             };
             for (auto &v : r.mesh.vertices)
             {
-                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-                v.normal = transform_vector(modelMatrix, v.normal);
+                // transform local coordinates into worldspace                
+                v.position = fpalg::size_cast<minalg::float3>(t.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(v.position)));
+                v.normal = fpalg::size_cast<minalg::float3>(t.ApplyDirection(fpalg::size_cast<std::array<float, 3>>(v.normal)));
             }
             drawlist.push_back(r);
         }
