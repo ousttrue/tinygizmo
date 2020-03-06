@@ -2,7 +2,7 @@
 // For more information, please refer to <http://unlicense.org>
 
 #include "renderer.h"
-#include "wgl_context.h"
+#include "dx11_context.h"
 #include "teapot.h"
 #include <vector>
 #include <tinygizmo.h>
@@ -30,15 +30,16 @@ enum class transform_mode
 int main(int argc, char *argv[])
 {
     screenstate::Win32Window win(L"tinygizmo_example_class");
-    auto hwnd = win.Create(L"tinygizmo_example_gl3", 1280, 800);
+    auto hwnd = win.Create(L"tinygizmo_example_d3d11", 1280, 800);
     if (!hwnd)
     {
         return 1;
     }
     win.Show();
 
-    WGLContext wgl;
-    if (!wgl.Create(hwnd, 3, 0))
+    DX11Context dx11;
+    auto device = dx11.Create(hwnd);
+    if(!device)
     {
         return 2;
     }
@@ -198,7 +199,7 @@ int main(int argc, char *argv[])
         // present
         //
         renderer.endFrame();
-        wgl.Present();
+        dx11.Present();
     }
     return EXIT_SUCCESS;
 }

@@ -5,7 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "tinygizmo_example",
+            "name": "tinygizmo_example_d3d11",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/tinygizmo_example_d3d11/tinygizmo_example_d3d11.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "tinygizmo_example_gl3",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/tinygizmo_example_gl3/tinygizmo_example_gl3.exe",
