@@ -94,7 +94,8 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         auto mesh = get_mesh(updated_state);
         if (mesh)
         {
-            gizmo->beginRotation(mesh, p.transform_point(ray.origin + ray.direction * best_t), t.position, t.orientation);
+            auto hit=p.transform_point(ray.origin + ray.direction * best_t);
+            gizmo->begin(mesh, hit, t, {});
         }
     }
     if (impl->state.has_released)
@@ -154,7 +155,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     if (!is_local && gizmo->mesh())
     {
         // Create orthonormal basis for drawing the arrow
-        auto a = qrot(p.orientation, gizmo->originalPositionToClick());
+        auto a = qrot(p.orientation, gizmo->m_state.originalPositionToClick());
         auto zDir = normalize(gizmo->mesh()->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
         // Ad-hoc geometry
@@ -171,7 +172,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         }
         impl->drawlist.push_back(r);
 
-        t.orientation = qmul(p.orientation, gizmo->originalOrientation());
+        t.orientation = qmul(p.orientation, gizmo->m_state.original.orientation);
     }
     else if (is_local == true && gizmo->mesh())
         t.orientation = p.orientation;

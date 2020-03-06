@@ -48,7 +48,7 @@ public:
         if (updated_state)
         {
             rigid_transform withoutScale(t.orientation, t.position);
-            begin(updated_state, withoutScale.transform_point(ray.origin + ray.direction * best_t), t);
+            begin(updated_state, withoutScale.transform_point(ray.origin + ray.direction * best_t), t, {});
         }
     }
 
@@ -81,11 +81,11 @@ public:
 
         auto distance = ray.origin + ray.direction * t;
 
-        auto hoge = (distance - m_click);
+        auto hoge = (distance - m_state.click);
         auto offset_on_axis = hoge * axis;
         flush_to_zero(offset_on_axis);
         // std::cout << offset_on_axis << std::endl;
-        auto new_scale = m_original_scale + offset_on_axis;
+        auto new_scale = m_state.original.scale + offset_on_axis;
 
         if (uniform)
             *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));

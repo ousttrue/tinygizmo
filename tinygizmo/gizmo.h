@@ -25,6 +25,19 @@ struct gizmo_renderable
     minalg::float4 color;
 };
 
+struct GizmoState
+{
+    // Offset from position of grabbed object to coordinates of clicked point
+    minalg::float3 click;
+    rigid_transform original;
+    minalg::float3 axis;
+
+    minalg::float3 originalPositionToClick() const
+    {
+        return click - original.position;
+    }
+};
+
 class Gizmo
 {
 protected:
@@ -32,36 +45,15 @@ protected:
     bool m_active = false;
     // Flag to indicate if the gizmo is being hovered
     bool m_hover = false;
-    // Offset from position of grabbed object to coordinates of clicked point
-    minalg::float3 m_click;
     // Currently active component
     gizmo_mesh_component *m_mesh = nullptr;
 
-    // Original orientation of an object being manipulated with a gizmo
-    minalg::float4 m_original_orientation;
-    // Original scale of an object being manipulated with a gizmo
-    minalg::float3 m_original_scale;
-
-    minalg::float3 m_axis;
-
 public:
-    // Original position of an object being manipulated with a gizmo
-    minalg::float3 m_original_position;
+    GizmoState m_state;
 
-public:
     bool isHoverOrActive() const { return m_hover || m_active; }
     void hover(bool enable) { m_hover = enable; }
     gizmo_mesh_component *mesh() { return m_mesh; }
-
-    minalg::float4 originalOrientation() const
-    {
-        return m_original_orientation;
-    }
-
-    minalg::float3 originalPositionToClick() const
-    {
-        return m_click - m_original_position;
-    }
 
     void end()
     {
@@ -69,20 +61,15 @@ public:
         m_mesh = nullptr;
     }
 
-    void begin(gizmo_mesh_component *pMesh, const minalg::float3 &click, const rigid_transform &t)
+    void begin(gizmo_mesh_component *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
     {
         m_active = true;
         m_mesh = pMesh;
-        m_click = click;
-        m_original_scale = t.scale;
-    }
-
-    void beginTranslation(gizmo_mesh_component *pMesh, const minalg::float3 &click, const minalg::float3 &axis)
-    {
-        m_active = true;
-        m_mesh = pMesh;
-        m_click = click;
-        m_axis = axis;
+        m_state = {
+            .click = click,
+            .original = t,
+            .axis = axis,
+        };
     }
 
     void translationDragger(const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
@@ -92,18 +79,9 @@ public:
             return;
         }
 
-        position += m_click;
-        m_mesh->dragger(*this, state, ray, m_axis, position);
-        position -= m_click;
-    }
-
-    void beginRotation(gizmo_mesh_component *pMesh, const minalg::float3 &click, const minalg::float3 &position, const minalg::float4 rotation)
-    {
-        m_active = true;
-        m_mesh = pMesh;
-        m_click = click;
-        m_original_position = position;
-        m_original_orientation = rotation;
+        position += m_state.click;
+        m_mesh->dragger(*this, state, ray, m_state.axis, position);
+        position -= m_state.click;
     }
 
     void axisRotationDragger(
@@ -119,12 +97,12 @@ public:
         {
             return;
         }
-        auto start_orientation = is_local ? m_original_orientation : minalg::float4(0, 0, 0, 1);
+        auto start_orientation = is_local ? m_state.original.orientation : minalg::float4(0, 0, 0, 1);
 
         auto axis = m_mesh->axis;
-        rigid_transform original_pose = {start_orientation, m_original_position};
+        rigid_transform original_pose = {start_orientation, m_state.original.position};
         auto the_axis = original_pose.transform_vector(axis);
-        minalg::float4 the_plane = {the_axis, -dot(the_axis, m_click)};
+        minalg::float4 the_plane = {the_axis, -dot(the_axis, m_state.click)};
 
         float t;
         if (!intersect_ray_plane(r, the_plane, &t))
@@ -133,8 +111,8 @@ public:
             return;
         }
 
-        auto center_of_rotation = m_original_position + the_axis * dot(the_axis, m_click - m_original_position);
-        auto arm1 = normalize(m_click - center_of_rotation);
+        auto center_of_rotation = m_state.original.position + the_axis * dot(the_axis, m_state.originalPositionToClick());
+        auto arm1 = normalize(m_state.click - center_of_rotation);
         auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
 
         float d = dot(arm1, arm2);

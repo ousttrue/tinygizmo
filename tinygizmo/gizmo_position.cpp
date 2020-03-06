@@ -33,12 +33,12 @@ static void plane_translation_dragger(Gizmo &gizmo,
 {
     // Mouse clicked
     if (state.has_clicked)
-        gizmo.m_original_position = point;
+        gizmo.m_state.original.position = point;
 
     if (state.mouse_left)
     {
         // Define the plane to contain the original position of the object
-        auto plane_point = gizmo.m_original_position;
+        auto plane_point = gizmo.m_state.original.position;
 
         // If an intersection exists between the ray and the plane, place the object at that point
         const float denom = dot(r.direction, plane_normal);
@@ -67,7 +67,7 @@ static void axis_translation_dragger(Gizmo &gizmo,
         plane_translation_dragger(gizmo, state, ray, plane_normal, point);
 
         // Constrain object motion to be along the desired axis
-        point = gizmo.m_original_position + axis * dot(point - gizmo.m_original_position, axis);
+        point = gizmo.m_state.original.position + axis * dot(point - gizmo.m_state.original.position, axis);
     }
 }
 
@@ -161,8 +161,10 @@ get_mesh(interact component)
 }
 
 // check hit
-void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &p, bool is_local)
+void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &t, bool is_local)
 {
+    auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
 
@@ -200,7 +202,7 @@ void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_stat
                     axis = mesh->axis;
                 }
             }
-            gizmo.beginTranslation(mesh, offset, axis);
+            gizmo.begin(mesh, offset, t, axis);
         }
     }
 
@@ -237,16 +239,16 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
 {
     auto &impl = ctx.m_impl;
     auto &t = castalg::ref_cast<rigid_transform>(trs);
-    auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // update
-    raycast(impl, *gizmo, impl->state, p, is_local);
+    raycast(impl, *gizmo, impl->state, t, is_local);
 
     // drag
     gizmo->translationDragger(impl->state, impl->get_ray(), t.position);
 
     // draw
+    auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     draw(*gizmo, impl, p);
 
     return gizmo->isHoverOrActive();
