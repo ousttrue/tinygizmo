@@ -384,6 +384,19 @@ struct Ray
 {
     std::array<float, 3> origin;
     std::array<float, 3> direction;
+
+    Ray ToLocal(const fpalg::Transform &t)
+    {
+        auto toLocal = t.Inverse();
+        return {
+            toLocal.ApplyPosition(origin),
+            fpalg::QuaternionRotateFloat3(toLocal.rotation, direction)};
+    }
+
+    std::array<float, 3> HitPosition(float t)
+    {
+        return origin + direction * t;
+    }
 };
 
 } // namespace fpalg
