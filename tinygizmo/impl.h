@@ -57,6 +57,12 @@ public:
         return {ray_origin, ray_direction};
     }
 
+    fpalg::Ray get_local_ray(fpalg::Transform &t) const
+    {
+        auto worldRay = fpalg::size_cast<fpalg::Ray>(get_ray());
+        return worldRay.ToLocal(t);
+    }
+
     // Returns a world-space ray through the given pixel, originating at the camera
     minalg::float3 get_ray_direction(int _x, int _y, int w, int h, const minalg::float4x4 &viewProjMatrix) const
     {

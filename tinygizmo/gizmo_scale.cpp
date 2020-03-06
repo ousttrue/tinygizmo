@@ -125,9 +125,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         impl->add_gizmo(id, gizmo);
     }
 
-    auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
-    auto localRay = worldRay.ToLocal(trs.transform);
-
+    auto localRay = impl->get_local_ray(trs.transform);
     if (impl->state.has_clicked)
     {
         gizmo->onClick(fpalg::size_cast<ray>(localRay), fpalg::size_cast<rigid_transform>(trs));
