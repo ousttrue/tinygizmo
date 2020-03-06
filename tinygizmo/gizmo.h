@@ -27,45 +27,25 @@ struct GizmoComponent
     minalg::float4 highlight_color;
     minalg::float3 axis;
 
-    std::function<void(class Gizmo &gizmo,
-                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
-        tDragger;
+    using DragFunc = std::function<void(class Gizmo &gizmo,
+                                        const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>;
+    DragFunc tDragger;
 
-    bool axisScaleDragger(
+public:
+    GizmoComponent(const geometry_mesh &_mesh,
+                   const minalg::float4 &_base_color, const minalg::float4 &_highlight_color,
+                   const minalg::float3 &_axis,
+                   const DragFunc &_func = DragFunc())
+        : mesh(_mesh), base_color(_base_color), highlight_color(_highlight_color), axis(_axis), tDragger(_func)
+    {
+    }
+
+    virtual bool dragger(
         const ray &ray, const GizmoState &state,
         const bool uniform,
-        minalg::float3 *scale)
+        rigid_transform *t)
     {
-        // auto axis = m_mesh->axis;
-        auto plane_tangent = cross(axis, state.original.position - fpalg::size_cast<minalg::float3>(ray.origin));
-        auto plane_normal = cross(axis, plane_tangent);
-
-        // If an intersection exists between the ray and the plane, place the object at that point
-        const float denom = dot(ray.direction, plane_normal);
-        if (std::abs(denom) == 0)
-        {
-            return false;
-        }
-
-        const float t = dot(state.original.position - ray.origin, plane_normal) / denom;
-        if (t < 0)
-        {
-            return false;
-        }
-
-        auto distance = ray.origin + ray.direction * t;
-
-        auto hoge = (distance - state.click);
-        auto offset_on_axis = hoge * axis;
-        flush_to_zero(offset_on_axis);
-        // std::cout << offset_on_axis << std::endl;
-        auto new_scale = state.original.scale + offset_on_axis;
-
-        if (uniform)
-            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-        else
-            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        return true;
+        return false;
     }
 };
 

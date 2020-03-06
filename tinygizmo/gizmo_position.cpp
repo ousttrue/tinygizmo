@@ -72,87 +72,80 @@ static void axis_translation_dragger(Gizmo &gizmo,
 }
 
 static GizmoComponent *
-get_mesh(interact component)
+get_mesh(interact c)
 {
     static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
 
-    switch (component)
+    switch (c)
     {
     case interact::translate_x:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
             {1, 0.5f, 0.5f, 1.f},
             {1, 0, 0, 1.f},
             {1, 0, 0},
-            axis_translation_dragger,
-        };
+            axis_translation_dragger);
         return &component;
     }
     case interact::translate_y:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 1, 0.5f, 1.f},
             {0, 1, 0, 1.f},
             {0, 1, 0},
-            axis_translation_dragger,
-        };
+            axis_translation_dragger);
         return &component;
     }
     case interact::translate_z:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 0.5f, 1, 1.f},
             {0, 0, 1, 1.f},
             {0, 0, 1},
-            axis_translation_dragger,
-        };
+            axis_translation_dragger);
         return &component;
     }
     case interact::translate_xy:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
             {1, 1, 0.5f, 0.5f},
             {1, 1, 0, 0.6f},
             {0, 0, 1},
-            plane_translation_dragger,
-        };
+            plane_translation_dragger);
         return &component;
     }
     case interact::translate_yz:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
             {0.5f, 1, 1, 0.5f},
             {0, 1, 1, 0.6f},
             {1, 0, 0},
-            plane_translation_dragger,
-        };
+            plane_translation_dragger);
         return &component;
     }
     case interact::translate_zx:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
             {1, 0.5f, 1, 0.5f},
             {1, 0, 1, 0.6f},
             {0, 1, 0},
-            plane_translation_dragger,
-        };
+            plane_translation_dragger);
         return &component;
     }
     case interact::translate_xyz:
     {
-        static GizmoComponent component{
+        static GizmoComponent component(
             geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
             {0.9f, 0.9f, 0.9f, 0.25f},
             {1, 1, 1, 0.35f},
             {0, 0, 0},
-            plane_translation_dragger,
-        };
+            plane_translation_dragger);
         return &component;
     }
     }
@@ -183,7 +176,7 @@ void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_stat
     {
         auto mesh = get_mesh(updated_state);
         if (mesh)
-        {           
+        {
             auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
             minalg::float3 axis;
             if (updated_state == interact::translate_xyz)
@@ -213,7 +206,6 @@ void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_stat
         gizmo.end();
     }
 }
-
 
 void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 {
