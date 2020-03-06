@@ -6,7 +6,7 @@
 namespace tinygizmo
 {
 
-static void addMeshes(interaction_state *gizmo)
+static void addMeshes(gizmo *gizmo)
 {
     static std::vector<minalg::float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
 

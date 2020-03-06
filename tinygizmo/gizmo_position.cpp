@@ -28,7 +28,7 @@ static const interact translation_components[] = {
     interact::translate_xyz,
 };
 
-static void plane_translation_dragger(interaction_state &gizmo,
+static void plane_translation_dragger(gizmo &gizmo,
                                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)
 {
     // Mouse clicked
@@ -56,7 +56,7 @@ static void plane_translation_dragger(interaction_state &gizmo,
     }
 }
 
-static void axis_translation_dragger(interaction_state &gizmo,
+static void axis_translation_dragger(gizmo &gizmo,
                                      const gizmo_application_state &state, const ray &ray, const minalg::float3 &axis, minalg::float3 &point)
 {
     if (state.mouse_left)
@@ -161,7 +161,7 @@ get_mesh(interact component)
 }
 
 // check hit
-void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_application_state &state, const rigid_transform &p, bool is_local)
+void raycast(gizmo_system_impl *impl, gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &p, bool is_local)
 {
     interact updated_state = interact::none;
     auto ray = detransform(p, impl->get_ray());
@@ -213,7 +213,7 @@ void raycast(gizmo_system_impl *impl, interaction_state &gizmo, const gizmo_appl
 }
 
 
-void draw(interaction_state &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
+void draw(gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 {
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
 

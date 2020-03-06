@@ -14,7 +14,7 @@ struct gizmo_mesh_component
     minalg::float4 highlight_color;
     minalg::float3 axis;
 
-    std::function<void(struct interaction_state &gizmo,
+    std::function<void(class gizmo &gizmo,
                        const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
         dragger;
 };
@@ -25,7 +25,7 @@ struct gizmo_renderable
     minalg::float4 color;
 };
 
-struct interaction_state
+class gizmo
 {
     // Flag to indicate if the gizmo is being actively manipulated
     bool m_active = false;
