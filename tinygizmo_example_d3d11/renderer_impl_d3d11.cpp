@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "dx11_context.h"
 #include "teapot.h"
 
 constexpr const char gizmo_vert[] = R"(#version 330
@@ -135,14 +136,21 @@ void Model::draw(const float *model, const float *vp, const float *eye)
 /////////////////////////////////////////////
 class RendererImpl
 {
+    DX11Context m_d3d11;
+
 public:
-    bool initialize()
+    bool initialize(void* hwnd)
     {
+        if(!m_d3d11.Create(hwnd))
+        {
+            return false;
+        }
         return true;
     }
 
     void beginFrame(int width, int height)
     {
+        m_d3d11.NewFrame(width, height);
     }
 
     void clearDepth()
@@ -151,6 +159,7 @@ public:
 
     void endFrame()
     {
+        m_d3d11.Present();
     }
 };
 
@@ -164,9 +173,9 @@ Renderer::~Renderer()
     delete m_impl;
 }
 
-bool Renderer::initialize()
+bool Renderer::initialize(void *hwnd)
 {
-    return m_impl->initialize();
+    return m_impl->initialize(hwnd);
 }
 
 std::shared_ptr<Model> Renderer::createMeshForGizmo()

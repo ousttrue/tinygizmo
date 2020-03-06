@@ -23,7 +23,7 @@ class Renderer
 public:
     Renderer();
     ~Renderer();
-    bool initialize();
+    bool initialize(void *hwnd);
     std::shared_ptr<Model> createMeshForGizmo();
     std::shared_ptr<Model> createMesh();
     void beginFrame(int width, int height);

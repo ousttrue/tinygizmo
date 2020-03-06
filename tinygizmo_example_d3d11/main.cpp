@@ -2,7 +2,6 @@
 // For more information, please refer to <http://unlicense.org>
 
 #include "renderer.h"
-#include "dx11_context.h"
 #include "teapot.h"
 #include <vector>
 #include <tinygizmo.h>
@@ -37,13 +36,6 @@ int main(int argc, char *argv[])
     }
     win.Show();
 
-    DX11Context dx11;
-    auto device = dx11.Create(hwnd);
-    if(!device)
-    {
-        return 2;
-    }
-
     // camera
     OrbitCamera camera{};
     transform_mode mode = transform_mode::scale;
@@ -53,7 +45,7 @@ int main(int argc, char *argv[])
     // scene
     //
     Renderer renderer;
-    if (!renderer.initialize())
+    if (!renderer.initialize((void *)hwnd))
     {
         return 3;
     }
@@ -199,7 +191,6 @@ int main(int argc, char *argv[])
         // present
         //
         renderer.endFrame();
-        dx11.Present();
     }
     return EXIT_SUCCESS;
 }

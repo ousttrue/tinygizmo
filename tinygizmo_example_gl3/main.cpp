@@ -2,7 +2,6 @@
 // For more information, please refer to <http://unlicense.org>
 
 #include "renderer.h"
-#include "wgl_context.h"
 #include "teapot.h"
 #include <vector>
 #include <tinygizmo.h>
@@ -37,12 +36,6 @@ int main(int argc, char *argv[])
     }
     win.Show();
 
-    WGLContext wgl;
-    if (!wgl.Create(hwnd, 3, 0))
-    {
-        return 2;
-    }
-
     // camera
     OrbitCamera camera{};
     transform_mode mode = transform_mode::scale;
@@ -52,7 +45,7 @@ int main(int argc, char *argv[])
     // scene
     //
     Renderer renderer;
-    if (!renderer.initialize())
+    if (!renderer.initialize(hwnd))
     {
         return 3;
     }
@@ -198,7 +191,6 @@ int main(int argc, char *argv[])
         // present
         //
         renderer.endFrame();
-        wgl.Present();
     }
     return EXIT_SUCCESS;
 }
