@@ -7,33 +7,33 @@ namespace tinygizmo
 {
 static minalg::float2 mace_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
 
-static gizmo_mesh_component xComponent{
+static GizmoComponent xComponent{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points, _countof(mace_points)),
     {1, 0.5f, 0.5f, 1.f},
     {1, 0, 0, 1.f},
     {1, 0, 0},
 };
-static gizmo_mesh_component yComponent{
+static GizmoComponent yComponent{
     geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points, _countof(mace_points)),
     {0.5f, 1, 0.5f, 1.f},
     {0, 1, 0, 1.f},
     {0, 1, 0},
 };
-static gizmo_mesh_component zComponent{
+static GizmoComponent zComponent{
     geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points, _countof(mace_points)),
     {0.5f, 0.5f, 1, 1.f},
     {0, 0, 1, 1.f},
     {0, 0, 1},
 };
 
-static gizmo_mesh_component *g_meshes[] = {&xComponent, &yComponent, &zComponent};
+static GizmoComponent *g_meshes[] = {&xComponent, &yComponent, &zComponent};
 
 class ScaleGizmo : public Gizmo
 {
 public:
     void onClick(const ray &ray, const rigid_transform &t) override
     {
-        gizmo_mesh_component *updated_state = nullptr;
+        GizmoComponent *updated_state = nullptr;
         float best_t = std::numeric_limits<float>::infinity();
         for (auto mesh : g_meshes)
         {

@@ -23,7 +23,7 @@ static const interact orientation_components[] = {
     interact::rotate_z,
 };
 
-static gizmo_mesh_component *get_mesh(interact c)
+static GizmoComponent *get_mesh(interact c)
 {
     static minalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
@@ -31,7 +31,7 @@ static gizmo_mesh_component *get_mesh(interact c)
     {
     case interact::rotate_x:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, _countof(ring_points), 0.003f),
             {1, 0.5f, 0.5f, 1.f},
             {1, 0, 0, 1.f},
@@ -41,7 +41,7 @@ static gizmo_mesh_component *get_mesh(interact c)
     }
     case interact::rotate_y:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, _countof(ring_points), -0.003f),
             {0.5f, 1, 0.5f, 1.f},
             {0, 1, 0, 1.f},
@@ -51,7 +51,7 @@ static gizmo_mesh_component *get_mesh(interact c)
     }
     case interact::rotate_z:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points, _countof(ring_points)),
             {0.5f, 0.5f, 1, 1.f},
             {0, 0, 1, 1.f},
@@ -109,7 +109,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
 
-    std::array<gizmo_mesh_component *, 1> world_and_active = {
+    std::array<GizmoComponent *, 1> world_and_active = {
         gizmo->mesh(),
     };
     if (!is_local && gizmo->mesh())

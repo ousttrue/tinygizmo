@@ -20,7 +20,7 @@ struct GizmoState
     }
 };
 
-struct gizmo_mesh_component
+struct GizmoComponent
 {
     geometry_mesh mesh;
     minalg::float4 base_color;
@@ -29,7 +29,7 @@ struct gizmo_mesh_component
 
     std::function<void(class Gizmo &gizmo,
                        const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
-        dragger;
+        tDragger;
 
     bool axisScaleDragger(
         const ray &ray, const GizmoState &state,
@@ -83,14 +83,14 @@ protected:
     // Flag to indicate if the gizmo is being hovered
     bool m_hover = false;
     // Currently active component
-    gizmo_mesh_component *m_mesh = nullptr;
+    GizmoComponent *m_mesh = nullptr;
 
 public:
     GizmoState m_state;
 
     bool isHoverOrActive() const { return m_hover || m_active; }
     void hover(bool enable) { m_hover = enable; }
-    gizmo_mesh_component *mesh() { return m_mesh; }
+    GizmoComponent *mesh() { return m_mesh; }
 
     void end()
     {
@@ -98,7 +98,7 @@ public:
         m_mesh = nullptr;
     }
 
-    void begin(gizmo_mesh_component *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
+    void begin(GizmoComponent *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
     {
         m_active = true;
         m_mesh = pMesh;
@@ -117,7 +117,7 @@ public:
         }
 
         position += m_state.click;
-        m_mesh->dragger(*this, state, ray, m_state.axis, position);
+        m_mesh->tDragger(*this, state, ray, m_state.axis, position);
         position -= m_state.click;
     }
 

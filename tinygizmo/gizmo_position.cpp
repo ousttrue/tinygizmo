@@ -71,7 +71,7 @@ static void axis_translation_dragger(Gizmo &gizmo,
     }
 }
 
-static gizmo_mesh_component *
+static GizmoComponent *
 get_mesh(interact component)
 {
     static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
@@ -80,7 +80,7 @@ get_mesh(interact component)
     {
     case interact::translate_x:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
             {1, 0.5f, 0.5f, 1.f},
             {1, 0, 0, 1.f},
@@ -91,7 +91,7 @@ get_mesh(interact component)
     }
     case interact::translate_y:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 1, 0.5f, 1.f},
             {0, 1, 0, 1.f},
@@ -102,7 +102,7 @@ get_mesh(interact component)
     }
     case interact::translate_z:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 0.5f, 1, 1.f},
             {0, 0, 1, 1.f},
@@ -113,7 +113,7 @@ get_mesh(interact component)
     }
     case interact::translate_xy:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
             {1, 1, 0.5f, 0.5f},
             {1, 1, 0, 0.6f},
@@ -124,7 +124,7 @@ get_mesh(interact component)
     }
     case interact::translate_yz:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
             {0.5f, 1, 1, 0.5f},
             {0, 1, 1, 0.6f},
@@ -135,7 +135,7 @@ get_mesh(interact component)
     }
     case interact::translate_zx:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
             {1, 0.5f, 1, 0.5f},
             {1, 0, 1, 0.6f},
@@ -146,7 +146,7 @@ get_mesh(interact component)
     }
     case interact::translate_xyz:
     {
-        static gizmo_mesh_component component{
+        static GizmoComponent component{
             geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
             {0.9f, 0.9f, 0.9f, 0.25f},
             {1, 1, 1, 0.35f},
