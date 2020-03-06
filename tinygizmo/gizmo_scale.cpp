@@ -96,9 +96,6 @@ public:
 
     void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) override
     {
-        // rigid_transform withoutScale(t.orientation, t.position);
-        // auto modelMatrix = fpalg::size_cast<minalg::float4x4>(withoutScale.matrix());
-        // auto modelMatrix = t.Matrix();
         for (auto mesh : g_meshes)
         {
             gizmo_renderable r{
@@ -135,7 +132,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     {
         gizmo->onClick(fpalg::size_cast<ray>(localRay), fpalg::size_cast<rigid_transform>(trs));
     }
-    if (impl->state.has_released)
+    else if (impl->state.has_released)
     {
         gizmo->end();
     }
