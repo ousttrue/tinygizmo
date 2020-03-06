@@ -25,14 +25,14 @@ static const interact orientation_components[] = {
 
 static gizmo_mesh_component *get_mesh(interact c)
 {
-    static std::vector<minalg::float2> ring_points = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
+    static minalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
     switch (c)
     {
     case interact::rotate_x:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, 0.003f),
+            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, _countof(ring_points), 0.003f),
             {1, 0.5f, 0.5f, 1.f},
             {1, 0, 0, 1.f},
             {1, 0, 0},
@@ -42,7 +42,7 @@ static gizmo_mesh_component *get_mesh(interact c)
     case interact::rotate_y:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, -0.003f),
+            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, _countof(ring_points), -0.003f),
             {0.5f, 1, 0.5f, 1.f},
             {0, 1, 0, 1.f},
             {0, 1, 0},
@@ -52,7 +52,7 @@ static gizmo_mesh_component *get_mesh(interact c)
     case interact::rotate_z:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points),
+            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points, _countof(ring_points)),
             {0.5f, 0.5f, 1, 1.f},
             {0, 0, 1, 1.f},
             {0, 0, 1},
@@ -158,8 +158,8 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         auto zDir = normalize(gizmo->mesh()->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
         // Ad-hoc geometry
-        std::initializer_list<minalg::float2> arrow_points = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
-        auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points);
+        minalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
+        auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points, _countof(arrow_points));
 
         gizmo_renderable r;
         r.mesh = geo;

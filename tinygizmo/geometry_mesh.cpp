@@ -2,7 +2,6 @@
 
 static const float tau = 6.28318530718f;
 
-
 namespace tinygizmo
 {
 
@@ -117,24 +116,28 @@ geometry_mesh geometry_mesh::make_cylinder_geometry(const minalg::float3 &axis, 
     return mesh;
 }
 
-geometry_mesh geometry_mesh::make_lathed_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, int slices, const std::vector<minalg::float2> &points, const float eps)
+geometry_mesh geometry_mesh::make_lathed_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, int slices,
+                                                  const minalg::float2 *points, uint32_t pointCount, const float eps)
 {
     geometry_mesh mesh;
     for (int i = 0; i <= slices; ++i)
     {
         const float angle = (static_cast<float>(i % slices) * tau / slices) + (tau / 8.f), c = std::cos(angle), s = std::sin(angle);
         const minalg::float3x2 mat = {axis, arm1 * c + arm2 * s};
-        for (auto &p : points)
+        for (uint32_t j = 0; j < pointCount; ++j)
+        {
+            auto &p = points[j];
             mesh.vertices.push_back({mul(mat, p) + eps, minalg::float3(0.f)});
+        }
 
         if (i > 0)
         {
-            for (uint32_t j = 1; j < (uint32_t)points.size(); ++j)
+            for (uint32_t j = 1; j < pointCount; ++j)
             {
-                uint32_t i0 = (i - 1) * uint32_t(points.size()) + (j - 1);
-                uint32_t i1 = (i - 0) * uint32_t(points.size()) + (j - 1);
-                uint32_t i2 = (i - 0) * uint32_t(points.size()) + (j - 0);
-                uint32_t i3 = (i - 1) * uint32_t(points.size()) + (j - 0);
+                uint32_t i0 = (i - 1) * pointCount + (j - 1);
+                uint32_t i1 = (i - 0) * pointCount + (j - 1);
+                uint32_t i2 = (i - 0) * pointCount + (j - 0);
+                uint32_t i3 = (i - 1) * pointCount + (j - 0);
                 mesh.triangles.push_back({i0, i1, i2});
                 mesh.triangles.push_back({i0, i2, i3});
             }

@@ -5,45 +5,38 @@
 
 namespace tinygizmo
 {
+static minalg::float2 mace_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
+
+static gizmo_mesh_component xComponent{
+    geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points, _countof(mace_points)),
+    {1, 0.5f, 0.5f, 1.f},
+    {1, 0, 0, 1.f},
+    {1, 0, 0},
+};
+static gizmo_mesh_component yComponent{
+    geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points, _countof(mace_points)),
+    {0.5f, 1, 0.5f, 1.f},
+    {0, 1, 0, 1.f},
+    {0, 1, 0},
+};
+static gizmo_mesh_component zComponent{
+    geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points, _countof(mace_points)),
+    {0.5f, 0.5f, 1, 1.f},
+    {0, 0, 1, 1.f},
+    {0, 0, 1},
+};
 
 class ScaleGizmo : Gizmo
 {
+
+public:
+    static void addMeshes(Gizmo *gizmo)
+    {
+        gizmo->addMesh(&xComponent);
+        gizmo->addMesh(&yComponent);
+        gizmo->addMesh(&zComponent);
+    }
 };
-
-static void addMeshes(Gizmo *gizmo)
-{
-    static std::vector<minalg::float2> mace_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
-
-    {
-        static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points),
-            {1, 0.5f, 0.5f, 1.f},
-            {1, 0, 0, 1.f},
-            {1, 0, 0},
-        };
-        gizmo->addMesh(&component);
-    }
-
-    {
-        static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, mace_points),
-            {0.5f, 1, 0.5f, 1.f},
-            {0, 1, 0, 1.f},
-            {0, 1, 0},
-        };
-        gizmo->addMesh(&component);
-    }
-
-    {
-        static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, mace_points),
-            {0.5f, 0.5f, 1, 1.f},
-            {0, 0, 1, 1.f},
-            {0, 0, 1},
-        };
-        gizmo->addMesh(&component);
-    }
-}
 
 bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_uniform)
 {
@@ -52,7 +45,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
     if (created)
     {
-        addMeshes(gizmo);
+        ScaleGizmo::addMeshes(gizmo);
     }
 
     auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());

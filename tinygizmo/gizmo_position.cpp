@@ -74,14 +74,14 @@ static void axis_translation_dragger(Gizmo &gizmo,
 static gizmo_mesh_component *
 get_mesh(interact component)
 {
-    static std::vector<minalg::float2> arrow_points = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+    static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
 
     switch (component)
     {
     case interact::translate_x:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points),
+            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
             {1, 0.5f, 0.5f, 1.f},
             {1, 0, 0, 1.f},
             {1, 0, 0},
@@ -92,7 +92,7 @@ get_mesh(interact component)
     case interact::translate_y:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points),
+            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 1, 0.5f, 1.f},
             {0, 1, 0, 1.f},
             {0, 1, 0},
@@ -103,7 +103,7 @@ get_mesh(interact component)
     case interact::translate_z:
     {
         static gizmo_mesh_component component{
-            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points),
+            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
             {0.5f, 0.5f, 1, 1.f},
             {0, 0, 1, 1.f},
             {0, 0, 1},
