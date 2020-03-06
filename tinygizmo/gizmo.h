@@ -7,24 +7,6 @@
 namespace tinygizmo
 {
 
-struct gizmo_mesh_component
-{
-    geometry_mesh mesh;
-    minalg::float4 base_color;
-    minalg::float4 highlight_color;
-    minalg::float3 axis;
-
-    std::function<void(class Gizmo &gizmo,
-                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
-        dragger;
-};
-
-struct gizmo_renderable
-{
-    geometry_mesh mesh;
-    minalg::float4 color;
-};
-
 struct GizmoState
 {
     // Offset from position of grabbed object to coordinates of clicked point
@@ -36,6 +18,61 @@ struct GizmoState
     {
         return click - original.position;
     }
+};
+
+struct gizmo_mesh_component
+{
+    geometry_mesh mesh;
+    minalg::float4 base_color;
+    minalg::float4 highlight_color;
+    minalg::float3 axis;
+
+    std::function<void(class Gizmo &gizmo,
+                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>
+        dragger;
+
+    bool axisScaleDragger(
+        const ray &ray, const GizmoState &state,
+        const bool uniform,
+        minalg::float3 *scale)
+    {
+        // auto axis = m_mesh->axis;
+        auto plane_tangent = cross(axis, state.original.position - fpalg::size_cast<minalg::float3>(ray.origin));
+        auto plane_normal = cross(axis, plane_tangent);
+
+        // If an intersection exists between the ray and the plane, place the object at that point
+        const float denom = dot(ray.direction, plane_normal);
+        if (std::abs(denom) == 0)
+        {
+            return false;
+        }
+
+        const float t = dot(state.original.position - ray.origin, plane_normal) / denom;
+        if (t < 0)
+        {
+            return false;
+        }
+
+        auto distance = ray.origin + ray.direction * t;
+
+        auto hoge = (distance - state.click);
+        auto offset_on_axis = hoge * axis;
+        flush_to_zero(offset_on_axis);
+        // std::cout << offset_on_axis << std::endl;
+        auto new_scale = state.original.scale + offset_on_axis;
+
+        if (uniform)
+            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
+        else
+            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
+        return true;
+    }
+};
+
+struct gizmo_renderable
+{
+    geometry_mesh mesh;
+    minalg::float4 color;
 };
 
 class Gizmo
@@ -144,11 +181,6 @@ public:
     }
 
     virtual void onClick(const ray &ray, const rigid_transform &t) {}
-
-    virtual void axisScaleDragger(
-        const gizmo_application_state &state, const ray &ray,
-        const minalg::float3 &center, const bool uniform,
-        minalg::float3 *scale) {}
 
     virtual void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) {}
 };

@@ -52,49 +52,6 @@ public:
         }
     }
 
-    void axisScaleDragger(
-        const gizmo_application_state &state, const ray &ray,
-        const minalg::float3 &center, const bool uniform,
-        minalg::float3 *scale) override
-    {
-        if (!m_active)
-        {
-            return;
-        }
-
-        auto axis = m_mesh->axis;
-        auto plane_tangent = cross(axis, center - fpalg::size_cast<minalg::float3>(state.camera_position));
-        auto plane_normal = cross(axis, plane_tangent);
-
-        // If an intersection exists between the ray and the plane, place the object at that point
-        const float denom = dot(ray.direction, plane_normal);
-        if (std::abs(denom) == 0)
-        {
-            return;
-        }
-
-        const float t = dot(center - ray.origin, plane_normal) / denom;
-        if (t < 0)
-        {
-            return;
-        }
-
-        auto distance = ray.origin + ray.direction * t;
-
-        auto hoge = (distance - m_state.click);
-        auto offset_on_axis = hoge * axis;
-        flush_to_zero(offset_on_axis);
-        // std::cout << offset_on_axis << std::endl;
-        auto new_scale = m_state.original.scale + offset_on_axis;
-
-        if (uniform)
-            *scale = minalg::float3(clamp(dot(distance, new_scale), 0.01f, 1000.f));
-        else
-            *scale = minalg::float3(clamp(new_scale.x, 0.01f, 1000.f), clamp(new_scale.y, 0.01f, 1000.f), clamp(new_scale.z, 0.01f, 1000.f));
-        if (state.snap_scale)
-            *scale = snap(*scale, state.snap_scale);
-    }
-
     void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) override
     {
         // rigid_transform withoutScale(t.orientation, t.position);
@@ -141,7 +98,18 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         gizmo->end();
     }
 
-    gizmo->axisScaleDragger(impl->state, fpalg::size_cast<ray>(localRay), fpalg::size_cast<minalg::float3>(trs.transform.position), is_uniform, &fpalg::size_cast<minalg::float3>(trs.scale));
+    auto active = gizmo->mesh();
+    if (active)
+    {
+        if (active->axisScaleDragger(fpalg::size_cast<ray>(localRay), gizmo->m_state, is_uniform, &fpalg::size_cast<minalg::float3>(trs.scale)))
+
+        {
+            // if (impl->state.snap_scale)
+            // {
+            //     trs.scale = snap(trs.scale, impl->state.snap_scale);
+            // }
+        }
+    }
 
     gizmo->draw(trs.transform, impl->drawlist);
 
