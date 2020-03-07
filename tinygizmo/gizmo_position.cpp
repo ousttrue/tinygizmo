@@ -25,9 +25,8 @@ static bool planeDragger(const GizmoComponent &component, const ray &worldRay, c
         return false;
     }
 
-    // maybe NP + D = 0 plane. to D=0
     auto Q = (state.original.position + state.offset) - worldRay.origin;
-    const float t = dot(Q, N) / NR;
+    const float t = dot(N, Q) / NR;
     if (t < 0)
     {
         return false;
