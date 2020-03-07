@@ -92,8 +92,9 @@ constexpr const char lit_shader[] = R"(
 
 	float4 psMain(VS_OUTPUT _in): SV_Target
     {
-        float3 light = float3(1, 1, 1) * max(dot(_in.normal, normalize(uEye - _in.world)), 0.50) + 0.25;
-        return _in.color * float4(light, 1);
+        float3 light = float3(0.5, 0.3, 0.3) * max(dot(_in.normal, normalize(uEye - _in.world)), 0.50) + 0.25;
+        // return _in.color * float4(light, 1);
+        return float4(light, 1);
     }
 )";
 
@@ -444,6 +445,7 @@ public:
 
     void clearDepth()
     {
+        m_d3d11.ClearDepth();
     }
 
     void endFrame()

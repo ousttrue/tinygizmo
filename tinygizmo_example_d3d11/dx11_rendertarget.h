@@ -82,4 +82,12 @@ struct Dx11RenderTarget
             };
         context->RSSetViewports(_countof(viewports), viewports);
     }
+
+    void ClearDepth(ID3D11DeviceContext *context, float depth, UINT8 stencil)
+    {
+        if (m_dsv)
+        {
+            context->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, depth, stencil);
+        }
+    }
 };

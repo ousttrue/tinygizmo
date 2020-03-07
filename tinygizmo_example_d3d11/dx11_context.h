@@ -10,6 +10,7 @@ public:
     void* Create(void *hwnd);
     // Get I3D11DeviceContext that has backbuffer
     void* NewFrame(int windowWidth, int windowHeight);
+    void ClearDepth();
     void Present();
     void *GetDeviceContext();
 };

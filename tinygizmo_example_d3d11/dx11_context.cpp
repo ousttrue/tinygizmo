@@ -111,6 +111,11 @@ public:
         return m_context.Get();
     }
 
+    void ClearDepth()
+    {
+        m_rt.ClearDepth(m_context.Get(), 1.0f, 0xff);
+    }
+
     void Present()
     {
         m_swapchain->Present(1, 0);
@@ -136,6 +141,11 @@ void *DX11Context::Create(void *hwnd)
 void *DX11Context::NewFrame(int width, int height)
 {
     return m_impl->NewFrame(width, height);
+}
+
+void DX11Context::ClearDepth()
+{
+    m_impl->ClearDepth();
 }
 
 void DX11Context::Present()

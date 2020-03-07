@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
         vertices.push_back(v);
     }
     teapot_mesh->uploadMesh(device,
-        vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(vertex)), sizeof(vertex),
-        teapot_triangles, sizeof(teapot_triangles), sizeof(teapot_triangles[0]),
-        false);
+                            vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(vertex)), sizeof(vertex),
+                            teapot_triangles, sizeof(teapot_triangles), sizeof(teapot_triangles[0]),
+                            false);
 
     // teapot a
     fpalg::TRS teapot_a{
@@ -130,16 +130,8 @@ int main(int argc, char *argv[])
         }
         lastState = state;
 
-        //
-        // draw
-        //
-        auto context = renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(context, teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
-        teapot_mesh->draw(context, teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
-
         {
             //
-            // after scene, before gizmo draw
             // manipulate and update gizmo
             //
             switch (mode)
@@ -170,11 +162,18 @@ int main(int argc, char *argv[])
                 &pVertices, &verticesBytes, &vertexStride,
                 &pIndices, &indicesBytes, &indexStride);
 
-            gizmo_mesh->uploadMesh(device, 
-                pVertices, verticesBytes, vertexStride,
-                pIndices, indicesBytes, indexStride,
-                true);
+            gizmo_mesh->uploadMesh(device,
+                                   pVertices, verticesBytes, vertexStride,
+                                   pIndices, indicesBytes, indexStride,
+                                   true);
         }
+
+        //
+        // draw
+        //
+        auto context = renderer.beginFrame(state.Width, state.Height);
+        teapot_mesh->draw(context, teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(context, teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
 
         //
         // gizmo after xform user draw
