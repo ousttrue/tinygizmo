@@ -8,85 +8,78 @@
 namespace tinygizmo
 {
 
-class RotationGizmoComponent : public GizmoComponent
+static bool dragger(const GizmoComponent &component,
+                    const ray &ray, const GizmoState &state, float snapVaue,
+                    rigid_transform *out, bool is_local)
 {
-public:
-    using GizmoComponent::GizmoComponent;
+    auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
 
-    bool axisRotationDragger(
-        const ray &ray, const GizmoState &state,
-        bool is_local, float snap_rotation,
-        rigid_transform *out) const override
+    //auto axis = m_activeMesh->axis;
+    rigid_transform original_pose = {start_orientation, state.original.position};
+    auto the_axis = original_pose.transform_vector(component.axis);
+    minalg::float4 the_plane = {the_axis, -dot(the_axis, state.click)};
+
+    float t;
+    if (!intersect_ray_plane(ray, the_plane, &t))
     {
-        auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
-
-        //auto axis = m_activeMesh->axis;
-        rigid_transform original_pose = {start_orientation, state.original.position};
-        auto the_axis = original_pose.transform_vector(axis);
-        minalg::float4 the_plane = {the_axis, -dot(the_axis, state.click)};
-
-        float t;
-        if (!intersect_ray_plane(ray, the_plane, &t))
-        {
-            // *out = start_orientation;
-            return false;
-        }
-
-        auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
-        auto arm1 = normalize(state.click - center_of_rotation);
-        auto arm2 = normalize(ray.origin + ray.direction * t - center_of_rotation);
-
-        float d = dot(arm1, arm2);
-        if (d > 0.999f)
-        {
-            // *out = start_orientation;
-            return false;
-        }
-
-        float angle = std::acos(d);
-        if (angle < 0.001f)
-        {
-            // *out = start_orientation;
-            return false;
-        }
-
-        if (snap_rotation)
-        {
-            auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snap_rotation);
-            out->orientation = qmul(snapped, start_orientation);
-            return true;
-        }
-        else
-        {
-            auto a = normalize(cross(arm1, arm2));
-            out->orientation = qmul(rotation_quat(a, angle), start_orientation);
-            return true;
-        }
+        // *out = start_orientation;
+        return false;
     }
-};
+
+    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
+    auto arm1 = normalize(state.click - center_of_rotation);
+    auto arm2 = normalize(ray.origin + ray.direction * t - center_of_rotation);
+
+    float d = dot(arm1, arm2);
+    if (d > 0.999f)
+    {
+        // *out = start_orientation;
+        return false;
+    }
+
+    float angle = std::acos(d);
+    if (angle < 0.001f)
+    {
+        // *out = start_orientation;
+        return false;
+    }
+
+    if (snapVaue)
+    {
+        auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapVaue);
+        out->orientation = qmul(snapped, start_orientation);
+        return true;
+    }
+    else
+    {
+        auto a = normalize(cross(arm1, arm2));
+        out->orientation = qmul(rotation_quat(a, angle), start_orientation);
+        return true;
+    }
+}
 
 static minalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
-static RotationGizmoComponent componentX{
+static GizmoComponent componentX{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, _countof(ring_points), 0.003f),
     {1, 0.5f, 0.5f, 1.f},
     {1, 0, 0, 1.f},
     {1, 0, 0},
 };
-static RotationGizmoComponent componentY{
+static GizmoComponent componentY{
     geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 32, ring_points, _countof(ring_points), -0.003f),
     {0.5f, 1, 0.5f, 1.f},
     {0, 1, 0, 1.f},
     {0, 1, 0},
 };
-static RotationGizmoComponent componentZ{
+static GizmoComponent componentZ{
     geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 32, ring_points, _countof(ring_points)),
     {0.5f, 0.5f, 1, 1.f},
     {0, 0, 1, 1.f},
     {0, 0, 1},
 };
 
-static const RotationGizmoComponent *orientation_components[] = {
+static const GizmoComponent *orientation_components[] = {
     &componentX,
     &componentY,
     &componentZ,
@@ -201,10 +194,10 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     }
 
     // drag
-    auto active = gizmo->activeMesh();
+    auto active = gizmo->active();
     if (active)
     {
-        active->axisRotationDragger(worldRay, gizmo->m_state, is_local, impl->state.snap_rotation, &gizmoTransform);
+        dragger(*active, worldRay, gizmo->m_state, impl->state.snap_rotation, &gizmoTransform, is_local);
         if (!is_local)
         {
             t.orientation = qmul(gizmoTransform.orientation, gizmo->m_state.original.orientation);

@@ -7,100 +7,98 @@
 namespace tinygizmo
 {
 
-class TranslationPlaneGizmoComponent : public GizmoComponent
+struct Param
 {
-public:
-    using GizmoComponent::GizmoComponent;
-
-    void translationDragger(const ray &worldRay, const GizmoState &state,
-                            const minalg::float3 &N, float snapValue,
-                            minalg::float3 &point) const override
-    {
-        // If an intersection exists between the ray and the plane, place the object at that point
-        const float NR = dot(N, worldRay.direction);
-        if (std::abs(NR) == 0)
-        {
-            // not intersect
-            return;
-        }
-
-        // maybe NP + D = 0 plane. to D=0
-        auto Q = (state.original.position + state.click) - worldRay.origin;
-        const float t = dot(Q, N) / NR;
-        if (t < 0)
-        {
-            return;
-        }
-
-        {
-            auto intersect = worldRay.origin + worldRay.direction * t;
-            // restore D and click delta
-            point = intersect - state.click;
-        }
-        if (snapValue)
-        {
-            point = snap(point, snapValue);
-        }
-    }
-}; // namespace tinygizmo
-
-class TranslationAxisGizmoComponent : public TranslationPlaneGizmoComponent
-{
-public:
-    using TranslationPlaneGizmoComponent::TranslationPlaneGizmoComponent;
-
-    void translationDragger(const ray &r, const GizmoState &state,
-                            const minalg::float3 &axis, float snapValue,
-                            minalg::float3 &point) const override
-    {
-        // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
-        auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(r.origin));
-        auto plane_normal = cross(axis, plane_tangent);
-        TranslationPlaneGizmoComponent::translationDragger(r, state, plane_normal, snapValue, point);
-
-        // Constrain object motion to be along the desired axis
-        point = state.original.position + axis * dot(point - state.original.position, axis);
-    }
+    minalg::float3 N;
+    float snapValue;
 };
 
+static bool planeDragger(const GizmoComponent &component, const ray &worldRay, const GizmoState &state, float snapValue,
+                         rigid_transform *out, const minalg::float3 &N)
+{
+
+    // If an intersection exists between the ray and the plane, place the object at that point
+    const float NR = dot(N, worldRay.direction);
+    if (std::abs(NR) == 0)
+    {
+        // not intersect
+        return false;
+    }
+
+    // maybe NP + D = 0 plane. to D=0
+    auto Q = (state.original.position + state.click) - worldRay.origin;
+    const float t = dot(Q, N) / NR;
+    if (t < 0)
+    {
+        return false;
+    }
+
+    {
+        auto intersect = worldRay.origin + worldRay.direction * t;
+        // restore D and click delta
+        out->position = intersect - state.click;
+    }
+    if (snapValue)
+    {
+        out->position = snap(out->position, snapValue);
+    }
+    return true;
+}
+
+static bool axisDragger(const GizmoComponent &component, const ray &r, const GizmoState &state, float snapValue,
+                        rigid_transform *out, const minalg::float3 &axis)
+{
+    // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
+    auto plane_tangent = minalg::cross(axis, out->position - castalg::ref_cast<minalg::float3>(r.origin));
+    auto plane_normal = cross(axis, plane_tangent);
+    if (!planeDragger(component, r, state, snapValue, out, plane_normal))
+    {
+        return false;
+    }
+
+    // Constrain object motion to be along the desired axis
+    out->position = state.original.position + axis * dot(out->position - state.original.position, axis);
+    return true;
+}
+
 static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
-static TranslationAxisGizmoComponent componentX(
+static GizmoComponent componentX{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
     {1, 0.5f, 0.5f, 1.f},
     {1, 0, 0, 1.f},
-    {1, 0, 0});
-static TranslationAxisGizmoComponent componentY(
+    {1, 0, 0}};
+static GizmoComponent componentY{
     geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
     {0.5f, 1, 0.5f, 1.f},
     {0, 1, 0, 1.f},
-    {0, 1, 0});
-static TranslationAxisGizmoComponent componentZ(
+    {0, 1, 0}};
+static GizmoComponent componentZ{
     geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
     {0.5f, 0.5f, 1, 1.f},
     {0, 0, 1, 1.f},
-    {0, 0, 1});
-static TranslationPlaneGizmoComponent componentXY(
+    {0, 0, 1}};
+static GizmoComponent componentXY{
     geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
     {1, 1, 0.5f, 0.5f},
     {1, 1, 0, 0.6f},
-    {0, 0, 1});
-static TranslationPlaneGizmoComponent componentYZ(
+    {0, 0, 1}};
+static GizmoComponent componentYZ{
     geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
     {0.5f, 1, 1, 0.5f},
     {0, 1, 1, 0.6f},
-    {1, 0, 0});
-static TranslationPlaneGizmoComponent componentZX(
+    {1, 0, 0}};
+static GizmoComponent componentZX{
     geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
     {1, 0.5f, 1, 0.5f},
     {1, 0, 1, 0.6f},
-    {0, 1, 0});
-static TranslationPlaneGizmoComponent componentXYZ(
+    {0, 1, 0}};
+static GizmoComponent componentXYZ{
     geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
     {0.9f, 0.9f, 0.9f, 0.25f},
     {1, 1, 1, 0.35f},
-    {0, 0, 0});
+    {0, 0, 0}};
 
-static const TranslationPlaneGizmoComponent *translation_components[] = {
+static const GizmoComponent *translation_components[] = {
     &componentX,
     &componentY,
     &componentZ,
@@ -134,7 +132,7 @@ void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
     {
         gizmo_renderable r{
             .mesh = c->mesh,
-            .color = (c == gizmo.activeMesh()) ? c->base_color : c->highlight_color,
+            .color = (c == gizmo.active()) ? c->base_color : c->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -190,11 +188,17 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // drag
-    auto activeMesh = gizmo->activeMesh();
-    if (activeMesh)
+    auto active = gizmo->active();
+    if (active)
     {
-        // activeMesh->translationDragger(impl->state, worldRay, t.position);
-        activeMesh->translationDragger(worldRay, gizmo->m_state, gizmo->m_state.axis, impl->state.snap_translation, t.position);
+        if (active == &componentX || active == &componentY || active == &componentZ)
+        {
+            axisDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
+        }
+        else
+        {
+            planeDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
+        }
     }
 
     // draw
