@@ -108,21 +108,80 @@ static std::pair<const GizmoComponent *, float> raycast(const ray &ray)
     return std::make_pair(updated_state, best_t);
 }
 
+static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
+                               const rigid_transform &gizmoTransform, const GizmoComponent *active,
+                               const GizmoState &state)
+{
+    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
+
+    // For non-local transformations, we only present one rotation ring
+    // and draw an arrow from the center of the gizmo to indicate the degree of rotation
+    gizmo_renderable r{
+        .mesh = active->mesh,
+        .color = active->base_color,
+    };
+    for (auto &v : r.mesh.vertices)
+    {
+        v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+        v.normal = transform_vector(modelMatrix, v.normal);
+    }
+    drawlist.push_back(r);
+
+    {
+        // Create orthonormal basis for drawing the arrow
+        auto a = qrot(gizmoTransform.orientation, state.originalPositionToClick());
+        auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+
+        // Ad-hoc geometry
+        minalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
+        auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points, _countof(arrow_points));
+
+        gizmo_renderable r;
+        r.mesh = geo;
+        r.color = minalg::float4(1);
+        for (auto &v : r.mesh.vertices)
+        {
+            v.position = transform_coord(modelMatrix, v.position);
+            v.normal = transform_vector(modelMatrix, v.normal);
+        }
+        drawlist.push_back(r);
+    }
+}
+
+static void draw(std::vector<gizmo_renderable> &drawlist, const minalg::float4x4 &modelMatrix, const GizmoComponent *active)
+{
+    for (auto mesh : orientation_components)
+    {
+        gizmo_renderable r{
+            .mesh = mesh->mesh,
+            .color = (mesh == active) ? mesh->base_color : mesh->highlight_color,
+        };
+        for (auto &v : r.mesh.vertices)
+        {
+            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
+            v.normal = transform_vector(modelMatrix, v.normal);
+        }
+        drawlist.push_back(r);
+    }
+}
+
 bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
-    auto &t = fpalg::size_cast<rigid_transform>(trs);
-    assert(length2(t.orientation) > float(1e-6));
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
     if (created)
     {
         // TODO
     }
 
+    auto &t = fpalg::size_cast<rigid_transform>(trs);
+    assert(length2(t.orientation) > float(1e-6));
     auto worldRay = impl->get_ray();
     rigid_transform gizmoTransform = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position); // Orientation is local by default
-    auto localRay = detransform(gizmoTransform, worldRay);
+
+    // raycast
     {
+        auto localRay = detransform(gizmoTransform, worldRay);
         auto [mesh, best_t] = raycast(localRay);
 
         // update
@@ -157,59 +216,14 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     }
 
     // draw
-    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
+    if (!is_local && active)
     {
-        if (!is_local && active)
-        {
-            // For non-local transformations, we only present one rotation ring
-            // and draw an arrow from the center of the gizmo to indicate the degree of rotation
-            gizmo_renderable r{
-                .mesh = active->mesh,
-                .color = active->base_color,
-            };
-            for (auto &v : r.mesh.vertices)
-            {
-                v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-                v.normal = transform_vector(modelMatrix, v.normal);
-            }
-            impl->drawlist.push_back(r);
-
-            {
-                // Create orthonormal basis for drawing the arrow
-                auto a = qrot(gizmoTransform.orientation, gizmo->m_state.originalPositionToClick());
-                auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
-
-                // Ad-hoc geometry
-                minalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
-                auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points, _countof(arrow_points));
-
-                gizmo_renderable r;
-                r.mesh = geo;
-                r.color = minalg::float4(1);
-                for (auto &v : r.mesh.vertices)
-                {
-                    v.position = transform_coord(modelMatrix, v.position);
-                    v.normal = transform_vector(modelMatrix, v.normal);
-                }
-                impl->drawlist.push_back(r);
-            }
-        }
-        else
-        {
-            for (auto mesh : orientation_components)
-            {
-                gizmo_renderable r{
-                    .mesh = mesh->mesh,
-                    .color = (mesh == active) ? mesh->base_color : mesh->highlight_color,
-                };
-                for (auto &v : r.mesh.vertices)
-                {
-                    v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-                    v.normal = transform_vector(modelMatrix, v.normal);
-                }
-                impl->drawlist.push_back(r);
-            }
-        }
+        draw_global_active(impl->drawlist, gizmoTransform, active, gizmo->m_state);
+    }
+    else
+    {
+        auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
+        draw(impl->drawlist, modelMatrix, active);
     }
 
     return gizmo->isHoverOrActive();
