@@ -93,10 +93,6 @@ public:
             .axis = axis,
         };
     }
-
-    virtual void onClick(const ray &ray, const rigid_transform &t) {}
-
-    virtual void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) {}
 };
 
 } // namespace tinygizmo

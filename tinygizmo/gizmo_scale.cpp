@@ -68,67 +68,70 @@ static ScaleGizmoComponent zComponent{
     {0, 0, 1},
 };
 
-static GizmoComponent *g_meshes[] = {&xComponent, &yComponent, &zComponent};
+static const GizmoComponent *g_meshes[] = {&xComponent, &yComponent, &zComponent};
 
-class ScaleGizmo : public Gizmo
+std::pair<const GizmoComponent *, float> raycast(const ray &ray, const rigid_transform &t)
 {
-public:
-    void onClick(const ray &ray, const rigid_transform &t) override
+    const GizmoComponent *updated_state = nullptr;
+    float best_t = std::numeric_limits<float>::infinity();
+    for (auto mesh : g_meshes)
     {
-        GizmoComponent *updated_state = nullptr;
-        float best_t = std::numeric_limits<float>::infinity();
-        for (auto mesh : g_meshes)
+        auto t = intersect_ray_mesh(ray, mesh->mesh);
+        if (t < best_t)
         {
-            auto t = intersect_ray_mesh(ray, mesh->mesh);
-            if (t < best_t)
-            {
-                updated_state = mesh;
-                best_t = t;
-            }
-        }
-
-        if (updated_state)
-        {
-            rigid_transform withoutScale(t.orientation, t.position);
-            begin(updated_state, withoutScale.transform_point(ray.origin + ray.direction * best_t), t, {});
+            updated_state = mesh;
+            best_t = t;
         }
     }
+    return std::make_pair(updated_state, best_t);
+}
 
-    void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist) override
+void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist, const GizmoComponent *activeMesh)
+{
+    for (auto mesh : g_meshes)
     {
-        for (auto mesh : g_meshes)
+        gizmo_renderable r{
+            .mesh = mesh->mesh,
+            .color = (mesh == activeMesh) ? mesh->base_color : mesh->highlight_color,
+        };
+        for (auto &v : r.mesh.vertices)
         {
-            gizmo_renderable r{
-                .mesh = mesh->mesh,
-                .color = (mesh == m_activeMesh) ? mesh->base_color : mesh->highlight_color,
-            };
-            for (auto &v : r.mesh.vertices)
-            {
-                // transform local coordinates into worldspace
-                v.position = fpalg::size_cast<minalg::float3>(t.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(v.position)));
-                v.normal = fpalg::size_cast<minalg::float3>(t.ApplyDirection(fpalg::size_cast<std::array<float, 3>>(v.normal)));
-            }
-            drawlist.push_back(r);
+            // transform local coordinates into worldspace
+            v.position = fpalg::size_cast<minalg::float3>(t.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(v.position)));
+            v.normal = fpalg::size_cast<minalg::float3>(t.ApplyDirection(fpalg::size_cast<std::array<float, 3>>(v.normal)));
         }
+        drawlist.push_back(r);
     }
-};
+}
 
 bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_uniform)
 {
     auto &impl = ctx.m_impl;
 
     auto id = hash_fnv1a(name);
-    auto gizmo = impl->get_gizmo(id);
-    if (!gizmo)
+    auto [gizmo, created] = impl->get_or_create_gizmo(id);
+    if (!created)
     {
-        gizmo = new ScaleGizmo();
-        impl->add_gizmo(id, gizmo);
     }
 
-    auto localRay = impl->get_local_ray(trs.transform);
+    // auto localRay = impl->get_local_ray(trs.transform);
+    auto worldRay = impl->get_ray();
+    auto &t = fpalg::size_cast<rigid_transform>(trs);
+    auto withoutScale = rigid_transform(t.orientation, t.position);
+    auto localRay = detransform(withoutScale, worldRay);
+
     if (impl->state.has_clicked)
     {
-        gizmo->onClick(fpalg::size_cast<ray>(localRay), fpalg::size_cast<rigid_transform>(trs));
+        auto &t = fpalg::size_cast<rigid_transform>(trs);
+        auto [updated_state, best_t] = raycast(fpalg::size_cast<ray>(localRay), t);
+
+        if (updated_state)
+        {
+            auto hit = localRay.origin + (localRay.direction * best_t);
+            rigid_transform withoutScale(t.orientation, t.position);
+            auto worldHit = withoutScale.transform_point(hit);
+            gizmo->begin(updated_state, worldHit, t, {});
+        }
     }
     else if (impl->state.has_released)
     {
@@ -148,7 +151,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         }
     }
 
-    gizmo->draw(trs.transform, impl->drawlist);
+    draw(trs.transform, impl->drawlist, gizmo->activeMesh());
 
     return gizmo->isHoverOrActive();
 }

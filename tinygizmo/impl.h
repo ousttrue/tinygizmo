@@ -17,21 +17,6 @@ private:
 public:
     std::vector<gizmo_renderable> drawlist;
 
-    Gizmo *get_gizmo(uint32_t id)
-    {
-        auto found = m_gizmos.find(id);
-        if (found == m_gizmos.end())
-        {
-            return nullptr;
-        }
-        return found->second.get();
-    }
-
-    void add_gizmo(uint32_t id, Gizmo *gizmo)
-    {
-        m_gizmos.insert(std::make_pair(id, gizmo));
-    }
-
     std::pair<Gizmo *, bool> get_or_create_gizmo(uint32_t id)
     {
         auto found = m_gizmos.find(id);
