@@ -5,6 +5,9 @@
 
 namespace fpalg
 {
+using float3 = std::array<float, 3>;
+using float4 = std::array<float, 4>;
+
 template <typename T, typename S>
 inline const T &size_cast(const S &s)
 {
@@ -36,6 +39,19 @@ inline std::array<float, 3> operator*(const std::array<float, 3> &lhs, float sca
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
 
+inline float Dot(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+{
+    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
+}
+
+inline float3 Cross(const float3 &lhs, const float3 &rhs)
+{
+    return {
+        lhs[1] * rhs[2] - lhs[2] * rhs[1],
+        lhs[2] * rhs[0] - lhs[0] * rhs[2],
+        lhs[0] * rhs[1] - lhs[1] * rhs[0]};
+}
+
 inline float Dot4(const float *row, const float *col, int step = 1)
 {
     auto i = 0;
@@ -48,11 +64,6 @@ inline float Dot4(const float *row, const float *col, int step = 1)
     auto d = row[3] * col[i];
     auto value = a + b + c + d;
     return value;
-}
-
-inline float Dot(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
-{
-    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
 }
 
 inline std::array<float, 16> Mul(const float l[16], const float r[16])
@@ -437,6 +448,41 @@ inline float operator>>(const Ray &ray, const Plane &plane)
     auto Q = plane.pointOnPlane - ray.origin;
     auto NQ = Dot(plane.normal, Q);
     return NQ / NV;
+}
+
+struct Triangle
+{
+    float3 v0;
+    float3 v1;
+    float3 v2;
+};
+
+// float intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2)
+inline float operator>>(const Ray &ray, const Triangle &triangle)
+{
+    auto e1 = triangle.v1 - triangle.v0;
+    auto e2 = triangle.v2 - triangle.v0;
+    auto h = Cross(ray.direction, e2);
+    auto a = Dot(e1, h);
+    if (std::abs(a) == 0)
+        return std::numeric_limits<float>::infinity();
+
+    float f = 1 / a;
+    auto s = ray.origin - triangle.v0;
+    auto u = f * Dot(s, h);
+    if (u < 0 || u > 1)
+        return std::numeric_limits<float>::infinity();
+
+    auto q = Cross(s, e1);
+    auto v = f * Dot(ray.direction, q);
+    if (v < 0 || u + v > 1)
+        return std::numeric_limits<float>::infinity();
+
+    auto t = f * Dot(e2, q);
+    if (t < 0)
+        return std::numeric_limits<float>::infinity();
+
+    return t;
 }
 
 } // namespace fpalg

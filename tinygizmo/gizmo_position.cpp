@@ -3,7 +3,6 @@
 #include "minalg.h"
 #include "impl.h"
 
-
 namespace tinygizmo
 {
 
@@ -100,13 +99,30 @@ static const GizmoComponent *translation_components[] = {
     &componentXYZ,
 };
 
-std::pair<const GizmoComponent *, float> raycast(const ray &ray)
+float RayIntersectMesh(const fpalg::Ray &ray, const geometry_mesh &mesh)
+{
+    float best_t = std::numeric_limits<float>::infinity();
+    for (auto &tri : mesh.triangles)
+    {
+        auto t = ray >> fpalg::Triangle{
+            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[0]].position), 
+            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[1]].position), 
+            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[2]].position)};
+        if (t < best_t)
+        {
+            best_t = t;
+        }
+    }
+    return best_t;
+}
+
+std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
 {
     const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
     {
-        auto t = intersect_ray_mesh(ray, c->mesh);
+        auto t = RayIntersectMesh(ray, c->mesh);
         if (t < best_t)
         {
             updated_state = c;
@@ -116,9 +132,9 @@ std::pair<const GizmoComponent *, float> raycast(const ray &ray)
     return std::make_pair(updated_state, best_t);
 }
 
-void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
+void draw(Gizmo &gizmo, gizmo_system_impl *impl, const fpalg::Transform &p)
 {
-    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(p.matrix());
+    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(p.Matrix());
 
     for (auto c : translation_components)
     {
@@ -143,9 +159,9 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     // raycast
     auto worldRay = impl->get_ray();
     auto &t = fpalg::size_cast<rigid_transform>(trs);
-    auto withoutScale = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-    auto localRay = detransform(withoutScale, worldRay);
-    auto [mesh, best_t] = raycast(localRay);
+    auto gizmoTransform = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+    auto localRay = detransform(gizmoTransform, worldRay);
+    auto [mesh, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay));
     gizmo->hover(mesh != nullptr);
 
     // update
@@ -154,7 +170,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
         if (mesh)
         {
             auto localHit = localRay.origin + localRay.direction * best_t;
-            auto worldOffset = withoutScale.transform_point(localHit) - t.position;
+            auto worldOffset = gizmoTransform.transform_point(localHit) - t.position;
             minalg::float3 axis;
             if (mesh == &componentXYZ)
             {
@@ -164,7 +180,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
             {
                 if (is_local)
                 {
-                    axis = withoutScale.transform_vector(mesh->axis);
+                    axis = gizmoTransform.transform_vector(mesh->axis);
                 }
                 else
                 {
@@ -194,7 +210,9 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // draw
-    draw(*gizmo, impl, withoutScale);
+    draw(*gizmo, impl,
+         {fpalg::size_cast<fpalg::float3>(gizmoTransform.position),
+          fpalg::size_cast<fpalg::float4>(gizmoTransform.orientation)});
 
     return gizmo->isHoverOrActive();
 }
