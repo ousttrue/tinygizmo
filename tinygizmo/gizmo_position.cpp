@@ -139,10 +139,10 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // raycast
-    auto worldRay = impl->get_ray();
+    auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
     auto &t = fpalg::size_cast<rigid_transform>(trs);
-    auto gizmoTransform = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-    auto localRay = detransform(gizmoTransform, worldRay);
+    auto gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.transform.position, {0, 0, 0, 1}};
+    auto localRay = worldRay.Transform(gizmoTransform.Inverse());
     auto [mesh, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay));
     gizmo->hover(mesh != nullptr);
 
@@ -151,8 +151,9 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     {
         if (mesh)
         {
-            auto localHit = localRay.origin + localRay.direction * best_t;
-            auto worldOffset = gizmoTransform.transform_point(localHit) - t.position;
+            auto localHit = localRay.SetT(best_t);
+            using fpalg::operator-;
+            auto worldOffset = gizmoTransform.ApplyPosition(localHit) - trs.transform.position;
             minalg::float3 axis;
             if (mesh == &componentXYZ)
             {
@@ -162,14 +163,14 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
             {
                 if (is_local)
                 {
-                    axis = gizmoTransform.transform_vector(mesh->axis);
+                    axis = fpalg::size_cast<minalg::float3>(gizmoTransform.ApplyDirection(fpalg::size_cast<fpalg::float3>(mesh->axis)));
                 }
                 else
                 {
                     axis = mesh->axis;
                 }
             }
-            gizmo->begin(mesh, worldOffset, t, axis);
+            gizmo->begin(mesh, fpalg::size_cast<minalg::float3>(worldOffset), t, axis);
         }
     }
     else if (impl->state.has_released)
@@ -192,9 +193,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // draw
-    draw(*gizmo, impl,
-         {fpalg::size_cast<fpalg::float3>(gizmoTransform.position),
-          fpalg::size_cast<fpalg::float4>(gizmoTransform.orientation)});
+    draw(*gizmo, impl, gizmoTransform);
 
     return gizmo->isHoverOrActive();
 }

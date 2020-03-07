@@ -22,24 +22,24 @@ inline T &size_cast(S &s)
     return *((T *)&s);
 }
 
-inline std::array<float, 3> operator-(const std::array<float, 3> &lhs)
+inline float3 operator-(const float3 &lhs)
 {
     return {-lhs[0], -lhs[1], -lhs[2]};
 }
-inline std::array<float, 3> operator+(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+inline float3 operator+(const float3 &lhs, const float3 &rhs)
 {
     return {lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2]};
 }
-inline std::array<float, 3> operator-(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+inline float3 operator-(const float3 &lhs, const float3 &rhs)
 {
     return {lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]};
 }
-inline std::array<float, 3> operator*(const std::array<float, 3> &lhs, float scalar)
+inline float3 operator*(const float3 &lhs, float scalar)
 {
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
 
-inline float Dot(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+inline float Dot(const float3 &lhs, const float3 &rhs)
 {
     return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
 }
@@ -275,7 +275,7 @@ inline void PerspectiveRHDX(float projection[16], float fovYRadians, float aspec
     projection[15] = 0.0f;
 }
 
-inline std::array<float, 4> QuaternionAxisAngle(const std::array<float, 3> &axis, float angle)
+inline float4 QuaternionAxisAngle(const float3 &axis, float angle)
 {
     auto angle_half = angle / 2;
     auto sin = std::sin(angle_half);
@@ -283,12 +283,20 @@ inline std::array<float, 4> QuaternionAxisAngle(const std::array<float, 3> &axis
     return {axis[0] * sin, axis[1] * sin, axis[2] * sin, cos};
 }
 
-inline std::array<float, 4> QuaternionConjugate(const std::array<float, 4> &v)
+inline float4 QuaternionMul(const float4 &lhs, const float4 &rhs)
+{
+    return {lhs[0] * rhs[3] + lhs[3] * rhs[0] + lhs[1] * rhs[2] - lhs[2] * rhs[1],
+            lhs[1] * rhs[3] + lhs[3] * rhs[1] + lhs[2] * rhs[0] - lhs[0] * rhs[2],
+            lhs[2] * rhs[3] + lhs[3] * rhs[2] + lhs[0] * rhs[1] - lhs[1] * rhs[0],
+            lhs[3] * rhs[3] - lhs[0] * rhs[0] - lhs[1] * rhs[1] - lhs[2] * rhs[2]};
+}
+
+inline float4 QuaternionConjugate(const float4 &v)
 {
     return {-v[0], -v[1], -v[2], v[3]};
 }
 
-inline std::array<float, 3> QuaternionXDir(const std::array<float, 4> &v)
+inline float3 QuaternionXDir(const float4 &v)
 {
     auto x = v[0];
     auto y = v[1];
@@ -297,7 +305,7 @@ inline std::array<float, 3> QuaternionXDir(const std::array<float, 4> &v)
     return {w * w + x * x - y * y - z * z, (x * y + z * w) * 2, (z * x - y * w) * 2};
 }
 
-inline std::array<float, 3> QuaternionYDir(const std::array<float, 4> &v)
+inline float3 QuaternionYDir(const float4 &v)
 {
     auto x = v[0];
     auto y = v[1];
@@ -306,7 +314,7 @@ inline std::array<float, 3> QuaternionYDir(const std::array<float, 4> &v)
     return {(x * y - z * w) * 2, w * w - x * x + y * y - z * z, (y * z + x * w) * 2};
 }
 
-inline std::array<float, 3> QuaternionZDir(const std::array<float, 4> &v)
+inline float3 QuaternionZDir(const float4 &v)
 {
     auto x = v[0];
     auto y = v[1];
@@ -315,7 +323,7 @@ inline std::array<float, 3> QuaternionZDir(const std::array<float, 4> &v)
     return {(z * x + y * w) * 2, (y * z - x * w) * 2, w * w - x * x - y * y + z * z};
 }
 
-inline std::array<float, 16> QuaternionMatrix(const std::array<float, 4> &q)
+inline std::array<float, 16> QuaternionMatrix(const float4 &q)
 {
     auto x = QuaternionXDir(q);
     auto y = QuaternionYDir(q);
@@ -327,7 +335,7 @@ inline std::array<float, 16> QuaternionMatrix(const std::array<float, 4> &q)
         0, 0, 0, 1};
 }
 
-inline std::array<float, 16> ScaleMatrix(const std::array<float, 3> &s)
+inline std::array<float, 16> ScaleMatrix(const float3 &s)
 {
     return {
         s[0], 0, 0, 0,
@@ -336,7 +344,7 @@ inline std::array<float, 16> ScaleMatrix(const std::array<float, 3> &s)
         0, 0, 0, 1};
 }
 
-inline std::array<float, 3> QuaternionRotateFloat3(const std::array<float, 4> &q, const std::array<float, 3> &v)
+inline float3 QuaternionRotateFloat3(const float4 &q, const float3 &v)
 {
     auto x = QuaternionXDir(q);
     auto y = QuaternionYDir(q);
@@ -344,7 +352,7 @@ inline std::array<float, 3> QuaternionRotateFloat3(const std::array<float, 4> &q
     return x * v[0] + y * v[1] + z * v[2];
 }
 
-inline std::array<float, 4> operator*(const std::array<float, 4> &lhs, const std::array<float, 4> &rhs)
+inline float4 operator*(const float4 &lhs, const float4 &rhs)
 {
     float ax = lhs[0];
     float ay = lhs[1];
@@ -364,8 +372,8 @@ inline std::array<float, 4> operator*(const std::array<float, 4> &lhs, const std
 
 struct Transform
 {
-    std::array<float, 3> position{0, 0, 0};
-    std::array<float, 4> rotation{0, 0, 0, 1};
+    float3 position{0, 0, 0};
+    float4 rotation{0, 0, 0, 1};
 
     std::array<float, 16> Matrix() const
     {
@@ -383,12 +391,12 @@ struct Transform
         return {inv_t, inv_r};
     }
 
-    std::array<float, 3> ApplyPosition(const std::array<float, 3> &v) const
+    float3 ApplyPosition(const float3 &v) const
     {
         return QuaternionRotateFloat3(rotation, v) + position;
     }
 
-    std::array<float, 3> ApplyDirection(const std::array<float, 3> &v) const
+    float3 ApplyDirection(const float3 &v) const
     {
         return QuaternionRotateFloat3(rotation, v);
     }
@@ -397,7 +405,7 @@ struct Transform
 struct TRS
 {
     Transform transform{};
-    std::array<float, 3> scale{1, 1, 1};
+    float3 scale{1, 1, 1};
 
     std::array<float, 16> Matrix() const
     {
@@ -408,10 +416,10 @@ static_assert(sizeof(TRS) == 40, "TRS");
 
 struct Ray
 {
-    std::array<float, 3> origin;
-    std::array<float, 3> direction;
+    float3 origin;
+    float3 direction;
 
-    Ray ToLocal(const fpalg::Transform &t)
+    Ray ToLocal(const fpalg::Transform &t) const
     {
         auto toLocal = t.Inverse();
         return {
@@ -419,18 +427,26 @@ struct Ray
             fpalg::QuaternionRotateFloat3(toLocal.rotation, direction)};
     }
 
-    std::array<float, 3> SetT(float t)
+    float3 SetT(float t) const
     {
         return origin + direction * t;
+    }
+
+    Ray Transform(const Transform &t) const
+    {
+        return {
+            .origin = t.ApplyPosition(origin),
+            .direction = t.ApplyDirection(direction),
+        };
     }
 };
 
 struct Plane
 {
-    std::array<float, 3> normal;
-    std::array<float, 3> pointOnPlane;
+    float3 normal;
+    float3 pointOnPlane;
 
-    Plane(const std::array<float, 3> &n, const std::array<float, 3> &point_on_plane)
+    Plane(const float3 &n, const float3 &point_on_plane)
         : normal(n), pointOnPlane(point_on_plane)
     {
     }
