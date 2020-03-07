@@ -44,8 +44,8 @@ public:
     }
 
     virtual void translationDragger(const ray &r, const GizmoState &state,
-                         const minalg::float3 &plane_normal, float snapValue,
-                         minalg::float3 &point) const
+                                    const minalg::float3 &plane_normal, float snapValue,
+                                    minalg::float3 &point) const
     {
     }
 };
@@ -59,30 +59,26 @@ struct gizmo_renderable
 class Gizmo
 {
 protected:
-    // Flag to indicate if the gizmo is being actively manipulated
-    bool m_active = false;
     // Flag to indicate if the gizmo is being hovered
     bool m_hover = false;
     // Currently active component
-    const GizmoComponent *m_mesh = nullptr;
+    const GizmoComponent *m_activeMesh = nullptr;
 
 public:
     GizmoState m_state;
 
-    bool isHoverOrActive() const { return m_hover || m_active; }
+    bool isHoverOrActive() const { return m_hover || m_activeMesh; }
     void hover(bool enable) { m_hover = enable; }
-    const GizmoComponent *mesh() const { return m_mesh; }
+    const GizmoComponent *activeMesh() const { return m_activeMesh; }
 
     void end()
     {
-        m_active = false;
-        m_mesh = nullptr;
+        m_activeMesh = nullptr;
     }
 
     void begin(const GizmoComponent *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
     {
-        m_active = true;
-        m_mesh = pMesh;
+        m_activeMesh = pMesh;
         m_state = {
             .click = click,
             .original = t,
@@ -95,7 +91,7 @@ public:
         const minalg::float3 &center, bool is_local,
         minalg::float4 *out)
     {
-        if (!m_active)
+        if (!m_activeMesh)
         {
             return;
         }
@@ -105,7 +101,7 @@ public:
         }
         auto start_orientation = is_local ? m_state.original.orientation : minalg::float4(0, 0, 0, 1);
 
-        auto axis = m_mesh->axis;
+        auto axis = m_activeMesh->axis;
         rigid_transform original_pose = {start_orientation, m_state.original.position};
         auto the_axis = original_pose.transform_vector(axis);
         minalg::float4 the_plane = {the_axis, -dot(the_axis, m_state.click)};

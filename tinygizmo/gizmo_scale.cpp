@@ -100,7 +100,7 @@ public:
         {
             gizmo_renderable r{
                 .mesh = mesh->mesh,
-                .color = (mesh == m_mesh) ? mesh->base_color : mesh->highlight_color,
+                .color = (mesh == m_activeMesh) ? mesh->base_color : mesh->highlight_color,
             };
             for (auto &v : r.mesh.vertices)
             {
@@ -135,7 +135,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
         gizmo->end();
     }
 
-    auto active = gizmo->mesh();
+    auto active = gizmo->activeMesh();
     if (active)
     {
         if (active->dragger(fpalg::size_cast<ray>(localRay), gizmo->m_state, is_uniform, &fpalg::size_cast<rigid_transform>(trs)))

@@ -7,6 +7,8 @@
 
 namespace tinygizmo
 {
+
+
 static minalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
 static GizmoComponent componentX{
@@ -84,7 +86,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     }
 
     // drag
-    auto active = gizmo->mesh();
+    auto active = gizmo->activeMesh();
     if (active)
     {
         gizmo->axisRotationDragger(impl->state, worldRay, t.position, is_local, &gizmoTransform.orientation);
@@ -119,7 +121,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
             {
                 // Create orthonormal basis for drawing the arrow
                 auto a = qrot(gizmoTransform.orientation, gizmo->m_state.originalPositionToClick());
-                auto zDir = normalize(gizmo->mesh()->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+                auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
                 // Ad-hoc geometry
                 minalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};

@@ -134,7 +134,7 @@ void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
     {
         gizmo_renderable r{
             .mesh = c->mesh,
-            .color = (c == gizmo.mesh()) ? c->base_color : c->highlight_color,
+            .color = (c == gizmo.activeMesh()) ? c->base_color : c->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -190,7 +190,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // drag
-    auto activeMesh = gizmo->mesh();
+    auto activeMesh = gizmo->activeMesh();
     if (activeMesh)
     {
         // activeMesh->translationDragger(impl->state, worldRay, t.position);
