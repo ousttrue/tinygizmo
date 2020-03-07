@@ -58,12 +58,6 @@ public:
     }
 };
 
-struct gizmo_renderable
-{
-    geometry_mesh mesh;
-    minalg::float4 color;
-};
-
 class Gizmo
 {
 protected:
