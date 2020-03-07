@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "minalg.h"
+#include <fpalg.h>
 
 namespace tinygizmo
 {
@@ -28,6 +29,8 @@ struct geometry_mesh
         vertices.clear();
         triangles.clear();
     }
+
+    float rayIntersect(const fpalg::Ray &ray) const;
 };
 
 } // namespace tinygizmo

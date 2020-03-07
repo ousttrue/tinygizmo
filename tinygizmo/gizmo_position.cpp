@@ -1,5 +1,4 @@
 #include "tinygizmo.h"
-#include "utilmath.h"
 #include "minalg.h"
 #include "impl.h"
 
@@ -99,30 +98,13 @@ static const GizmoComponent *translation_components[] = {
     &componentXYZ,
 };
 
-float RayIntersectMesh(const fpalg::Ray &ray, const geometry_mesh &mesh)
-{
-    float best_t = std::numeric_limits<float>::infinity();
-    for (auto &tri : mesh.triangles)
-    {
-        auto t = ray >> fpalg::Triangle{
-            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[0]].position), 
-            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[1]].position), 
-            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[2]].position)};
-        if (t < best_t)
-        {
-            best_t = t;
-        }
-    }
-    return best_t;
-}
-
 std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
 {
     const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
     {
-        auto t = RayIntersectMesh(ray, c->mesh);
+        auto t = c->mesh.rayIntersect(ray);
         if (t < best_t)
         {
             updated_state = c;
