@@ -48,6 +48,14 @@ public:
                                     minalg::float3 &point) const
     {
     }
+
+    virtual bool axisRotationDragger(
+        const ray &ray, const GizmoState &state,
+        bool is_local, float snap_rotation,
+        rigid_transform *out) const
+    {
+        return false;
+    }
 };
 
 struct gizmo_renderable
@@ -84,65 +92,6 @@ public:
             .original = t,
             .axis = axis,
         };
-    }
-
-    void axisRotationDragger(
-        const gizmo_application_state &state, const ray &r,
-        const minalg::float3 &center, bool is_local,
-        minalg::float4 *out)
-    {
-        if (!m_activeMesh)
-        {
-            return;
-        }
-        if (!state.mouse_left)
-        {
-            return;
-        }
-        auto start_orientation = is_local ? m_state.original.orientation : minalg::float4(0, 0, 0, 1);
-
-        auto axis = m_activeMesh->axis;
-        rigid_transform original_pose = {start_orientation, m_state.original.position};
-        auto the_axis = original_pose.transform_vector(axis);
-        minalg::float4 the_plane = {the_axis, -dot(the_axis, m_state.click)};
-
-        float t;
-        if (!intersect_ray_plane(r, the_plane, &t))
-        {
-            *out = start_orientation;
-            return;
-        }
-
-        auto center_of_rotation = m_state.original.position + the_axis * dot(the_axis, m_state.originalPositionToClick());
-        auto arm1 = normalize(m_state.click - center_of_rotation);
-        auto arm2 = normalize(r.origin + r.direction * t - center_of_rotation);
-
-        float d = dot(arm1, arm2);
-        if (d > 0.999f)
-        {
-            *out = start_orientation;
-            return;
-        }
-
-        float angle = std::acos(d);
-        if (angle < 0.001f)
-        {
-            *out = start_orientation;
-            return;
-        }
-
-        if (state.snap_rotation)
-        {
-            auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, state.snap_rotation);
-            *out = qmul(snapped, start_orientation);
-            return;
-        }
-        else
-        {
-            auto a = normalize(cross(arm1, arm2));
-            *out = qmul(rotation_quat(a, angle), start_orientation);
-            return;
-        }
     }
 
     virtual void onClick(const ray &ray, const rigid_transform &t) {}
