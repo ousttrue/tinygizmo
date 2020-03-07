@@ -10,10 +10,6 @@ namespace tinygizmo
 static void plane_translation_dragger(Gizmo &gizmo,
                                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)
 {
-    // Mouse clicked
-    if (state.has_clicked)
-        gizmo.m_state.original.position = point;
-
     if (state.mouse_left)
     {
         // Define the plane to contain the original position of the object
@@ -142,11 +138,11 @@ void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
-    auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // raycast
     auto worldRay = impl->get_ray();
+    auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto withoutScale = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     auto localRay = detransform(withoutScale, worldRay);
     auto [mesh, best_t] = raycast(localRay);
@@ -157,10 +153,8 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     {
         if (mesh)
         {
-            auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-            auto ray = detransform(p, worldRay);
-
-            auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
+            auto localHit = localRay.origin + localRay.direction * best_t;
+            auto worldHit = withoutScale.transform_vector(localHit);
             minalg::float3 axis;
             if (mesh == &componentXYZ)
             {
@@ -170,15 +164,14 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
             {
                 if (is_local)
                 {
-                    // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-                    axis = p.transform_vector(mesh->axis);
+                    axis = withoutScale.transform_vector(mesh->axis);
                 }
                 else
                 {
                     axis = mesh->axis;
                 }
             }
-            gizmo->begin(mesh, offset, t, axis);
+            gizmo->begin(mesh, worldHit, t, axis);
         }
     }
     else if (impl->state.has_released)
@@ -187,7 +180,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     }
 
     // drag
-    gizmo->translationDragger(impl->state, impl->get_ray(), t.position);
+    gizmo->translationDragger(impl->state, worldRay, t.position);
 
     // draw
     draw(*gizmo, impl, withoutScale);
