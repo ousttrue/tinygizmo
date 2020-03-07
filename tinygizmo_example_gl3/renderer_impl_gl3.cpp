@@ -155,12 +155,12 @@ Model::~Model()
 void Model::uploadMesh(void *,
                        const void *vertices, uint32_t verticesSize, uint32_t vertexStride,
                        const void *indices, uint32_t indicesSize, uint32_t indexSize,
-                       bool is_local)
+                       bool is_dynamic)
 {
     m_impl->upload_mesh(
         vertices, verticesSize, vertexStride,
         indices, indicesSize, indexSize,
-        is_local);
+        is_dynamic);
 }
 
 void Model::draw(void *, const float *model, const float *vp, const float *eye)

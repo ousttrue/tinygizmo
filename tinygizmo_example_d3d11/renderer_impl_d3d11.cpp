@@ -116,7 +116,7 @@ static ComPtr<ID3DBlob> LoadCompileShader(const std::string &src, const char *na
 struct ConstantBuffer
 {
     std::array<float, 16> model;
-    std::array<float, 16> viewProjection;    
+    std::array<float, 16> viewProjection;
     std::array<float, 3> eye;
     float padding;
 };
@@ -198,7 +198,7 @@ public:
                const std::array<float, 16> &viewProj,
                const std::array<float, 16> &model)
     {
-        if(!m_vs)
+        if (!m_vs)
         {
             return;
         }
@@ -231,35 +231,90 @@ class ModelImpl
     ComPtr<ID3D11Buffer> m_ib;
     DXGI_FORMAT m_indexFormat = DXGI_FORMAT_R32_UINT;
     int m_indexCount = 0;
-    bool m_isDynamic = false;
 
 public:
-    void upload_mesh(ID3D11Device *device,
-                     const uint8_t *pVertices, uint32_t verticesBytes, uint32_t vertexStride,
-                     const uint8_t *pIndices, uint32_t indicesBytes, uint32_t indexStride,
-                     bool isDynamic = false)
+    void upload_dynamic_mesh(ID3D11Device *device,
+                             const uint8_t *pVertices, uint32_t verticesBytes, uint32_t vertexStride,
+                             const uint8_t *pIndices, uint32_t indicesBytes, uint32_t indexStride)
     {
-        m_isDynamic = isDynamic;
+        ComPtr<ID3D11DeviceContext> context;
+        device->GetImmediateContext(&context);
+
         if (!m_shader)
         {
             m_shader.reset(new Shader);
-            if (m_isDynamic)
+            if (!m_shader->initialize(device,
+                                      gizmo_shader, "vsMain",
+                                      gizmo_shader, "psMain"))
             {
-                if (!m_shader->initialize(device,
-                                          gizmo_shader, "vsMain",
-                                          gizmo_shader, "psMain"))
-                {
-                    return;
-                }
+                return;
             }
-            else
+        }
+        if (!m_vb)
+        {
+            D3D11_BUFFER_DESC desc{
+                .ByteWidth = sizeof(Vertex) * 65535,
+                .Usage = D3D11_USAGE_DYNAMIC,
+                .BindFlags = D3D11_BIND_VERTEX_BUFFER,
+                .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+            };
+            if (FAILED(device->CreateBuffer(&desc, nullptr, &m_vb)))
             {
-                if (!m_shader->initialize(device,
-                                          lit_shader, "vsMain",
-                                          lit_shader, "psMain"))
-                {
-                    return;
-                }
+                return;
+            }
+        }
+        {
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            context->Map(m_vb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+            memcpy(mapped.pData, pVertices, verticesBytes);
+            context->Unmap(m_vb.Get(), 0);
+        }
+
+        m_indexCount = indicesBytes / indexStride;
+        if (!m_ib)
+        {
+            switch (indexStride)
+            {
+            case 4:
+                m_indexFormat = DXGI_FORMAT_R32_UINT;
+                break;
+            case 2:
+                m_indexFormat = DXGI_FORMAT_R16_UINT;
+                break;
+            default:
+                throw;
+            }
+            D3D11_BUFFER_DESC desc = {
+                .ByteWidth = indexStride * 65535,
+                .Usage = D3D11_USAGE_DYNAMIC,
+                .BindFlags = D3D11_BIND_INDEX_BUFFER,
+                .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+            };
+            if (FAILED(device->CreateBuffer(&desc, nullptr, &m_ib)))
+            {
+                return;
+            }
+        }
+        {
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            context->Map(m_ib.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+            memcpy(mapped.pData, pIndices, indicesBytes);
+            context->Unmap(m_ib.Get(), 0);
+        }
+    }
+
+    void upload_static_mesh(ID3D11Device *device,
+                            const uint8_t *pVertices, uint32_t verticesBytes, uint32_t vertexStride,
+                            const uint8_t *pIndices, uint32_t indicesBytes, uint32_t indexStride)
+    {
+        if (!m_shader)
+        {
+            m_shader.reset(new Shader);
+            if (!m_shader->initialize(device,
+                                      lit_shader, "vsMain",
+                                      lit_shader, "psMain"))
+            {
+                return;
             }
         }
         if (!m_vb)
@@ -345,12 +400,20 @@ Model::~Model()
 void Model::uploadMesh(void *device,
                        const void *vertices, uint32_t verticesSize, uint32_t vertexStride,
                        const void *indices, uint32_t indicesSize, uint32_t indexSize,
-                       bool is_local)
+                       bool is_dynamic)
 {
-    m_impl->upload_mesh((ID3D11Device *)device,
-                        (const uint8_t *)vertices, verticesSize, vertexStride,
-                        (const uint8_t *)indices, indicesSize, indexSize,
-                        is_local);
+    if (is_dynamic)
+    {
+        m_impl->upload_dynamic_mesh((ID3D11Device *)device,
+                                    (const uint8_t *)vertices, verticesSize, vertexStride,
+                                    (const uint8_t *)indices, indicesSize, indexSize);
+    }
+    else
+    {
+        m_impl->upload_static_mesh((ID3D11Device *)device,
+                                   (const uint8_t *)vertices, verticesSize, vertexStride,
+                                   (const uint8_t *)indices, indicesSize, indexSize);
+    }
 }
 
 void Model::draw(void *context, const float *model, const float *vp, const float *eye)

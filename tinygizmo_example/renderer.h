@@ -12,7 +12,7 @@ public:
     void uploadMesh(void *device,
         const void *vertices, uint32_t verticesSize, uint32_t vertexStride,
         const void *indices, uint32_t indicesSize, uint32_t indexSize,
-        bool is_local);
+        bool is_dynamic);
     void draw(void *context, const float *model, const float *vp, const float *eye);
 };
 
