@@ -29,7 +29,7 @@ static bool dragger(const GizmoComponent &component,
 
     auto distance = ray.origin + ray.direction * t;
 
-    auto hoge = (distance - state.click);
+    auto hoge = (distance - state.offset);
     auto offset_on_axis = hoge * component.axis;
     flush_to_zero(offset_on_axis);
     // std::cout << offset_on_axis << std::endl;

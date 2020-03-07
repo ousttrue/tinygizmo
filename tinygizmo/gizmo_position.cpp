@@ -26,7 +26,7 @@ static bool planeDragger(const GizmoComponent &component, const ray &worldRay, c
     }
 
     // maybe NP + D = 0 plane. to D=0
-    auto Q = (state.original.position + state.click) - worldRay.origin;
+    auto Q = (state.original.position + state.offset) - worldRay.origin;
     const float t = dot(Q, N) / NR;
     if (t < 0)
     {
@@ -36,7 +36,7 @@ static bool planeDragger(const GizmoComponent &component, const ray &worldRay, c
     {
         auto intersect = worldRay.origin + worldRay.direction * t;
         // restore D and click delta
-        out->position = intersect - state.click;
+        out->position = intersect - state.offset;
     }
     if (snapValue)
     {
@@ -162,7 +162,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
         if (mesh)
         {
             auto localHit = localRay.origin + localRay.direction * best_t;
-            auto worldHit = withoutScale.transform_vector(localHit);
+            auto worldOffset = withoutScale.transform_point(localHit) - t.position;
             minalg::float3 axis;
             if (mesh == &componentXYZ)
             {
@@ -179,7 +179,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
                     axis = mesh->axis;
                 }
             }
-            gizmo->begin(mesh, worldHit, t, axis);
+            gizmo->begin(mesh, worldOffset, t, axis);
         }
     }
     else if (impl->state.has_released)

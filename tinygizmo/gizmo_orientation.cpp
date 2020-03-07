@@ -17,7 +17,7 @@ static bool dragger(const GizmoComponent &component,
     //auto axis = m_activeMesh->axis;
     rigid_transform original_pose = {start_orientation, state.original.position};
     auto the_axis = original_pose.transform_vector(component.axis);
-    minalg::float4 the_plane = {the_axis, -dot(the_axis, state.click)};
+    minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
 
     float t;
     if (!intersect_ray_plane(ray, the_plane, &t))
@@ -27,7 +27,7 @@ static bool dragger(const GizmoComponent &component,
     }
 
     auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
-    auto arm1 = normalize(state.click - center_of_rotation);
+    auto arm1 = normalize(state.offset - center_of_rotation);
     auto arm2 = normalize(ray.origin + ray.direction * t - center_of_rotation);
 
     float d = dot(arm1, arm2);

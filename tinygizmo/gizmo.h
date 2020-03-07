@@ -10,13 +10,13 @@ namespace tinygizmo
 struct GizmoState
 {
     // Offset from position of grabbed object to coordinates of clicked point
-    minalg::float3 click;
+    minalg::float3 offset;
     rigid_transform original;
     minalg::float3 axis;
 
     minalg::float3 originalPositionToClick() const
     {
-        return click - original.position;
+        return offset - original.position;
     }
 };
 
@@ -48,11 +48,11 @@ public:
         m_active = nullptr;
     }
 
-    void begin(const GizmoComponent *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
+    void begin(const GizmoComponent *pMesh, const minalg::float3 &offset, const rigid_transform &t, const minalg::float3 &axis)
     {
         m_active = pMesh;
         m_state = {
-            .click = click,
+            .offset = offset,
             .original = t,
             .axis = axis,
         };

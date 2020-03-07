@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <limits>
 #include <math.h>
 
 namespace fpalg
@@ -26,12 +27,16 @@ inline std::array<float, 3> operator+(const std::array<float, 3> &lhs, const std
 {
     return {lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2]};
 }
+inline std::array<float, 3> operator-(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+{
+    return {lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]};
+}
 inline std::array<float, 3> operator*(const std::array<float, 3> &lhs, float scalar)
 {
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
 
-inline float Dot(const float *row, const float *col, int step = 1)
+inline float Dot4(const float *row, const float *col, int step = 1)
 {
     auto i = 0;
     auto a = row[0] * col[i];
@@ -45,24 +50,29 @@ inline float Dot(const float *row, const float *col, int step = 1)
     return value;
 }
 
+inline float Dot(const std::array<float, 3> &lhs, const std::array<float, 3> &rhs)
+{
+    return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
+}
+
 inline std::array<float, 16> Mul(const float l[16], const float r[16])
 {
-    auto _11 = Dot(&l[0], &r[0], 4);
-    auto _12 = Dot(&l[0], &r[1], 4);
-    auto _13 = Dot(&l[0], &r[2], 4);
-    auto _14 = Dot(&l[0], &r[3], 4);
-    auto _21 = Dot(&l[4], &r[0], 4);
-    auto _22 = Dot(&l[4], &r[1], 4);
-    auto _23 = Dot(&l[4], &r[2], 4);
-    auto _24 = Dot(&l[4], &r[3], 4);
-    auto _31 = Dot(&l[8], &r[0], 4);
-    auto _32 = Dot(&l[8], &r[1], 4);
-    auto _33 = Dot(&l[8], &r[2], 4);
-    auto _34 = Dot(&l[8], &r[3], 4);
-    auto _41 = Dot(&l[12], &r[0], 4);
-    auto _42 = Dot(&l[12], &r[1], 4);
-    auto _43 = Dot(&l[12], &r[2], 4);
-    auto _44 = Dot(&l[12], &r[3], 4);
+    auto _11 = Dot4(&l[0], &r[0], 4);
+    auto _12 = Dot4(&l[0], &r[1], 4);
+    auto _13 = Dot4(&l[0], &r[2], 4);
+    auto _14 = Dot4(&l[0], &r[3], 4);
+    auto _21 = Dot4(&l[4], &r[0], 4);
+    auto _22 = Dot4(&l[4], &r[1], 4);
+    auto _23 = Dot4(&l[4], &r[2], 4);
+    auto _24 = Dot4(&l[4], &r[3], 4);
+    auto _31 = Dot4(&l[8], &r[0], 4);
+    auto _32 = Dot4(&l[8], &r[1], 4);
+    auto _33 = Dot4(&l[8], &r[2], 4);
+    auto _34 = Dot4(&l[8], &r[3], 4);
+    auto _41 = Dot4(&l[12], &r[0], 4);
+    auto _42 = Dot4(&l[12], &r[1], 4);
+    auto _43 = Dot4(&l[12], &r[2], 4);
+    auto _44 = Dot4(&l[12], &r[3], 4);
 
     return std::array<float, 16>{
         _11,
@@ -398,10 +408,35 @@ struct Ray
             fpalg::QuaternionRotateFloat3(toLocal.rotation, direction)};
     }
 
-    std::array<float, 3> HitPosition(float t)
+    std::array<float, 3> SetT(float t)
     {
         return origin + direction * t;
     }
 };
+
+struct Plane
+{
+    std::array<float, 3> normal;
+    float d = 0;
+
+    Plane(const std::array<float, 3> &n, const std::array<float, 3> &point_on_plane)
+        : normal(n)
+    {
+        d = -Dot(n, point_on_plane);
+    }
+};
+
+inline float operator>>(const Ray &ray, const Plane &plane)
+{
+    auto NV = Dot(plane.normal, ray.direction);
+    if (NV == 0)
+    {
+        // not intersect
+        return std::numeric_limits<float>::infinity();
+    }
+
+    auto NQ = Dot(plane.normal, ray.origin);
+    return (-NQ - plane.d) / NV;
+}
 
 } // namespace fpalg
