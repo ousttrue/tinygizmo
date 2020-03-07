@@ -6,6 +6,7 @@
 
 namespace tinygizmo
 {
+
 enum class interact
 {
     none,
@@ -71,82 +72,82 @@ static void axis_translation_dragger(Gizmo &gizmo,
     }
 }
 
+static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+static GizmoComponent componentX(
+    geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
+    {1, 0.5f, 0.5f, 1.f},
+    {1, 0, 0, 1.f},
+    {1, 0, 0},
+    axis_translation_dragger);
+static GizmoComponent componentY(
+    geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
+    {0.5f, 1, 0.5f, 1.f},
+    {0, 1, 0, 1.f},
+    {0, 1, 0},
+    axis_translation_dragger);
+static GizmoComponent componentZ(
+    geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
+    {0.5f, 0.5f, 1, 1.f},
+    {0, 0, 1, 1.f},
+    {0, 0, 1},
+    axis_translation_dragger);
+static GizmoComponent componentXY(
+    geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
+    {1, 1, 0.5f, 0.5f},
+    {1, 1, 0, 0.6f},
+    {0, 0, 1},
+    plane_translation_dragger);
+static GizmoComponent componentYZ(
+    geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
+    {0.5f, 1, 1, 0.5f},
+    {0, 1, 1, 0.6f},
+    {1, 0, 0},
+    plane_translation_dragger);
+static GizmoComponent componentZX(
+    geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
+    {1, 0.5f, 1, 0.5f},
+    {1, 0, 1, 0.6f},
+    {0, 1, 0},
+    plane_translation_dragger);
+static GizmoComponent componentXYZ(
+    geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
+    {0.9f, 0.9f, 0.9f, 0.25f},
+    {1, 1, 1, 0.35f},
+    {0, 0, 0},
+    plane_translation_dragger);
+
 static GizmoComponent *
 get_mesh(interact c)
 {
-    static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
-
     switch (c)
     {
     case interact::translate_x:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
-            {1, 0.5f, 0.5f, 1.f},
-            {1, 0, 0, 1.f},
-            {1, 0, 0},
-            axis_translation_dragger);
-        return &component;
+        return &componentX;
     }
     case interact::translate_y:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
-            {0.5f, 1, 0.5f, 1.f},
-            {0, 1, 0, 1.f},
-            {0, 1, 0},
-            axis_translation_dragger);
-        return &component;
+        return &componentY;
     }
     case interact::translate_z:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_lathed_geometry({0, 0, 1}, {1, 0, 0}, {0, 1, 0}, 16, arrow_points, _countof(arrow_points)),
-            {0.5f, 0.5f, 1, 1.f},
-            {0, 0, 1, 1.f},
-            {0, 0, 1},
-            axis_translation_dragger);
-        return &component;
+        return &componentZ;
     }
     case interact::translate_xy:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_box_geometry({0.25, 0.25, -0.01f}, {0.75f, 0.75f, 0.01f}),
-            {1, 1, 0.5f, 0.5f},
-            {1, 1, 0, 0.6f},
-            {0, 0, 1},
-            plane_translation_dragger);
-        return &component;
+        return &componentXY;
     }
     case interact::translate_yz:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_box_geometry({-0.01f, 0.25, 0.25}, {0.01f, 0.75f, 0.75f}),
-            {0.5f, 1, 1, 0.5f},
-            {0, 1, 1, 0.6f},
-            {1, 0, 0},
-            plane_translation_dragger);
-        return &component;
+        return &componentYZ;
     }
     case interact::translate_zx:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_box_geometry({0.25, -0.01f, 0.25}, {0.75f, 0.01f, 0.75f}),
-            {1, 0.5f, 1, 0.5f},
-            {1, 0, 1, 0.6f},
-            {0, 1, 0},
-            plane_translation_dragger);
-        return &component;
+        return &componentZX;
     }
     case interact::translate_xyz:
     {
-        static GizmoComponent component(
-            geometry_mesh::make_box_geometry({-0.05f, -0.05f, -0.05f}, {0.05f, 0.05f, 0.05f}),
-            {0.9f, 0.9f, 0.9f, 0.25f},
-            {1, 1, 1, 0.35f},
-            {0, 0, 0},
-            plane_translation_dragger);
-        return &component;
+        return &componentXYZ;
     }
     }
 
@@ -154,14 +155,14 @@ get_mesh(interact c)
 }
 
 // check hit
-void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &t, bool is_local)
+std::pair<GizmoComponent *, float> raycast(const ray &worldRay, Gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &t, bool is_local)
 {
     auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+    auto ray = detransform(p, worldRay);
 
     interact updated_state = interact::none;
-    auto ray = detransform(p, impl->get_ray());
-
     float best_t = std::numeric_limits<float>::infinity();
+    bool hover = false;
     for (auto c : translation_components)
     {
         auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
@@ -169,42 +170,12 @@ void raycast(gizmo_system_impl *impl, Gizmo &gizmo, const gizmo_application_stat
         {
             updated_state = c;
             best_t = t;
+            hover = true;
         }
     }
+    gizmo.hover(hover);
 
-    if (impl->state.has_clicked)
-    {
-        auto mesh = get_mesh(updated_state);
-        if (mesh)
-        {
-            auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
-            minalg::float3 axis;
-            if (updated_state == interact::translate_xyz)
-            {
-                axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(state.camera_orientation));
-            }
-            else
-            {
-                if (is_local)
-                {
-                    // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
-                    axis = p.transform_vector(mesh->axis);
-                }
-                else
-                {
-                    axis = mesh->axis;
-                }
-            }
-            gizmo.begin(mesh, offset, t, axis);
-        }
-    }
-
-    gizmo.hover(best_t != std::numeric_limits<float>::infinity());
-
-    if (impl->state.has_released)
-    {
-        gizmo.end();
-    }
+    return std::make_pair(get_mesh(updated_state), best_t);
 }
 
 void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
@@ -234,7 +205,42 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // update
-    raycast(impl, *gizmo, impl->state, t, is_local);
+    auto worldRay = impl->get_ray();
+    auto [mesh, best_t] = raycast(worldRay, *gizmo, impl->state, t, is_local);
+
+    if (impl->state.has_clicked)
+    {
+        if (mesh)
+        {
+            auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+            auto ray = detransform(p, worldRay);
+
+            auto offset = is_local ? p.transform_vector(ray.origin + ray.direction * best_t) : ray.origin + ray.direction * best_t;
+            minalg::float3 axis;
+            if (mesh == &componentXYZ)
+            {
+                axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.camera_orientation));
+            }
+            else
+            {
+                if (is_local)
+                {
+                    // minalg::float3 local_axes[3]{qxdir(p.orientation), qydir(p.orientation), qzdir(p.orientation)};
+                    axis = p.transform_vector(mesh->axis);
+                }
+                else
+                {
+                    axis = mesh->axis;
+                }
+            }
+            gizmo->begin(mesh, offset, t, axis);
+        }
+    }
+
+    if (impl->state.has_released)
+    {
+        gizmo->end();
+    }
 
     // drag
     gizmo->translationDragger(impl->state, impl->get_ray(), t.position);
