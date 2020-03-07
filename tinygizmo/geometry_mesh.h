@@ -29,8 +29,8 @@ struct geometry_mesh
         vertices.clear();
         triangles.clear();
     }
-
-    float rayIntersect(const fpalg::Ray &ray) const;
 };
+
+float operator>>(const fpalg::Ray &ray, const geometry_mesh &mesh);
 
 } // namespace tinygizmo

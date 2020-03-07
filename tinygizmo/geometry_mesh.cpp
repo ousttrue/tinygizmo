@@ -147,15 +147,15 @@ geometry_mesh geometry_mesh::make_lathed_geometry(const minalg::float3 &axis, co
     return mesh;
 }
 
-float geometry_mesh::rayIntersect(const fpalg::Ray &ray) const
+float operator>>(const fpalg::Ray &ray, const geometry_mesh &mesh)
 {
     float best_t = std::numeric_limits<float>::infinity();
-    for (auto &tri : triangles)
+    for (auto &tri : mesh.triangles)
     {
         auto t = ray >> fpalg::Triangle{
-                            fpalg::size_cast<fpalg::float3>(vertices[tri[0]].position),
-                            fpalg::size_cast<fpalg::float3>(vertices[tri[1]].position),
-                            fpalg::size_cast<fpalg::float3>(vertices[tri[2]].position)};
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[0]].position),
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[1]].position),
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[2]].position)};
         if (t < best_t)
         {
             best_t = t;

@@ -104,7 +104,7 @@ std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : translation_components)
     {
-        auto t = c->mesh.rayIntersect(ray);
+        auto t = ray >> c->mesh;
         if (t < best_t)
         {
             updated_state = c;
