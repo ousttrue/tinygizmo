@@ -109,7 +109,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     // draw
     auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
 
-    std::array<GizmoComponent *, 1> world_and_active = {
+    std::array<const GizmoComponent *, 1> world_and_active = {
         gizmo->mesh(),
     };
     if (!is_local && gizmo->mesh())

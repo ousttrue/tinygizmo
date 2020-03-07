@@ -43,7 +43,7 @@ public:
     virtual bool dragger(
         const ray &ray, const GizmoState &state,
         const bool uniform,
-        rigid_transform *t)
+        rigid_transform *t) const
     {
         return false;
     }
@@ -63,14 +63,14 @@ protected:
     // Flag to indicate if the gizmo is being hovered
     bool m_hover = false;
     // Currently active component
-    GizmoComponent *m_mesh = nullptr;
+    const GizmoComponent *m_mesh = nullptr;
 
 public:
     GizmoState m_state;
 
     bool isHoverOrActive() const { return m_hover || m_active; }
     void hover(bool enable) { m_hover = enable; }
-    GizmoComponent *mesh() { return m_mesh; }
+    const GizmoComponent *mesh() const { return m_mesh; }
 
     void end()
     {
@@ -78,7 +78,7 @@ public:
         m_mesh = nullptr;
     }
 
-    void begin(GizmoComponent *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
+    void begin(const GizmoComponent *pMesh, const minalg::float3 &click, const rigid_transform &t, const minalg::float3 &axis)
     {
         m_active = true;
         m_mesh = pMesh;

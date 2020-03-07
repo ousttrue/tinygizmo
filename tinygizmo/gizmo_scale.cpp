@@ -13,7 +13,7 @@ public:
     bool dragger(
         const ray &ray, const GizmoState &state,
         const bool uniform,
-        rigid_transform *out) override
+        rigid_transform *out) const override
     {
         // auto axis = m_mesh->axis;
         auto plane_tangent = cross(axis, state.original.position - fpalg::size_cast<minalg::float3>(ray.origin));

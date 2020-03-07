@@ -7,28 +7,6 @@
 namespace tinygizmo
 {
 
-enum class interact
-{
-    none,
-    translate_x,
-    translate_y,
-    translate_z,
-    translate_yz,
-    translate_zx,
-    translate_xy,
-    translate_xyz,
-};
-
-static const interact translation_components[] = {
-    interact::translate_x,
-    interact::translate_y,
-    interact::translate_z,
-    interact::translate_xy,
-    interact::translate_yz,
-    interact::translate_zx,
-    interact::translate_xyz,
-};
-
 static void plane_translation_dragger(Gizmo &gizmo,
                                       const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)
 {
@@ -116,66 +94,30 @@ static GizmoComponent componentXYZ(
     {0, 0, 0},
     plane_translation_dragger);
 
-static GizmoComponent *
-get_mesh(interact c)
+static const GizmoComponent *translation_components[] = {
+    &componentX,
+    &componentY,
+    &componentZ,
+    &componentXY,
+    &componentYZ,
+    &componentZX,
+    &componentXYZ,
+};
+
+std::pair<const GizmoComponent *, float> raycast(const ray &ray)
 {
-    switch (c)
-    {
-    case interact::translate_x:
-    {
-        return &componentX;
-    }
-    case interact::translate_y:
-    {
-        return &componentY;
-    }
-    case interact::translate_z:
-    {
-        return &componentZ;
-    }
-    case interact::translate_xy:
-    {
-        return &componentXY;
-    }
-    case interact::translate_yz:
-    {
-        return &componentYZ;
-    }
-    case interact::translate_zx:
-    {
-        return &componentZX;
-    }
-    case interact::translate_xyz:
-    {
-        return &componentXYZ;
-    }
-    }
-
-    return nullptr;
-}
-
-// check hit
-std::pair<GizmoComponent *, float> raycast(const ray &worldRay, Gizmo &gizmo, const gizmo_application_state &state, const rigid_transform &t, bool is_local)
-{
-    auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-    auto ray = detransform(p, worldRay);
-
-    interact updated_state = interact::none;
+    const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
-    bool hover = false;
     for (auto c : translation_components)
     {
-        auto t = intersect_ray_mesh(ray, get_mesh(c)->mesh);
+        auto t = intersect_ray_mesh(ray, c->mesh);
         if (t < best_t)
         {
             updated_state = c;
             best_t = t;
-            hover = true;
         }
     }
-    gizmo.hover(hover);
-
-    return std::make_pair(get_mesh(updated_state), best_t);
+    return std::make_pair(updated_state, best_t);
 }
 
 void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
@@ -184,10 +126,9 @@ void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 
     for (auto c : translation_components)
     {
-        auto mesh = get_mesh(c);
         gizmo_renderable r{
-            .mesh = mesh->mesh,
-            .color = (mesh == gizmo.mesh()) ? mesh->base_color : mesh->highlight_color,
+            .mesh = c->mesh,
+            .color = (c == gizmo.mesh()) ? c->base_color : c->highlight_color,
         };
         for (auto &v : r.mesh.vertices)
         {
@@ -204,10 +145,14 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     auto &t = castalg::ref_cast<rigid_transform>(trs);
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
-    // update
+    // raycast
     auto worldRay = impl->get_ray();
-    auto [mesh, best_t] = raycast(worldRay, *gizmo, impl->state, t, is_local);
+    auto withoutScale = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
+    auto localRay = detransform(withoutScale, worldRay);
+    auto [mesh, best_t] = raycast(localRay);
+    gizmo->hover(mesh != nullptr);
 
+    // update
     if (impl->state.has_clicked)
     {
         if (mesh)
@@ -236,8 +181,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
             gizmo->begin(mesh, offset, t, axis);
         }
     }
-
-    if (impl->state.has_released)
+    else if (impl->state.has_released)
     {
         gizmo->end();
     }
@@ -246,8 +190,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     gizmo->translationDragger(impl->state, impl->get_ray(), t.position);
 
     // draw
-    auto p = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
-    draw(*gizmo, impl, p);
+    draw(*gizmo, impl, withoutScale);
 
     return gizmo->isHoverOrActive();
 }
