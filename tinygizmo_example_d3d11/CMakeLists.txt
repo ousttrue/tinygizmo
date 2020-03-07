@@ -15,4 +15,5 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
 target_link_libraries(${TARGET_NAME} PRIVATE
     tinygizmo
     d3d11
+    d3dcompiler
     )

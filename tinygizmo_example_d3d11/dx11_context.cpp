@@ -105,7 +105,7 @@ public:
         }
 
         // clear
-        float clear[] = {0.3f, 0.3f, 0.3f, 1.0f};
+        float clear[] = {0.3f, 0.3f, 0.4f, 1.0f};
         m_rt.ClearAndSet(m_context.Get(), clear, 1.0f, 0xff, m_width, m_height);
 
         return m_context.Get();
@@ -113,7 +113,7 @@ public:
 
     void Present()
     {
-        m_swapchain->Present(0, 0);
+        m_swapchain->Present(1, 0);
     }
 };
 

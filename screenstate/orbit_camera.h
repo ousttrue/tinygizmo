@@ -3,9 +3,17 @@
 #include "camera_state.h"
 #include <array>
 
+enum class PerspectiveTypes
+{
+    OpenGL,
+    D3D,
+};
+
 struct OrbitCamera
 {
     camera::CameraState state;
+
+    PerspectiveTypes perspectiveType;
 
     float zNear = 0.1f;
     float zFar = 100.0f;
@@ -18,7 +26,8 @@ struct OrbitCamera
     float yawRadians = 0;
     float pitchRadians = 0;
 
-    OrbitCamera()
+    OrbitCamera(PerspectiveTypes type = PerspectiveTypes::OpenGL)
+        : perspectiveType(type)
     {
         CalcView();
         CalcPerspective();

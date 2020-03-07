@@ -22,11 +22,16 @@ void OrbitCamera::CalcView()
 
 void OrbitCamera::CalcPerspective()
 {
-#if 1
-    fpalg::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
-#else
-    fpalg::PerspectiveRHDX(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
-#endif
+    switch(perspectiveType)
+    {
+    case PerspectiveTypes::OpenGL:
+        fpalg::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
+        break;
+
+    case PerspectiveTypes::D3D:
+        fpalg::PerspectiveRHDX(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
+        break;
+    }
 }
 
 void OrbitCamera::SetViewport(int x, int y, int w, int h)

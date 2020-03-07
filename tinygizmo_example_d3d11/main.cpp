@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     win.Show();
 
     // camera
-    OrbitCamera camera{};
+    OrbitCamera camera(PerspectiveTypes::D3D);
     transform_mode mode = transform_mode::scale;
     bool is_local = true;
 
@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
     // scene
     //
     Renderer renderer;
-    if (!renderer.initialize((void *)hwnd))
+    auto device = renderer.initialize(hwnd);
+    if (!device)
     {
         return 3;
     }
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
                 teapot_vertices[i + 5]}};
         vertices.push_back(v);
     }
-    teapot_mesh->uploadMesh(
+    teapot_mesh->uploadMesh(device,
         vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(vertex)), sizeof(vertex),
         teapot_triangles, sizeof(teapot_triangles), sizeof(teapot_triangles[0]),
         false);
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
 
     // gizmo
     tinygizmo::gizmo_system gizmo_system;
-    auto gizmo_mesh = renderer.createMeshForGizmo();
+    auto gizmo_mesh = renderer.createMesh();
 
     //
     // main loop
@@ -132,9 +133,9 @@ int main(int argc, char *argv[])
         //
         // draw
         //
-        renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
-        teapot_mesh->draw(teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        auto context = renderer.beginFrame(state.Width, state.Height);
+        teapot_mesh->draw(context, teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(context, teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
 
         {
             //
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
                 &pVertices, &verticesBytes, &vertexStride,
                 &pIndices, &indicesBytes, &indexStride);
 
-            gizmo_mesh->uploadMesh(
+            gizmo_mesh->uploadMesh(device, 
                 pVertices, verticesBytes, vertexStride,
                 pIndices, indicesBytes, indexStride,
                 true);
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo_mesh->draw(identity4x4, camera.state.viewProjection.data(), camera.state.position.data());
+        gizmo_mesh->draw(context, identity4x4, camera.state.viewProjection.data(), camera.state.position.data());
 
         //
         // present

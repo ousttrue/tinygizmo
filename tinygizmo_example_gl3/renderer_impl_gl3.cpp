@@ -88,23 +88,23 @@ class ModelImpl
     GlMesh m_mesh;
 
 public:
-    ModelImpl(bool isGizmo)
-    {
-        if (isGizmo)
-        {
-            m_shader.reset(new GlShader(gizmo_vert, gizmo_frag));
-        }
-        else
-        {
-            m_shader.reset(new GlShader(lit_vert, lit_frag));
-        }
-    }
-
     void upload_mesh(
         const void *pVertices, uint32_t verticesBytes, uint32_t vertexStride,
         const void *pIndices, uint32_t indicesBytes, uint32_t indexStride,
         bool isDynamic = false)
     {
+        if (!m_shader)
+        {
+            if (isDynamic)
+            {
+                m_shader.reset(new GlShader(gizmo_vert, gizmo_frag));
+            }
+            else
+            {
+                m_shader.reset(new GlShader(lit_vert, lit_frag));
+            }
+        }
+
         m_mesh.set_vertex_data(verticesBytes, pVertices, isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
         m_mesh.set_attribute(0, 3, GL_FLOAT, GL_FALSE, vertexStride, (GLvoid *)0);
         m_mesh.set_attribute(1, 3, GL_FLOAT, GL_FALSE, vertexStride, (GLvoid *)12);
@@ -152,10 +152,10 @@ Model::~Model()
     delete m_impl;
 }
 
-void Model::uploadMesh(
-    const void *vertices, uint32_t verticesSize, uint32_t vertexStride,
-    const void *indices, uint32_t indicesSize, uint32_t indexSize,
-    bool is_local)
+void Model::uploadMesh(void *,
+                       const void *vertices, uint32_t verticesSize, uint32_t vertexStride,
+                       const void *indices, uint32_t indicesSize, uint32_t indexSize,
+                       bool is_local)
 {
     m_impl->upload_mesh(
         vertices, verticesSize, vertexStride,
@@ -163,7 +163,7 @@ void Model::uploadMesh(
         is_local);
 }
 
-void Model::draw(const float *model, const float *vp, const float *eye)
+void Model::draw(void *, const float *model, const float *vp, const float *eye)
 {
     m_impl->draw(eye, vp, model);
 }
@@ -172,10 +172,11 @@ void Model::draw(const float *model, const float *vp, const float *eye)
 class RendererImpl
 {
     WGLContext m_wgl;
+
 public:
     bool initialize(void *hwnd)
     {
-        if(!m_wgl.Create(hwnd, 3, 0))
+        if (!m_wgl.Create(hwnd, 3, 0))
         {
             return false;
         }
@@ -214,26 +215,21 @@ Renderer::~Renderer()
     delete m_impl;
 }
 
-bool Renderer::initialize(void *hwnd)
+void *Renderer::initialize(void *hwnd)
 {
-    return m_impl->initialize(hwnd);
-}
-
-std::shared_ptr<Model> Renderer::createMeshForGizmo()
-{
-    auto modelImpl = new ModelImpl(true);
-    return std::make_shared<Model>(modelImpl);
+    return m_impl->initialize(hwnd) ? this : nullptr;
 }
 
 std::shared_ptr<Model> Renderer::createMesh()
 {
-    auto modelImpl = new ModelImpl(false);
+    auto modelImpl = new ModelImpl();
     return std::make_shared<Model>(modelImpl);
 }
 
-void Renderer::beginFrame(int width, int height)
+void *Renderer::beginFrame(int width, int height)
 {
     m_impl->beginFrame(width, height);
+    return nullptr;
 }
 
 void Renderer::endFrame()
