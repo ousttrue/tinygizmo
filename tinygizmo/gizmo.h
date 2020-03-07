@@ -27,16 +27,11 @@ struct GizmoComponent
     minalg::float4 highlight_color;
     minalg::float3 axis;
 
-    using DragFunc = std::function<void(class Gizmo &gizmo,
-                                        const gizmo_application_state &state, const ray &r, const minalg::float3 &plane_normal, minalg::float3 &point)>;
-    DragFunc tDragger;
-
 public:
     GizmoComponent(const geometry_mesh &_mesh,
                    const minalg::float4 &_base_color, const minalg::float4 &_highlight_color,
-                   const minalg::float3 &_axis,
-                   const DragFunc &_func = DragFunc())
-        : mesh(_mesh), base_color(_base_color), highlight_color(_highlight_color), axis(_axis), tDragger(_func)
+                   const minalg::float3 &_axis)
+        : mesh(_mesh), base_color(_base_color), highlight_color(_highlight_color), axis(_axis)
     {
     }
 
@@ -46,6 +41,12 @@ public:
         rigid_transform *t) const
     {
         return false;
+    }
+
+    virtual void translationDragger(const ray &r, const GizmoState &state,
+                         const minalg::float3 &plane_normal, float snapValue,
+                         minalg::float3 &point) const
+    {
     }
 };
 
@@ -87,18 +88,6 @@ public:
             .original = t,
             .axis = axis,
         };
-    }
-
-    void translationDragger(const gizmo_application_state &state, const ray &ray, minalg::float3 &position)
-    {
-        if (!m_active)
-        {
-            return;
-        }
-
-        position += m_state.click;
-        m_mesh->tDragger(*this, state, ray, m_state.axis, position);
-        position -= m_state.click;
     }
 
     void axisRotationDragger(
