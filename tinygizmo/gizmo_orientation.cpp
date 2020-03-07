@@ -17,14 +17,20 @@ static bool dragger(const GizmoComponent &component,
     //auto axis = m_activeMesh->axis;
     rigid_transform original_pose = {start_orientation, state.original.position};
     auto the_axis = original_pose.transform_vector(component.axis);
-    minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
+    // minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
 
-    float t;
-    if (!intersect_ray_plane(ray, the_plane, &t))
+    auto t = fpalg::size_cast<fpalg::Ray>(ray) >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.offset)};
+    if (t < 0)
     {
-        // *out = start_orientation;
         return false;
     }
+
+    // float t;
+    // if (!intersect_ray_plane(ray, the_plane, &t))
+    // {
+    //     // *out = start_orientation;
+    //     return false;
+    // }
 
     auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
     auto arm1 = normalize(state.offset - center_of_rotation);
@@ -85,17 +91,17 @@ static const GizmoComponent *orientation_components[] = {
     &componentZ,
 };
 
-static std::pair<const GizmoComponent *, float> raycast(const ray &ray)
+static std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
 {
     const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
     for (auto c : orientation_components)
     {
-        auto f = intersect_ray_mesh(ray, c->mesh);
-        if (f < best_t)
+        auto t = ray >> c->mesh;
+        if (t < best_t)
         {
             updated_state = c;
-            best_t = f;
+            best_t = t;
         }
     }
     return std::make_pair(updated_state, best_t);
@@ -175,7 +181,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     // raycast
     {
         auto localRay = detransform(gizmoTransform, worldRay);
-        auto [mesh, best_t] = raycast(localRay);
+        auto [mesh, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay));
 
         // update
         if (impl->state.has_clicked)

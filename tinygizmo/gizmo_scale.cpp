@@ -70,13 +70,13 @@ static GizmoComponent zComponent{
 
 static const GizmoComponent *g_meshes[] = {&xComponent, &yComponent, &zComponent};
 
-std::pair<const GizmoComponent *, float> raycast(const ray &ray, const rigid_transform &t)
+std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray, const rigid_transform &t)
 {
     const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
     for (auto mesh : g_meshes)
     {
-        auto t = intersect_ray_mesh(ray, mesh->mesh);
+        auto t = ray >> mesh->mesh;
         if (t < best_t)
         {
             updated_state = mesh;
@@ -123,7 +123,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
     if (impl->state.has_clicked)
     {
         auto &t = fpalg::size_cast<rigid_transform>(trs);
-        auto [updated_state, best_t] = raycast(fpalg::size_cast<ray>(localRay), t);
+        auto [updated_state, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay), t);
 
         if (updated_state)
         {

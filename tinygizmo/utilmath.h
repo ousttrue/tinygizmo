@@ -32,12 +32,4 @@ minalg::float3 transform_vector(const minalg::float4x4 &transform, const minalg:
 void transform(const float scale, ray &r);
 void detransform(const float scale, ray &r);
 
-/////////////////////////////////////////
-// Ray-Geometry Intersection Functions //
-/////////////////////////////////////////
-
-bool intersect_ray_plane(const ray &ray, const minalg::float4 &plane, float *hit_t);
-float intersect_ray_triangle(const ray &ray, const minalg::float3 &v0, const minalg::float3 &v1, const minalg::float3 &v2);
-float intersect_ray_mesh(const ray &ray, const geometry_mesh &mesh);
-
 } // namespace tinygizmo
