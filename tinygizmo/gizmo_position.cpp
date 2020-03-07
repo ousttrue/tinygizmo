@@ -12,32 +12,35 @@ class TranslationPlaneGizmoComponent : public GizmoComponent
 public:
     using GizmoComponent::GizmoComponent;
 
-    void translationDragger(const ray &r, const GizmoState &state,
-                 const minalg::float3 &plane_normal, float snapValue,
-                 minalg::float3 &point) const override
+    void translationDragger(const ray &worldRay, const GizmoState &state,
+                            const minalg::float3 &N, float snapValue,
+                            minalg::float3 &point) const override
     {
-        // Define the plane to contain the original position of the object
-        auto plane_point = state.original.position;
-
         // If an intersection exists between the ray and the plane, place the object at that point
-        const float denom = dot(r.direction, plane_normal);
-        if (std::abs(denom) == 0)
+        const float NV = dot(worldRay.direction, N);
+        if (std::abs(NV) == 0)
         {
+            // not intersect
             return;
         }
-        const float t = dot(plane_point - r.origin, plane_normal) / denom;
+
+        auto Q = (state.original.position + state.click) - worldRay.origin;
+        const float t = dot(Q, N) / NV;
         if (t < 0)
         {
             return;
         }
 
-        point = r.origin + r.direction * t;
+        {
+            auto intersect = worldRay.origin + worldRay.direction * t;
+            point = intersect - state.click;
+        }
         if (snapValue)
         {
             point = snap(point, snapValue);
         }
     }
-};
+}; // namespace tinygizmo
 
 class TranslationAxisGizmoComponent : public TranslationPlaneGizmoComponent
 {
@@ -45,8 +48,8 @@ public:
     using TranslationPlaneGizmoComponent::TranslationPlaneGizmoComponent;
 
     void translationDragger(const ray &r, const GizmoState &state,
-                 const minalg::float3 &axis, float snapValue,
-                 minalg::float3 &point) const override
+                            const minalg::float3 &axis, float snapValue,
+                            minalg::float3 &point) const override
     {
         // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
         auto plane_tangent = minalg::cross(axis, point - castalg::ref_cast<minalg::float3>(r.origin));
@@ -189,9 +192,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     if (activeMesh)
     {
         // activeMesh->translationDragger(impl->state, worldRay, t.position);
-        t.position += gizmo->m_state.click;
         activeMesh->translationDragger(worldRay, gizmo->m_state, gizmo->m_state.axis, impl->state.snap_translation, t.position);
-        t.position -= gizmo->m_state.click;
     }
 
     // draw
