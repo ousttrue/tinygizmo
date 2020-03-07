@@ -17,15 +17,16 @@ public:
                             minalg::float3 &point) const override
     {
         // If an intersection exists between the ray and the plane, place the object at that point
-        const float NV = dot(worldRay.direction, N);
-        if (std::abs(NV) == 0)
+        const float NR = dot(N, worldRay.direction);
+        if (std::abs(NR) == 0)
         {
             // not intersect
             return;
         }
 
+        // maybe NP + D = 0 plane. to D=0
         auto Q = (state.original.position + state.click) - worldRay.origin;
-        const float t = dot(Q, N) / NV;
+        const float t = dot(Q, N) / NR;
         if (t < 0)
         {
             return;
@@ -33,6 +34,7 @@ public:
 
         {
             auto intersect = worldRay.origin + worldRay.direction * t;
+            // restore D and click delta
             point = intersect - state.click;
         }
         if (snapValue)
