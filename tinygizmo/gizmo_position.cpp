@@ -2,7 +2,7 @@
 #include "utilmath.h"
 #include "minalg.h"
 #include "impl.h"
-#include "../screenstate/castalg.h"
+
 
 namespace tinygizmo
 {
@@ -13,44 +13,37 @@ struct Param
     float snapValue;
 };
 
-static bool planeDragger(const GizmoComponent &component, const ray &worldRay, const GizmoState &state, float snapValue,
+static bool planeDragger(const GizmoComponent &component, const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
                          rigid_transform *out, const minalg::float3 &N)
 {
-
-    // If an intersection exists between the ray and the plane, place the object at that point
-    const float NR = dot(N, worldRay.direction);
-    if (std::abs(NR) == 0)
-    {
-        // not intersect
-        return false;
-    }
-
-    auto Q = (state.original.position + state.offset) - worldRay.origin;
-    const float t = dot(N, Q) / NR;
+    fpalg::Plane plane(
+        fpalg::size_cast<std::array<float, 3>>(N),
+        fpalg::size_cast<std::array<float, 3>>(state.original.position + state.offset));
+    auto t = worldRay >> plane;
     if (t < 0)
     {
         return false;
     }
 
-    {
-        auto intersect = worldRay.origin + worldRay.direction * t;
-        // restore D and click delta
-        out->position = intersect - state.offset;
-    }
+    using namespace fpalg;
+    auto intersect = worldRay.origin + worldRay.direction * t;
+    out->position = fpalg::size_cast<minalg::float3>(intersect) - state.offset;
+
     if (snapValue)
     {
         out->position = snap(out->position, snapValue);
     }
+
     return true;
 }
 
-static bool axisDragger(const GizmoComponent &component, const ray &r, const GizmoState &state, float snapValue,
+static bool axisDragger(const GizmoComponent &component, const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
                         rigid_transform *out, const minalg::float3 &axis)
 {
     // First apply a plane translation dragger with a plane that contains the desired axis and is oriented to face the camera
-    auto plane_tangent = minalg::cross(axis, out->position - castalg::ref_cast<minalg::float3>(r.origin));
+    auto plane_tangent = minalg::cross(axis, out->position - fpalg::size_cast<minalg::float3>(worldRay.origin));
     auto plane_normal = cross(axis, plane_tangent);
-    if (!planeDragger(component, r, state, snapValue, out, plane_normal))
+    if (!planeDragger(component, worldRay, state, snapValue, out, plane_normal))
     {
         return false;
     }
@@ -125,7 +118,7 @@ std::pair<const GizmoComponent *, float> raycast(const ray &ray)
 
 void draw(Gizmo &gizmo, gizmo_system_impl *impl, const rigid_transform &p)
 {
-    auto modelMatrix = castalg::ref_cast<minalg::float4x4>(p.matrix());
+    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(p.matrix());
 
     for (auto c : translation_components)
     {
@@ -149,7 +142,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
 
     // raycast
     auto worldRay = impl->get_ray();
-    auto &t = castalg::ref_cast<rigid_transform>(trs);
+    auto &t = fpalg::size_cast<rigid_transform>(trs);
     auto withoutScale = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position);
     auto localRay = detransform(withoutScale, worldRay);
     auto [mesh, best_t] = raycast(localRay);
@@ -165,7 +158,7 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
             minalg::float3 axis;
             if (mesh == &componentXYZ)
             {
-                axis = -minalg::qzdir(castalg::ref_cast<minalg::float4>(impl->state.camera_orientation));
+                axis = -minalg::qzdir(fpalg::size_cast<minalg::float4>(impl->state.camera_orientation));
             }
             else
             {
@@ -192,11 +185,11 @@ bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS
     {
         if (active == &componentX || active == &componentY || active == &componentZ)
         {
-            axisDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
+            axisDragger(*active, fpalg::size_cast<fpalg::Ray>(worldRay), gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
         }
         else
         {
-            planeDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
+            planeDragger(*active, fpalg::size_cast<fpalg::Ray>(worldRay), gizmo->m_state, impl->state.snap_translation, &t, gizmo->m_state.axis);
         }
     }
 

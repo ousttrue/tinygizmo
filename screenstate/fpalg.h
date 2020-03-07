@@ -417,12 +417,11 @@ struct Ray
 struct Plane
 {
     std::array<float, 3> normal;
-    float d = 0;
+    std::array<float, 3> pointOnPlane;
 
     Plane(const std::array<float, 3> &n, const std::array<float, 3> &point_on_plane)
-        : normal(n)
+        : normal(n), pointOnPlane(point_on_plane)
     {
-        d = -Dot(n, point_on_plane);
     }
 };
 
@@ -432,11 +431,12 @@ inline float operator>>(const Ray &ray, const Plane &plane)
     if (NV == 0)
     {
         // not intersect
-        return std::numeric_limits<float>::infinity();
+        return -std::numeric_limits<float>::infinity();
     }
 
-    auto NQ = Dot(plane.normal, ray.origin);
-    return (-NQ - plane.d) / NV;
+    auto Q = plane.pointOnPlane - ray.origin;
+    auto NQ = Dot(plane.normal, Q);
+    return NQ / NV;
 }
 
 } // namespace fpalg
