@@ -13,12 +13,8 @@ static bool dragger(const GizmoComponent &component,
                     fpalg::Transform *out, bool is_local)
 {
     auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
-
-    //auto axis = m_activeMesh->axis;
     rigid_transform original_pose = {start_orientation, state.original.position};
     auto the_axis = original_pose.transform_vector(component.axis);
-    // minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
-
     auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.original.position + state.offset)};
     if (t < 0)
     {
@@ -28,7 +24,6 @@ static bool dragger(const GizmoComponent &component,
     auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.offset);
     auto arm1 = normalize(state.original.position + state.offset - center_of_rotation);
     auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
-
     float d = dot(arm1, arm2);
     if (d > 0.999f)
     {
@@ -43,16 +38,19 @@ static bool dragger(const GizmoComponent &component,
         return false;
     }
 
-    if (snapVaue)
-    {
-        auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapVaue);
-        out->rotation = fpalg::size_cast<fpalg::float4>(qmul(snapped, start_orientation));
-        return true;
-    }
-    else
+    // if (snapVaue)
+    // {
+    //     auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapVaue);
+    //     out->rotation = fpalg::size_cast<fpalg::float4>(qmul(snapped, start_orientation));
+    //     return true;
+    // }
+    // else
     {
         auto a = normalize(cross(arm1, arm2));
-        out->rotation = fpalg::size_cast<fpalg::float4>(qmul(rotation_quat(a, angle), start_orientation));
+        // out->rotation = fpalg::size_cast<fpalg::float4>(qmul(rotation_quat(a, angle), start_orientation));
+        out->rotation = fpalg::QuaternionMul(
+            fpalg::QuaternionAxisAngle(fpalg::size_cast<fpalg::float3>(a), angle),
+            fpalg::size_cast<fpalg::float4>(start_orientation));
         return true;
     }
 }
