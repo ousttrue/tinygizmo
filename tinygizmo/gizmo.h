@@ -43,6 +43,14 @@ public:
         m_active = nullptr;
     }
 
+    void begin(const GizmoComponent *pMesh, const fpalg::float3 &offset, const fpalg::TRS &t, const fpalg::float3 &axis)
+    {
+        begin(pMesh,
+              fpalg::size_cast<minalg::float3>(offset),
+              fpalg::size_cast<rigid_transform>(t),
+              fpalg::size_cast<minalg::float3>(axis));
+    }
+
     void begin(const GizmoComponent *pMesh, const minalg::float3 &offset, const rigid_transform &t, const minalg::float3 &axis)
     {
         m_active = pMesh;

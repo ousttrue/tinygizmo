@@ -46,6 +46,10 @@ inline float3 operator*(const float3 &lhs, float scalar)
 {
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
+inline float3 operator*(const float3 &lhs, const float3 &rhs)
+{
+    return {lhs[0] * rhs[0], lhs[1] * rhs[1], lhs[2] * rhs[2]};
+}
 
 inline float Dot(const float3 &lhs, const float3 &rhs)
 {

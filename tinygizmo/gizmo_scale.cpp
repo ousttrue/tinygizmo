@@ -6,54 +6,45 @@
 namespace tinygizmo
 {
 
+using fpalg::operator-;
+using fpalg::operator+;
+using fpalg::operator*;
+
 static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
                     rigid_transform *out, bool uniform)
 {
-    // auto axis = m_mesh->axis;
-    auto plane_tangent = cross(component.axis, state.original.position - fpalg::size_cast<minalg::float3>(worldRay.origin));
-    auto N = cross(component.axis, plane_tangent);
+    auto plane_tangent = fpalg::Cross(
+        fpalg::size_cast<fpalg::float3>(component.axis),
+        fpalg::size_cast<fpalg::float3>(state.original.position) - worldRay.origin);
+    auto N = fpalg::Cross(fpalg::size_cast<fpalg::float3>(component.axis), plane_tangent);
 
     // If an intersection exists between the ray and the plane, place the object at that point
     auto t = worldRay >> fpalg::Plane{
-                             fpalg::size_cast<fpalg::float3>(N),
+                             N,
                              fpalg::size_cast<fpalg::float3>(state.original.position + state.offset)};
     if (t < 0)
     {
         return false;
     }
+    auto intersect = worldRay.SetT(t);
 
-    // auto NR = dot(N, worldRay.direction);
-    // if (std::abs(NR) == 0)
-    // {
-    //     return false;
-    // }
-
-    // auto Q = state.original.position + state.offset - worldRay.origin;
-    // const float t = dot(N, Q) / NR;
-    // if (t < 0)
-    // {
-    //     return false;
-    // }
-
-    auto intersect = fpalg::size_cast<minalg::float3>(worldRay.SetT(t));
-
-    auto offset_on_axis = (intersect - state.offset - state.original.position) * component.axis;
-    flush_to_zero(offset_on_axis);
-    auto new_scale = state.original.scale + offset_on_axis;
+    auto offset_on_axis = (intersect - fpalg::size_cast<fpalg::float3>(state.offset - state.original.position)) * fpalg::size_cast<fpalg::float3>(component.axis);
+    flush_to_zero(fpalg::size_cast<minalg::float3>(offset_on_axis));
+    auto new_scale = fpalg::size_cast<fpalg::float3>(state.original.scale) + offset_on_axis;
 
     if (uniform)
-        out->scale = minalg::float3(clamp(dot(intersect, new_scale), 0.01f, 1000.f));
+        out->scale = minalg::float3(clamp(fpalg::Dot(intersect, new_scale), 0.01f, 1000.f));
     else
         out->scale = minalg::float3(
-            clamp(new_scale.x, 0.01f, 1000.f),
-            clamp(new_scale.y, 0.01f, 1000.f),
-            clamp(new_scale.z, 0.01f, 1000.f));
+            clamp(new_scale[0], 0.01f, 1000.f),
+            clamp(new_scale[1], 0.01f, 1000.f),
+            clamp(new_scale[2], 0.01f, 1000.f));
 
-    if (snapValue)
-    {
-        out->scale = snap(out->scale, snapValue);
-    }
+    // if (snapValue)
+    // {
+    //     out->scale = snap(out->scale, snapValue);
+    // }
 
     return true;
 }
@@ -124,7 +115,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
 
     // auto localRay = impl->get_local_ray(trs.transform);
     auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
-    auto &t = fpalg::size_cast<rigid_transform>(trs);
+    // auto &t = fpalg::size_cast<rigid_transform>(trs);
     // auto withoutScale = rigid_transform(t.orientation, t.position);
     auto localRay = worldRay.Transform(trs.transform.Inverse());
 
@@ -139,7 +130,7 @@ bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &t
             // rigid_transform withoutScale(t.orientation, t.position);
             using fpalg::operator-;
             auto offset = trs.transform.ApplyPosition(localHit) - trs.transform.position;
-            gizmo->begin(updated_state, fpalg::size_cast<minalg::float3>(offset), t, {});
+            gizmo->begin(updated_state, offset, trs, {});
         }
     }
     else if (impl->state.has_released)
