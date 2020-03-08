@@ -175,7 +175,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     // raycast
     {
         auto localRay = worldRay.Transform(gizmoTransform.Inverse());
-        auto [mesh, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay));
+        auto [mesh, best_t] = raycast(localRay);
 
         // update
         if (impl->state.has_clicked)
@@ -201,7 +201,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         dragger(*active, worldRay, gizmo->m_state, impl->state.snap_rotation, &gizmoTransform, is_local);
         if (!is_local)
         {
-            trs.rotation = fpalg::size_cast<fpalg::float4>(qmul(fpalg::size_cast<minalg::float4>(gizmoTransform.rotation), gizmo->m_state.original.orientation));
+            trs.rotation = fpalg::QuaternionMul(gizmoTransform.rotation, fpalg::size_cast<fpalg::float4>(gizmo->m_state.original.orientation));
         }
         else
         {
@@ -212,11 +212,11 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     // draw
     if (!is_local && active)
     {
-        draw_global_active(impl->drawlist, fpalg::size_cast<fpalg::Transform>(gizmoTransform), active, gizmo->m_state);
+        draw_global_active(impl->drawlist, gizmoTransform, active, gizmo->m_state);
     }
     else
     {
-        draw(impl->drawlist, fpalg::size_cast<fpalg::Transform>(gizmoTransform), active);
+        draw(impl->drawlist, gizmoTransform, active);
     }
 
     return gizmo->isHoverOrActive();
