@@ -26,7 +26,7 @@ struct gizmo_application_state
 
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
     std::array<float, 3> camera_position;
-    std::array<float, 4> camera_orientation;
+    std::array<float, 4> camera_rotation;
 
     // ray
     std::array<float, 3> ray_origin;

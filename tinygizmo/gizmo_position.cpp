@@ -156,7 +156,7 @@ bool position_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool 
             fpalg::float3 axis;
             if (mesh == &componentXYZ)
             {
-                axis = -fpalg::QuaternionZDir(impl->state.camera_orientation);
+                axis = -fpalg::QuaternionZDir(impl->state.camera_rotation);
             }
             else
             {
@@ -176,18 +176,20 @@ bool position_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool 
     {
         gizmo->end();
     }
-
-    // drag
-    auto active = gizmo->active();
-    if (active)
+    else
     {
-        if (active == &componentX || active == &componentY || active == &componentZ)
+        // drag
+        auto active = gizmo->active();
+        if (active)
         {
-            axisDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &trs.transform, gizmo->m_state.axis);
-        }
-        else
-        {
-            planeDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &trs.transform, gizmo->m_state.axis);
+            if (active == &componentX || active == &componentY || active == &componentZ)
+            {
+                axisDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &trs.transform, gizmo->m_state.axis);
+            }
+            else
+            {
+                planeDragger(*active, worldRay, gizmo->m_state, impl->state.snap_translation, &trs.transform, gizmo->m_state.axis);
+            }
         }
     }
 

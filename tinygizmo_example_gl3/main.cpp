@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         tinygizmo::gizmo_application_state gizmo_state{
             .button = state.MouseLeftDown(),
             .camera_position = camera.state.position,
-            .camera_orientation = camera.state.rotation,
+            .camera_rotation = camera.state.rotation,
             .ray_origin = camera.state.ray_origin,
             .ray_direction = camera.state.ray_direction,
         };
