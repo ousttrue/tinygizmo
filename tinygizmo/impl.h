@@ -1,9 +1,7 @@
 #pragma once
 #include "gizmo.h"
 #include <unordered_map>
-#include <functional>
 #include <fpalg.h>
-// #include "minalg.h"
 
 namespace tinygizmo
 {

@@ -47,12 +47,18 @@ static bool axisDragger(const GizmoComponent &component, const fpalg::Ray &world
     return true;
 }
 
+///
+///      |\ 
+/// +----+ \ 
+/// |       \ 
+///
 static fpalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+
 static GizmoComponent componentX{
-    geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
-    {1, 0.5f, 0.5f, 1.f},
-    {1, 0, 0, 1.f},
-    {1, 0, 0}};
+    .mesh = geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
+    .base_color = {1, 0.5f, 0.5f, 1.f},
+    .highlight_color = {1, 0, 0, 1.f},
+    .axis = {1, 0, 0}};
 static GizmoComponent componentY{
     geometry_mesh::make_lathed_geometry({0, 1, 0}, {0, 0, 1}, {1, 0, 0}, 16, arrow_points, _countof(arrow_points)),
     {0.5f, 1, 0.5f, 1.f},

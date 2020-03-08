@@ -1,5 +1,4 @@
 #include "geometry_mesh.h"
-#include "minalg.h"
 
 static const float tau = 6.28318530718f;
 
@@ -145,12 +144,13 @@ geometry_mesh geometry_mesh::make_lathed_geometry(const fpalg::float3 &axis, con
         const float angle = (static_cast<float>(i % slices) * tau / slices) + (tau / 8.f);
         const float c = std::cos(angle);
         const float s = std::sin(angle);
-        const minalg::float3x2 mat = {fpalg::size_cast<minalg::float3>(axis), fpalg::size_cast<minalg::float3>(arm1) * c + fpalg::size_cast<minalg::float3>(arm2) * s};
+        fpalg::Matrix2x3 mat{axis, arm1 * c + arm2 * s};
         for (uint32_t j = 0; j < pointCount; ++j)
         {
-            auto &p = fpalg::size_cast<minalg::float2>(points[j]);
-            auto v = minalg::mul(mat, p) + eps;
-            mesh.vertices.push_back({fpalg::size_cast<fpalg::float3>(v), {0, 0, 0}});
+            auto &p = points[j];
+            // 2D to 3D
+            auto v = mat.Apply(p) + fpalg::float3{eps, eps, eps};
+            mesh.vertices.push_back({v, {0, 0, 0}});
         }
 
         if (i > 0)

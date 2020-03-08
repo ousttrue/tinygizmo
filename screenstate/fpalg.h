@@ -313,6 +313,23 @@ inline float4 QuaternionMul(const float4 &lhs, const float4 &rhs)
             lhs[2] * rhs[3] + lhs[3] * rhs[2] + lhs[0] * rhs[1] - lhs[1] * rhs[0],
             lhs[3] * rhs[3] - lhs[0] * rhs[0] - lhs[1] * rhs[1] - lhs[2] * rhs[2]};
 }
+// inline float4 operator*(const float4 &lhs, const float4 &rhs)
+// {
+//     float ax = lhs[0];
+//     float ay = lhs[1];
+//     float az = lhs[2];
+//     float aw = lhs[3];
+//     float bx = rhs[0];
+//     float by = rhs[1];
+//     float bz = rhs[2];
+//     float bw = rhs[3];
+//     return {
+//         ax * bw + aw * bx + ay * bz - az * by,
+//         ay * bw + aw * by + az * bx - ax * bz,
+//         az * bw + aw * bz + ax * by - ay * bx,
+//         aw * bw - ax * bx - ay * by - az * bz,
+//     };
+// }
 
 inline float4 QuaternionConjugate(const float4 &v)
 {
@@ -374,24 +391,6 @@ inline float3 QuaternionRotateFloat3(const float4 &q, const float3 &v)
     auto z = QuaternionZDir(q);
     return x * v[0] + y * v[1] + z * v[2];
 }
-
-// inline float4 operator*(const float4 &lhs, const float4 &rhs)
-// {
-//     float ax = lhs[0];
-//     float ay = lhs[1];
-//     float az = lhs[2];
-//     float aw = lhs[3];
-//     float bx = rhs[0];
-//     float by = rhs[1];
-//     float bz = rhs[2];
-//     float bw = rhs[3];
-//     return {
-//         ax * bw + aw * bx + ay * bz - az * by,
-//         ay * bw + aw * by + az * bx - ax * bz,
-//         az * bw + aw * bz + ax * by - ay * bx,
-//         aw * bw - ax * bx - ay * by - az * bz,
-//     };
-// }
 
 struct Transform
 {
@@ -549,5 +548,20 @@ inline float operator>>(const Ray &ray, const Triangle &triangle)
 
     return t;
 }
+
+struct Matrix2x3
+{
+    float3 x;
+    float3 y;
+
+    float3 Apply(const float2 &value) const
+    {
+        return {
+            x[0] * value[0] + y[0] * value[1],
+            x[1] * value[0] + y[1] * value[1],
+            x[2] * value[0] + y[2] * value[1],
+        };
+    }
+};
 
 } // namespace fpalg
