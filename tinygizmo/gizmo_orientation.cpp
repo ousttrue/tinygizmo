@@ -25,7 +25,7 @@ static bool dragger(const GizmoComponent &component,
         return false;
     }
 
-    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
+    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.offset - state.original.position);
     auto arm1 = normalize(state.offset - center_of_rotation);
     auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
 
@@ -121,7 +121,7 @@ static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
 
     {
         // Create orthonormal basis for drawing the arrow
-        auto a = qrot(gizmoTransform.orientation, state.originalPositionToClick());
+        auto a = qrot(gizmoTransform.orientation, state.offset - state.original.position);
         auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
         // Ad-hoc geometry

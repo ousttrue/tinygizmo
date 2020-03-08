@@ -62,6 +62,7 @@
         "Luint",
         "Lvoid",
         "Wwindow",
+        "countof",
         "fpalg",
         "glfw",
         "hwnd",

@@ -13,11 +13,6 @@ struct GizmoState
     minalg::float3 offset;
     rigid_transform original;
     minalg::float3 axis;
-
-    minalg::float3 originalPositionToClick() const
-    {
-        return offset - original.position;
-    }
 };
 
 struct GizmoComponent
