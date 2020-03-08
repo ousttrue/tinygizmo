@@ -1,7 +1,7 @@
 set(TARGET_NAME screenstate)
 add_library(${TARGET_NAME}
     Win32Window.cpp
-    orbit_camera.cpp
+    OrbitCamera.cpp
     )
 set_property(TARGET ${TARGET_NAME} 
     PROPERTY CXX_STANDARD 20

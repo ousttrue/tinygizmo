@@ -6,7 +6,7 @@
 #include <vector>
 #include <tinygizmo.h>
 #include <Win32Window.h>
-#include <orbit_camera.h>
+#include <OrbitCamera.h>
 
 struct vertex
 {
