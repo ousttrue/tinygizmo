@@ -11,18 +11,12 @@ namespace tinygizmo
 
 struct gizmo_application_state
 {
-    int window_width = 0;
-    int window_height = 0;
-    int mouse_x = 0;
-    int mouse_y = 0;
+    bool button{false};
+    // State to describe if the user has pressed the left mouse button during the last frame
+    bool has_clicked{false};
+    // State to describe if the user has released the left mouse button during the last frame
+    bool has_released{false};
 
-    bool mouse_left{false};
-    bool has_clicked{false};  // State to describe if the user has pressed the left mouse button during the last frame
-    bool has_released{false}; // State to describe if the user has released the left mouse button during the last frame
-
-    bool hotkey_ctrl{false};
-    // If > 0.f, the gizmos are drawn scale-invariant with a screenspace value defined here
-    // float screenspace_scale{0.f};
     // World-scale units used for snapping translation
     float snap_translation{0.f};
     // World-scale units used for snapping scale

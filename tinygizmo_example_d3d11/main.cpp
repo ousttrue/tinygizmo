@@ -100,12 +100,7 @@ int main(int argc, char *argv[])
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
-            .window_width = state.Width,
-            .window_height = state.Height,
-            .mouse_x = state.MouseX,
-            .mouse_y = state.MouseY,
-            .mouse_left = state.MouseLeftDown(),
-            // .hotkey_ctrl = state.key_left_control,
+            .button = state.MouseLeftDown(),
             .camera_position = camera.state.position,
             .camera_orientation = camera.state.rotation,
             .ray_origin = camera.state.ray_origin,

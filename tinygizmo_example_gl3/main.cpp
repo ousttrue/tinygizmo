@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     // main loop
     //
     screenstate::ScreenState state;
-    screenstate::ScreenState lastState{};
+    std::bitset<128> lastState{};
     for (int i = 0; win.Update(&state); ++i)
     {
         // update camera
@@ -96,19 +96,12 @@ int main(int argc, char *argv[])
 
         // gizmo new frame
         tinygizmo::gizmo_application_state gizmo_state{
-            .window_width = state.Width,
-            .window_height = state.Height,
-            .mouse_x = state.MouseX,
-            .mouse_y = state.MouseY,
-            .mouse_left = state.MouseLeftDown(),
-            // .hotkey_ctrl = state.key_left_control,
+            .button = state.MouseLeftDown(),
             .camera_position = camera.state.position,
             .camera_orientation = camera.state.rotation,
             .ray_origin = camera.state.ray_origin,
             .ray_direction = camera.state.ray_direction,
         };
-        gizmo_state.has_clicked = !lastState.MouseLeftDown() && state.MouseLeftDown();
-        gizmo_state.has_released = lastState.MouseLeftDown() && !state.MouseLeftDown();
 
         gizmo_system.new_frame(gizmo_state);
 
@@ -124,11 +117,11 @@ int main(int argc, char *argv[])
         {
             mode = transform_mode::scale;
         }
-        if (!lastState.KeyCode['Z'] && state.KeyCode['Z'])
+        if (!lastState['Z'] && state.KeyCode['Z'])
         {
             is_local = !is_local;
         }
-        lastState = state;
+        lastState = state.KeyCode;
 
         using fpalg::operator*;
         auto viewProjection = camera.state.view * camera.state.projection;

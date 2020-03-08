@@ -39,7 +39,11 @@ public:
     // Public methods
     void gizmo_system_impl::update(const gizmo_application_state &state)
     {
+        auto lastButton = this->state.button;
         this->state = state;
+        this->state.has_clicked = !lastButton && state.button;
+        this->state.has_released = lastButton && !state.button;
+
         drawlist.clear();
         m_r.clear();
     }
