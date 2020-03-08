@@ -10,6 +10,16 @@ using fpalg::operator-;
 using fpalg::operator+;
 using fpalg::operator*;
 
+static void flush_to_zero(minalg::float3 &f)
+{
+    if (std::abs(f.x) < 0.02f)
+        f.x = 0.f;
+    if (std::abs(f.y) < 0.02f)
+        f.y = 0.f;
+    if (std::abs(f.z) < 0.02f)
+        f.z = 0.f;
+}
+
 static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
                     fpalg::TRS *out, bool uniform)

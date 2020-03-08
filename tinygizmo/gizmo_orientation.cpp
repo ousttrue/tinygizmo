@@ -1,5 +1,4 @@
 #include "tinygizmo.h"
-#include "utilmath.h"
 #include "impl.h"
 #include "assert.h"
 #include "minalg.h"

@@ -49,6 +49,9 @@ struct gizmo_system
         void **pIndices, uint32_t *indicesBytes, uint32_t *indexStride);
 };
 
+// 32 bit FNV Hash
+uint32_t hash_fnv1a(const std::string &str);
+
 bool position_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
 bool orientation_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
 bool scale_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_uniform);
