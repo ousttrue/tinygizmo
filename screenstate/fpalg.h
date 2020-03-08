@@ -44,6 +44,12 @@ inline float Dot(const float3 &lhs, const float3 &rhs)
     return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
 }
 
+inline float3 Normalize(const float3 &lhs)
+{
+    auto factor = 1.0f / Dot(lhs, lhs);
+    return {lhs[0] * factor, lhs[1] * factor, lhs[2] * factor};
+}
+
 inline float3 Cross(const float3 &lhs, const float3 &rhs)
 {
     return {
@@ -404,8 +410,19 @@ struct Transform
 
 struct TRS
 {
-    Transform transform{};
-    float3 scale{1, 1, 1};
+    union {
+        Transform transform;
+        struct
+        {
+            float3 position;
+            float4 rotation;
+        };
+    };
+    float3 scale;
+
+    TRS()
+    : position({0, 0, 0}), rotation({0, 0, 0, 1}), scale({1, 1, 1})
+    {}
 
     std::array<float, 16> Matrix() const
     {
@@ -420,7 +437,7 @@ struct Ray
     float3 direction;
 
     Ray(const float3 &_origin, const float3 &_direction)
-    :origin(_origin), direction(_direction)
+        : origin(_origin), direction(_direction)
     {
     }
 
