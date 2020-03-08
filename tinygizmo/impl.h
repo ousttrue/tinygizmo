@@ -1,9 +1,9 @@
 #pragma once
-#include "minalg.h"
 #include "gizmo.h"
 #include <unordered_map>
 #include <functional>
 #include <fpalg.h>
+#include "minalg.h"
 
 namespace tinygizmo
 {
@@ -39,23 +39,19 @@ public:
     gizmo_application_state state;
 
     // world-space ray origin (i.e. the camera position)
-    minalg::float3 ray_origin;
+    fpalg::float3 ray_origin;
     // world-space ray direction
-    minalg::float3 ray_direction;
+    fpalg::float3 ray_direction;
 
-    ray get_ray() const
+    fpalg::Ray get_ray() const
     {
         return {ray_origin, ray_direction};
     }
 
-    fpalg::Ray get_local_ray(fpalg::Transform &t) const
-    {
-        auto worldRay = fpalg::size_cast<fpalg::Ray>(get_ray());
-        return worldRay.ToLocal(t);
-    }
+
 
     // Returns a world-space ray through the given pixel, originating at the camera
-    minalg::float3 get_ray_direction(int _x, int _y, int w, int h, const minalg::float4x4 &viewProjMatrix) const
+    fpalg::float3 get_ray_direction(int _x, int _y, int w, int h, const minalg::float4x4 &viewProjMatrix) const
     {
         const float x = 2 * (float)_x / w - 1;
         const float y = 1 - 2 * (float)_y / h;
@@ -63,7 +59,7 @@ public:
         auto inv_view_proj = inverse(viewProjMatrix);
         auto p0 = mul(inv_view_proj, minalg::float4(x, y, -1, 1));
         auto p1 = mul(inv_view_proj, minalg::float4(x, y, +1, 1));
-        return (p1.xyz() * p0.w - p0.xyz() * p1.w);
+        return fpalg::size_cast<fpalg::float3>(p1.xyz() * p0.w - p0.xyz() * p1.w);
     }
 
     // Public methods
@@ -72,7 +68,7 @@ public:
         this->state = state;
         drawlist.clear();
 
-        ray_origin = fpalg::size_cast<minalg::float3>(state.camera_position);
+        ray_origin = state.camera_position;
 
         ray_direction = get_ray_direction(
             state.mouse_x, state.mouse_y, state.window_width, state.window_height,

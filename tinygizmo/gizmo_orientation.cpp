@@ -16,17 +16,17 @@ static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
                     fpalg::Transform *out, bool is_local)
 {
-    auto start_orientation = fpalg::size_cast<fpalg::float4>(is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1));
-    fpalg::Transform original_pose = {fpalg::size_cast<fpalg::float3>(state.original.position), start_orientation};
-    auto the_axis = original_pose.ApplyDirection(fpalg::size_cast<fpalg::float3>(component.axis));
-    auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.original.position + state.offset)};
+    auto start_orientation = is_local ? state.original.rotation : fpalg::float4{0, 0, 0, 1};
+    fpalg::Transform original_pose = {state.original.position, start_orientation};
+    auto the_axis = original_pose.ApplyDirection(component.axis);
+    auto t = worldRay >> fpalg::Plane{the_axis, state.original.position + state.offset};
     if (t < 0)
     {
         return false;
     }
 
-    auto center_of_rotation = fpalg::size_cast<fpalg::float3>(state.original.position) + the_axis * fpalg::Dot(the_axis, fpalg::size_cast<fpalg::float3>(state.offset));
-    auto arm1 = fpalg::Normalize(fpalg::size_cast<fpalg::float3>(state.original.position + state.offset) - center_of_rotation);
+    auto center_of_rotation = state.original.position + the_axis * fpalg::Dot(the_axis, state.offset);
+    auto arm1 = fpalg::Normalize(state.original.position + state.offset - center_of_rotation);
     auto arm2 = fpalg::Normalize(worldRay.SetT(t) - center_of_rotation);
     float d = fpalg::Dot(arm1, arm2);
     if (d > 0.999f)
@@ -52,7 +52,7 @@ static bool dragger(const GizmoComponent &component,
         // out->rotation = fpalg::size_cast<fpalg::float4>(qmul(rotation_quat(a, angle), start_orientation));
         out->rotation = fpalg::QuaternionMul(
             fpalg::QuaternionAxisAngle(a, angle),
-            fpalg::size_cast<fpalg::float4>(start_orientation));
+            start_orientation);
         return true;
     }
 }
@@ -84,7 +84,7 @@ static const GizmoComponent *orientation_components[] = {
     &componentZ,
 };
 
-static std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
+inline std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
 {
     const GizmoComponent *updated_state = nullptr;
     float best_t = std::numeric_limits<float>::infinity();
@@ -121,8 +121,8 @@ static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
 
     {
         // Create orthonormal basis for drawing the arrow
-        auto a = gizmoTransform.ApplyDirection(fpalg::size_cast<fpalg::float3>(state.offset));
-        auto zDir = fpalg::Normalize(fpalg::size_cast<fpalg::float3>(active->axis));
+        auto a = gizmoTransform.ApplyDirection(state.offset);
+        auto zDir = fpalg::Normalize(active->axis);
         auto xDir = fpalg::Normalize(fpalg::Cross(a, zDir));
         auto yDir = fpalg::Cross(zDir, xDir);
 
@@ -169,7 +169,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
 
     // assert(length2(t.orientation) > float(1e-6));
-    auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
+    auto worldRay = impl->get_ray();
     fpalg::Transform gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.position, {0, 0, 0, 1}}; // Orientation is local by default
 
     // raycast
@@ -201,7 +201,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         dragger(*active, worldRay, gizmo->m_state, impl->state.snap_rotation, &gizmoTransform, is_local);
         if (!is_local)
         {
-            trs.rotation = fpalg::QuaternionMul(gizmoTransform.rotation, fpalg::size_cast<fpalg::float4>(gizmo->m_state.original.orientation));
+            trs.rotation = fpalg::QuaternionMul(gizmoTransform.rotation, gizmo->m_state.original.rotation);
         }
         else
         {

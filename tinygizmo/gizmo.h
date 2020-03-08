@@ -1,7 +1,4 @@
 #include "geometry_mesh.h"
-#include "functional"
-#include "tinygizmo.h"
-#include "utilmath.h"
 #include <vector>
 
 namespace tinygizmo
@@ -10,9 +7,9 @@ namespace tinygizmo
 struct GizmoState
 {
     // Offset from position of grabbed object to coordinates of clicked point
-    minalg::float3 offset;
-    rigid_transform original;
-    minalg::float3 axis;
+    fpalg::TRS original;
+    fpalg::float3 offset;
+    fpalg::float3 axis;
 };
 
 struct GizmoComponent
@@ -20,7 +17,7 @@ struct GizmoComponent
     geometry_mesh mesh;
     fpalg::float4 base_color;
     fpalg::float4 highlight_color;
-    minalg::float3 axis;
+    fpalg::float3 axis;
 };
 
 class Gizmo
@@ -45,18 +42,10 @@ public:
 
     void begin(const GizmoComponent *pMesh, const fpalg::float3 &offset, const fpalg::TRS &t, const fpalg::float3 &axis)
     {
-        begin(pMesh,
-              fpalg::size_cast<minalg::float3>(offset),
-              fpalg::size_cast<rigid_transform>(t),
-              fpalg::size_cast<minalg::float3>(axis));
-    }
-
-    void begin(const GizmoComponent *pMesh, const minalg::float3 &offset, const rigid_transform &t, const minalg::float3 &axis)
-    {
         m_active = pMesh;
         m_state = {
-            .offset = offset,
             .original = t,
+            .offset = offset,
             .axis = axis,
         };
     }
