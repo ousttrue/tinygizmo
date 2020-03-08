@@ -19,14 +19,14 @@ static bool dragger(const GizmoComponent &component,
     auto the_axis = original_pose.transform_vector(component.axis);
     // minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
 
-    auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.offset)};
+    auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.original.position + state.offset)};
     if (t < 0)
     {
         return false;
     }
 
-    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.offset - state.original.position);
-    auto arm1 = normalize(state.offset - center_of_rotation);
+    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.offset);
+    auto arm1 = normalize(state.original.position + state.offset - center_of_rotation);
     auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
 
     float d = dot(arm1, arm2);
@@ -121,7 +121,7 @@ static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
 
     {
         // Create orthonormal basis for drawing the arrow
-        auto a = qrot(gizmoTransform.orientation, state.offset - state.original.position);
+        auto a = qrot(gizmoTransform.orientation, state.offset);
         auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
 
         // Ad-hoc geometry
@@ -181,9 +181,9 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         {
             if (mesh)
             {
-                auto hit = localRay.origin + localRay.direction * best_t;
-                auto worldHit = gizmoTransform.transform_point(hit);
-                gizmo->begin(mesh, worldHit, t, {});
+                auto localHit = localRay.origin + localRay.direction * best_t;
+                auto offset = gizmoTransform.transform_point(localHit) - t.position;
+                gizmo->begin(mesh, offset, t, {});
             }
         }
         else if (impl->state.has_released)
