@@ -129,6 +129,16 @@ int main(int argc, char *argv[])
         }
         lastState = state;
 
+        using fpalg::operator*;
+        auto viewProjection = camera.state.view * camera.state.projection;
+
+        //
+        // draw
+        //
+        auto context = renderer.beginFrame(state.Width, state.Height);
+        teapot_mesh->draw(context, teapot_a.Matrix().data(), viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(context, teapot_b.Matrix().data(), viewProjection.data(), camera.state.position.data());
+
         {
             //
             // manipulate and update gizmo
@@ -166,16 +176,6 @@ int main(int argc, char *argv[])
                                    pIndices, indicesBytes, indexStride,
                                    true);
         }
-
-        using fpalg::operator*;
-        auto viewProjection = camera.state.view * camera.state.projection;
-
-        //
-        // draw
-        //
-        auto context = renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(context, teapot_a.Matrix().data(), viewProjection.data(), camera.state.position.data());
-        teapot_mesh->draw(context, teapot_b.Matrix().data(), viewProjection.data(), camera.state.position.data());
 
         //
         // gizmo after xform user draw
