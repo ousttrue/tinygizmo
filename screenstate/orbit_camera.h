@@ -29,9 +29,6 @@ struct OrbitCamera
     OrbitCamera(PerspectiveTypes type = PerspectiveTypes::OpenGL)
         : perspectiveType(type)
     {
-        // CalcView();
-        // CalcPerspective();
-        // state.CalcViewProjection();
     }
     void CalcView(int w, int h, int x, int y);
     void CalcPerspective();

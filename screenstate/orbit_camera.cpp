@@ -1,4 +1,5 @@
 #include "orbit_camera.h"
+#include "fpalg.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -99,5 +100,20 @@ void OrbitCamera::WindowInput(const screenstate::ScreenState &window)
     prevMouseX = window.MouseX;
     prevMouseY = window.MouseY;
     CalcView(window.Width, window.Height, window.MouseX, window.MouseY);
-    state.CalcViewProjection();
+    // state.viewProjection = state.view *  CalcViewProjection();
 }
+
+
+    // // mult
+    // std::array<float, 16> viewProjection;
+    // void CalcViewProjection()
+    // {
+    //     using fpalg::operator*;
+    //     viewProjection = view * projection;
+    // }
+
+    // std::array<float, 16> CalcModelViewProjection(const std::array<float, 16> &m) const
+    // {
+    //     using fpalg::operator*;
+    //     return m * viewProjection;
+    // }

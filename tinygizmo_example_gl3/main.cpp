@@ -130,12 +130,15 @@ int main(int argc, char *argv[])
         }
         lastState = state;
 
+        using fpalg::operator*;
+        auto viewProjection = camera.state.view * camera.state.projection;
+
         //
         // draw
         //
         auto context = renderer.beginFrame(state.Width, state.Height);
-        teapot_mesh->draw(context, teapot_a.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
-        teapot_mesh->draw(context, teapot_b.Matrix().data(), camera.state.viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(context, teapot_a.Matrix().data(), viewProjection.data(), camera.state.position.data());
+        teapot_mesh->draw(context, teapot_b.Matrix().data(), viewProjection.data(), camera.state.position.data());
 
         {
             //
@@ -183,7 +186,7 @@ int main(int argc, char *argv[])
             0, 0, 1, 0, //
             0, 0, 0, 1, //
         };
-        gizmo_mesh->draw(context, identity4x4, camera.state.viewProjection.data(), camera.state.position.data());
+        gizmo_mesh->draw(context, identity4x4, viewProjection.data(), camera.state.position.data());
 
         //
         // present
