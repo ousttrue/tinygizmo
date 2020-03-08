@@ -6,9 +6,6 @@ namespace camera
 
 struct CameraState
 {
-    std::array<float, 4> clearColor = {0, 0.2f, 0.4f, 1.0f};
-    float clearDepth = 1.0f;
-
     // projection
     float fovYRadians = 60.0f / 180.0f * 3.14f;
     std::array<float, 16> projection;
