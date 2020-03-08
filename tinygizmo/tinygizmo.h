@@ -42,7 +42,8 @@ struct gizmo_system
     ~gizmo_system();
 
     // Clear geometry buffer and update internal `gizmo_application_state` data
-    void new_frame(const gizmo_application_state &state, const std::array<float, 16> &viewProjection);
+    void new_frame(
+        const gizmo_application_state &state, const std::array<float, 16> &viewProjection);
 
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
@@ -52,8 +53,8 @@ struct gizmo_system
 // 32 bit FNV Hash
 uint32_t hash_fnv1a(const std::string &str);
 
-bool position_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
-bool orientation_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_local);
-bool scale_gizmo(const gizmo_system &context, const std::string &name, fpalg::TRS &t, bool is_uniform);
+bool position_gizmo(const gizmo_system &context, uint32_t id, fpalg::TRS &t, bool is_local);
+bool orientation_gizmo(const gizmo_system &context, uint32_t id, fpalg::TRS &t, bool is_local);
+bool scale_gizmo(const gizmo_system &context, uint32_t id, fpalg::TRS &t, bool is_uniform);
 
 } // namespace tinygizmo

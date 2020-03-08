@@ -24,11 +24,4 @@ minalg::float4 make_rotation_quat_between_vectors_snapped(const minalg::float3 &
     return make_rotation_quat_axis_angle(normalize(cross(a, b)), snappedAcos);
 }
 
-minalg::float3 transform_coord(const minalg::float4x4 &transform, const minalg::float3 &coord)
-{
-    auto r = mul(transform, minalg::float4(coord, 1));
-    return (r.xyz() / r.w);
-}
-minalg::float3 transform_vector(const minalg::float4x4 &transform, const minalg::float3 &vector) { return mul(transform, minalg::float4(vector, 0)).xyz(); }
-
 } // namespace tinygizmo

@@ -1,5 +1,4 @@
 #include "tinygizmo.h"
-#include "utilmath.h"
 #include "impl.h"
 #include <iostream>
 
@@ -19,6 +18,9 @@ static void flush_to_zero(minalg::float3 &f)
     if (std::abs(f.z) < 0.02f)
         f.z = 0.f;
 }
+
+template <typename T>
+T clamp(const T &val, const T &min, const T &max) { return std::min(std::max(val, min), max); }
 
 static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
@@ -118,10 +120,9 @@ static void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawl
     }
 }
 
-bool scale_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_uniform)
+bool scale_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool is_uniform)
 {
     auto &impl = ctx.m_impl;
-    auto id = hash_fnv1a(name);
     auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
     auto worldRay = impl->get_ray();

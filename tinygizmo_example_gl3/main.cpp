@@ -143,18 +143,18 @@ int main(int argc, char *argv[])
             switch (mode)
             {
             case transform_mode::translate:
-                tinygizmo::position_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
-                tinygizmo::position_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
+                tinygizmo::position_gizmo(gizmo_system, tinygizmo::hash_fnv1a("first-example-gizmo"), teapot_a, is_local);
+                tinygizmo::position_gizmo(gizmo_system, tinygizmo::hash_fnv1a("second-example-gizmo"), teapot_b, is_local);
                 break;
 
             case transform_mode::rotate:
-                tinygizmo::orientation_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
-                tinygizmo::orientation_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, tinygizmo::hash_fnv1a("first-example-gizmo"), teapot_a, is_local);
+                tinygizmo::orientation_gizmo(gizmo_system, tinygizmo::hash_fnv1a("second-example-gizmo"), teapot_b, is_local);
                 break;
 
             case transform_mode::scale:
-                tinygizmo::scale_gizmo(gizmo_system, "first-example-gizmo", teapot_a, is_local);
-                tinygizmo::scale_gizmo(gizmo_system, "second-example-gizmo", teapot_b, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, tinygizmo::hash_fnv1a("first-example-gizmo"), teapot_a, is_local);
+                tinygizmo::scale_gizmo(gizmo_system, tinygizmo::hash_fnv1a("second-example-gizmo"), teapot_b, is_local);
                 break;
             }
 

@@ -160,10 +160,10 @@ static void draw(std::vector<gizmo_renderable> &drawlist, const fpalg::Transform
     }
 }
 
-bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
+bool orientation_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
-    auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
+    auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
     // assert(length2(t.orientation) > float(1e-6));
     auto worldRay = impl->get_ray();

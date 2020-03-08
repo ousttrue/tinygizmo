@@ -134,10 +134,10 @@ static void draw(Gizmo &gizmo, gizmo_system_impl *impl, const fpalg::Transform &
     }
 }
 
-bool position_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::TRS &trs, bool is_local)
+bool position_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool is_local)
 {
     auto &impl = ctx.m_impl;
-    auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
+    auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
     // raycast
     auto worldRay = impl->get_ray();
