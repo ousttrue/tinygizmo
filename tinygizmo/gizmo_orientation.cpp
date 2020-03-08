@@ -12,29 +12,27 @@ static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
                     fpalg::Transform *out, bool is_local)
 {
-    auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
-    rigid_transform original_pose = {start_orientation, state.original.position};
-    auto the_axis = original_pose.transform_vector(component.axis);
+    auto start_orientation = fpalg::size_cast<fpalg::float4>(is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1));
+    fpalg::Transform original_pose = {fpalg::size_cast<fpalg::float3>(state.original.position), start_orientation};
+    auto the_axis = original_pose.ApplyDirection(fpalg::size_cast<fpalg::float3>(component.axis));
     auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.original.position + state.offset)};
     if (t < 0)
     {
         return false;
     }
 
-    auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.offset);
+    auto center_of_rotation = state.original.position + fpalg::size_cast<minalg::float3>(the_axis) * dot(fpalg::size_cast<minalg::float3>(the_axis), state.offset);
     auto arm1 = normalize(state.original.position + state.offset - center_of_rotation);
     auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
     float d = dot(arm1, arm2);
     if (d > 0.999f)
     {
-        // *out = start_orientation;
         return false;
     }
 
     float angle = std::acos(d);
     if (angle < 0.001f)
     {
-        // *out = start_orientation;
         return false;
     }
 
