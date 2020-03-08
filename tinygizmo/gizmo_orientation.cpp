@@ -8,6 +8,10 @@
 namespace tinygizmo
 {
 
+using fpalg::operator+;
+using fpalg::operator-;
+using fpalg::operator*;
+
 static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
                     fpalg::Transform *out, bool is_local)
@@ -21,10 +25,10 @@ static bool dragger(const GizmoComponent &component,
         return false;
     }
 
-    auto center_of_rotation = state.original.position + fpalg::size_cast<minalg::float3>(the_axis) * dot(fpalg::size_cast<minalg::float3>(the_axis), state.offset);
-    auto arm1 = normalize(state.original.position + state.offset - center_of_rotation);
-    auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
-    float d = dot(arm1, arm2);
+    auto center_of_rotation = fpalg::size_cast<fpalg::float3>(state.original.position) + the_axis * fpalg::Dot(the_axis, fpalg::size_cast<fpalg::float3>(state.offset));
+    auto arm1 = fpalg::Normalize(fpalg::size_cast<fpalg::float3>(state.original.position + state.offset) - center_of_rotation);
+    auto arm2 = fpalg::Normalize(worldRay.SetT(t) - center_of_rotation);
+    float d = fpalg::Dot(arm1, arm2);
     if (d > 0.999f)
     {
         return false;
@@ -44,10 +48,10 @@ static bool dragger(const GizmoComponent &component,
     // }
     // else
     {
-        auto a = normalize(cross(arm1, arm2));
+        auto a = fpalg::Normalize(fpalg::Cross(arm1, arm2));
         // out->rotation = fpalg::size_cast<fpalg::float4>(qmul(rotation_quat(a, angle), start_orientation));
         out->rotation = fpalg::QuaternionMul(
-            fpalg::QuaternionAxisAngle(fpalg::size_cast<fpalg::float3>(a), angle),
+            fpalg::QuaternionAxisAngle(a, angle),
             fpalg::size_cast<fpalg::float4>(start_orientation));
         return true;
     }

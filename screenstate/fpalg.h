@@ -63,7 +63,7 @@ inline float Length(const float3 &lhs)
 
 inline float3 Normalize(const float3 &lhs)
 {
-    auto factor = 1.0f / Dot(lhs, lhs);
+    auto factor = 1.0f / Length(lhs);
     return {lhs[0] * factor, lhs[1] * factor, lhs[2] * factor};
 }
 
