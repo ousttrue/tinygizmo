@@ -1,6 +1,6 @@
 #pragma once
 #include "ScreenState.h"
-#include "camera_state.h"
+#include "CameraState.h"
 #include <array>
 
 enum class PerspectiveTypes
