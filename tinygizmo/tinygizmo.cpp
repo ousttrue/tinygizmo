@@ -45,7 +45,7 @@ void gizmo_system::render(
     *vertexStride = sizeof(r.vertices[0]);
     *pIndices = (void *)r.triangles.data();
     *indicesBytes = static_cast<uint32_t>(r.triangles.size() * sizeof(r.triangles[0]));
-    *indexStride = sizeof(r.triangles[0]) / 3;
+    *indexStride = sizeof(r.triangles[0]);
 }
 
 } // namespace tinygizmo

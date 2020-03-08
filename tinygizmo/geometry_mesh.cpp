@@ -28,11 +28,11 @@ void geometry_mesh::compute_normals()
     }
 
     uint32_t idx0, idx1, idx2;
-    for (auto &t : this->triangles)
+    for (auto t = triangles.begin(); t != triangles.end(); t += 3)
     {
-        idx0 = uniqueVertIndices[t.x] - 1;
-        idx1 = uniqueVertIndices[t.y] - 1;
-        idx2 = uniqueVertIndices[t.z] - 1;
+        idx0 = uniqueVertIndices[t[0]] - 1;
+        idx1 = uniqueVertIndices[t[1]] - 1;
+        idx2 = uniqueVertIndices[t[2]] - 1;
 
         geometry_vertex &v0 = this->vertices[idx0], &v1 = this->vertices[idx1], &v2 = this->vertices[idx2];
         const minalg::float3 n = cross(v1.position - v0.position, v2.position - v0.position);
@@ -77,7 +77,10 @@ geometry_mesh geometry_mesh::make_box_geometry(const minalg::float3 &min_bounds,
         {{b.x, b.y, b.z}, {0, 0, +1}},
         {{a.x, b.y, b.z}, {0, 0, +1}},
     };
-    mesh.triangles = {{0, 1, 2}, {0, 2, 3}, {4, 5, 6}, {4, 6, 7}, {8, 9, 10}, {8, 10, 11}, {12, 13, 14}, {12, 14, 15}, {16, 17, 18}, {16, 18, 19}, {20, 21, 22}, {20, 22, 23}};
+    minalg::uint3 triangles[] = {{0, 1, 2}, {0, 2, 3}, {4, 5, 6}, {4, 6, 7}, {8, 9, 10}, {8, 10, 11}, {12, 13, 14}, {12, 14, 15}, {16, 17, 18}, {16, 18, 19}, {20, 21, 22}, {20, 22, 23}};
+    auto begin = (uint32_t *)triangles;
+    auto end = begin + _countof(triangles) * 3;
+    mesh.triangles.assign(begin, end);
     return mesh;
 }
 
@@ -95,8 +98,13 @@ geometry_mesh geometry_mesh::make_cylinder_geometry(const minalg::float3 &axis, 
     }
     for (uint32_t i = 0; i < slices; ++i)
     {
-        mesh.triangles.push_back({i * 2, i * 2 + 2, i * 2 + 3});
-        mesh.triangles.push_back({i * 2, i * 2 + 3, i * 2 + 1});
+        mesh.triangles.push_back(i * 2);
+        mesh.triangles.push_back(i * 2 + 2);
+        mesh.triangles.push_back(i * 2 + 3);
+
+        mesh.triangles.push_back(i * 2);
+        mesh.triangles.push_back(i * 2 + 3);
+        mesh.triangles.push_back(i * 2 + 1);
     }
 
     // Generate caps
@@ -110,8 +118,13 @@ geometry_mesh geometry_mesh::make_cylinder_geometry(const minalg::float3 &axis, 
     }
     for (uint32_t i = 2; i < slices; ++i)
     {
-        mesh.triangles.push_back({base, base + i * 2 - 2, base + i * 2});
-        mesh.triangles.push_back({base + 1, base + i * 2 + 1, base + i * 2 - 1});
+        mesh.triangles.push_back(base);
+        mesh.triangles.push_back(base + i * 2 - 2);
+        mesh.triangles.push_back(base + i * 2);
+
+        mesh.triangles.push_back(base + 1);
+        mesh.triangles.push_back(base + i * 2 + 1);
+        mesh.triangles.push_back(base + i * 2 - 1);
     }
     return mesh;
 }
@@ -138,8 +151,13 @@ geometry_mesh geometry_mesh::make_lathed_geometry(const minalg::float3 &axis, co
                 uint32_t i1 = (i - 0) * pointCount + (j - 1);
                 uint32_t i2 = (i - 0) * pointCount + (j - 0);
                 uint32_t i3 = (i - 1) * pointCount + (j - 0);
-                mesh.triangles.push_back({i0, i1, i2});
-                mesh.triangles.push_back({i0, i2, i3});
+                mesh.triangles.push_back(i0);
+                mesh.triangles.push_back(i1);
+                mesh.triangles.push_back(i2);
+
+                mesh.triangles.push_back(i0);
+                mesh.triangles.push_back(i2);
+                mesh.triangles.push_back(i3);
             }
         }
     }
@@ -150,12 +168,12 @@ geometry_mesh geometry_mesh::make_lathed_geometry(const minalg::float3 &axis, co
 float operator>>(const fpalg::Ray &ray, const geometry_mesh &mesh)
 {
     float best_t = std::numeric_limits<float>::infinity();
-    for (auto &tri : mesh.triangles)
+    for (auto it = mesh.triangles.begin(); it != mesh.triangles.end(); it += 3)
     {
         auto t = ray >> fpalg::Triangle{
-                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[0]].position),
-                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[1]].position),
-                            fpalg::size_cast<fpalg::float3>(mesh.vertices[tri[2]].position)};
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[it[0]].position),
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[it[1]].position),
+                            fpalg::size_cast<fpalg::float3>(mesh.vertices[it[2]].position)};
         if (t < best_t)
         {
             best_t = t;

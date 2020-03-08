@@ -88,8 +88,12 @@ public:
         {
             uint32_t numVerts = (uint32_t)m_r.vertices.size();
             auto it = m_r.vertices.insert(m_r.vertices.end(), m.mesh.vertices.begin(), m.mesh.vertices.end());
-            for (auto &f : m.mesh.triangles)
-                m_r.triangles.push_back({numVerts + f.x, numVerts + f.y, numVerts + f.z});
+            for (auto tri = m.mesh.triangles.begin(); tri!=m.mesh.triangles.end(); tri+=3)
+            {
+                m_r.triangles.push_back(numVerts + tri[0]);
+                m_r.triangles.push_back(numVerts + tri[1]);
+                m_r.triangles.push_back(numVerts + tri[2]);
+            }
             for (; it != m_r.vertices.end(); ++it)
                 it->color = m.color; // Take the color and shove it into a per-vertex attribute
         }

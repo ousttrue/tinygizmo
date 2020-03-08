@@ -16,7 +16,7 @@ struct geometry_vertex
 struct geometry_mesh
 {
     std::vector<geometry_vertex> vertices;
-    std::vector<minalg::uint3> triangles;
+    std::vector<uint32_t> triangles;
 
     static geometry_mesh make_box_geometry(const minalg::float3 &min_bounds, const minalg::float3 &max_bounds);
     static geometry_mesh make_cylinder_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, uint32_t slices);
