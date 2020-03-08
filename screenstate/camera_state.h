@@ -28,6 +28,9 @@ struct CameraState
     // viewInverse;
     std::array<float, 3> position;
     std::array<float, 4> rotation;
+    // ray
+    std::array<float, 3> ray_origin;
+    std::array<float, 3> ray_direction;
 
     // mult
     std::array<float, 16> viewProjection;

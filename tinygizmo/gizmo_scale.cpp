@@ -9,14 +9,14 @@ using fpalg::operator-;
 using fpalg::operator+;
 using fpalg::operator*;
 
-static void flush_to_zero(minalg::float3 &f)
+static void flush_to_zero(fpalg::float3 &f)
 {
-    if (std::abs(f.x) < 0.02f)
-        f.x = 0.f;
-    if (std::abs(f.y) < 0.02f)
-        f.y = 0.f;
-    if (std::abs(f.z) < 0.02f)
-        f.z = 0.f;
+    if (std::abs(f[0]) < 0.02f)
+        f[0] = 0.f;
+    if (std::abs(f[1]) < 0.02f)
+        f[1] = 0.f;
+    if (std::abs(f[2]) < 0.02f)
+        f[2] = 0.f;
 }
 
 template <typename T>
@@ -40,8 +40,7 @@ static bool dragger(const GizmoComponent &component,
         return false;
     }
     auto intersect = worldRay.SetT(t);
-
-    auto offset_on_axis = fpalg::size_cast<minalg::float3>((intersect - state.offset - state.original.position) * component.axis);
+    auto offset_on_axis = fpalg::Mul3((intersect - state.offset - state.original.position), component.axis);
     flush_to_zero(offset_on_axis);
     auto new_scale = state.original.scale + fpalg::size_cast<fpalg::float3>(offset_on_axis);
 
@@ -125,7 +124,7 @@ bool scale_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool is_
     auto &impl = ctx.m_impl;
     auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
-    auto worldRay = impl->get_ray();
+    auto worldRay = fpalg::Ray{impl->state.ray_origin, impl->state.ray_direction};
     auto localRay = worldRay.Transform(trs.transform.Inverse());
 
     if (impl->state.has_clicked)

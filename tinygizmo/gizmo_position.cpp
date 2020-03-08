@@ -1,15 +1,8 @@
 #include "tinygizmo.h"
 #include "impl.h"
 
-
 namespace tinygizmo
 {
-
-struct Param
-{
-    minalg::float3 N;
-    float snapValue;
-};
 
 using fpalg::operator+;
 using fpalg::operator-;
@@ -140,7 +133,7 @@ bool position_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bool 
     auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
     // raycast
-    auto worldRay = impl->get_ray();
+    auto worldRay = fpalg::Ray{impl->state.ray_origin, impl->state.ray_direction};
     auto gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.transform.position, {0, 0, 0, 1}};
     auto localRay = worldRay.Transform(gizmoTransform.Inverse());
     auto [mesh, best_t] = raycast(localRay);

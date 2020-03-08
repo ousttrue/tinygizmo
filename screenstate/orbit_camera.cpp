@@ -2,27 +2,39 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void OrbitCamera::CalcView()
+void OrbitCamera::CalcView(int w, int h, int x, int y)
 {
     using fpalg::operator*;
 
     // view transform
     auto q_yaw = fpalg::QuaternionAxisAngle({0, 1, 0}, yawRadians);
     auto q_pitch = fpalg::QuaternionAxisAngle({1, 0, 0}, pitchRadians);
-    auto transform = fpalg::Transform{shift, q_pitch * q_yaw};
+    auto transform = fpalg::Transform{shift, fpalg::QuaternionMul(q_pitch, q_yaw)};
     state.view = transform.Matrix();
 
     // inverse view transform
+    auto inv = transform.Inverse();
     {
-        auto inv = transform.Inverse();
         state.rotation = inv.rotation;
         state.position = inv.position;
     }
+
+    // ray for mouse cursor
+    auto t = std::tan(state.fovYRadians / 2);
+    const float xx = 2 * (float)x / w - 1;
+    const float yy = 1 - 2 * (float)y / h;
+    auto dir = fpalg::float3{
+        t * aspectRatio * xx,
+        t * yy,
+        -1,
+    };
+    state.ray_direction = inv.ApplyDirection(dir);
+    state.ray_origin = state.position;
 }
 
 void OrbitCamera::CalcPerspective()
 {
-    switch(perspectiveType)
+    switch (perspectiveType)
     {
     case PerspectiveTypes::OpenGL:
         fpalg::PerspectiveRHGL(state.projection.data(), state.fovYRadians, aspectRatio, zNear, zFar);
@@ -86,6 +98,6 @@ void OrbitCamera::WindowInput(const screenstate::ScreenState &window)
     }
     prevMouseX = window.MouseX;
     prevMouseY = window.MouseY;
-    CalcView();
+    CalcView(window.Width, window.Height, window.MouseX, window.MouseY);
     state.CalcViewProjection();
 }

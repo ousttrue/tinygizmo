@@ -3,7 +3,8 @@
 
 #pragma once
 #include <string>
-#include "fpalg.h"
+#include <array>
+#include <stdint.h>
 
 namespace tinygizmo
 {
@@ -32,6 +33,10 @@ struct gizmo_application_state
     // Used for constructing inverse view projection for raycasting onto gizmo geometry
     std::array<float, 3> camera_position;
     std::array<float, 4> camera_orientation;
+
+    // ray
+    std::array<float, 3> ray_origin;
+    std::array<float, 3> ray_direction;
 };
 
 struct gizmo_system
@@ -43,7 +48,7 @@ struct gizmo_system
 
     // Clear geometry buffer and update internal `gizmo_application_state` data
     void new_frame(
-        const gizmo_application_state &state, const std::array<float, 16> &viewProjection);
+        const gizmo_application_state &state);
 
     void render(
         void **pVertices, uint32_t *veticesBytes, uint32_t *vertexStride,
@@ -52,6 +57,12 @@ struct gizmo_system
 
 // 32 bit FNV Hash
 uint32_t hash_fnv1a(const std::string &str);
+} // namespace tinygizmo
+
+#include "fpalg.h"
+
+namespace tinygizmo
+{
 
 bool position_gizmo(const gizmo_system &context, uint32_t id, fpalg::TRS &t, bool is_local);
 bool orientation_gizmo(const gizmo_system &context, uint32_t id, fpalg::TRS &t, bool is_local);

@@ -10,7 +10,7 @@ using fpalg::operator-;
 using fpalg::operator*;
 
 static bool dragger(const GizmoComponent &component,
-                    const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
+                    const fpalg::Ray &worldRay, const GizmoState &state, float snapValue,
                     fpalg::Transform *out, bool is_local)
 {
     auto start_orientation = is_local ? state.original.rotation : fpalg::float4{0, 0, 0, 1};
@@ -37,9 +37,9 @@ static bool dragger(const GizmoComponent &component,
         return false;
     }
 
-    // if (snapVaue)
+    // if (snapValue)
     // {
-    //     auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapVaue);
+    //     auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapValue);
     //     out->rotation = fpalg::size_cast<fpalg::float4>(qmul(snapped, start_orientation));
     //     return true;
     // }
@@ -166,7 +166,7 @@ bool orientation_gizmo(const gizmo_system &ctx, uint32_t id, fpalg::TRS &trs, bo
     auto [gizmo, created] = impl->get_or_create_gizmo(id);
 
     // assert(length2(t.orientation) > float(1e-6));
-    auto worldRay = impl->get_ray();
+    auto worldRay = fpalg::Ray{impl->state.ray_origin, impl->state.ray_direction};
     fpalg::Transform gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.position, {0, 0, 0, 1}}; // Orientation is local by default
 
     // raycast

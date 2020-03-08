@@ -46,7 +46,7 @@ inline float3 operator*(const float3 &lhs, float scalar)
 {
     return {lhs[0] * scalar, lhs[1] * scalar, lhs[2] * scalar};
 }
-inline float3 operator*(const float3 &lhs, const float3 &rhs)
+inline float3 Mul3(const float3 &lhs, const float3 &rhs)
 {
     return {lhs[0] * rhs[0], lhs[1] * rhs[1], lhs[2] * rhs[2]};
 }
@@ -375,23 +375,23 @@ inline float3 QuaternionRotateFloat3(const float4 &q, const float3 &v)
     return x * v[0] + y * v[1] + z * v[2];
 }
 
-inline float4 operator*(const float4 &lhs, const float4 &rhs)
-{
-    float ax = lhs[0];
-    float ay = lhs[1];
-    float az = lhs[2];
-    float aw = lhs[3];
-    float bx = rhs[0];
-    float by = rhs[1];
-    float bz = rhs[2];
-    float bw = rhs[3];
-    return {
-        ax * bw + aw * bx + ay * bz - az * by,
-        ay * bw + aw * by + az * bx - ax * bz,
-        az * bw + aw * bz + ax * by - ay * bx,
-        aw * bw - ax * bx - ay * by - az * bz,
-    };
-}
+// inline float4 operator*(const float4 &lhs, const float4 &rhs)
+// {
+//     float ax = lhs[0];
+//     float ay = lhs[1];
+//     float az = lhs[2];
+//     float aw = lhs[3];
+//     float bx = rhs[0];
+//     float by = rhs[1];
+//     float bz = rhs[2];
+//     float bw = rhs[3];
+//     return {
+//         ax * bw + aw * bx + ay * bz - az * by,
+//         ay * bw + aw * by + az * bx - ax * bz,
+//         az * bw + aw * bz + ax * by - ay * bx,
+//         aw * bw - ax * bx - ay * by - az * bz,
+//     };
+// }
 
 struct Transform
 {

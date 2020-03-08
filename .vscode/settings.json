@@ -51,7 +51,15 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "locale": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "optional": "cpp",
+        "random": "cpp",
+        "sstream": "cpp",
+        "variant": "cpp",
+        "xlocbuf": "cpp",
+        "*.rh": "cpp"
     },
     "cSpell.words": [
         "Lboolean",

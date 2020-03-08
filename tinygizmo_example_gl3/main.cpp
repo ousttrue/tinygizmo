@@ -104,11 +104,13 @@ int main(int argc, char *argv[])
             // .hotkey_ctrl = state.key_left_control,
             .camera_position = camera.state.position,
             .camera_orientation = camera.state.rotation,
+            .ray_origin = camera.state.ray_origin,
+            .ray_direction = camera.state.ray_direction,
         };
         gizmo_state.has_clicked = !lastState.MouseLeftDown() && state.MouseLeftDown();
         gizmo_state.has_released = lastState.MouseLeftDown() && !state.MouseLeftDown();
 
-        gizmo_system.new_frame(gizmo_state, camera.state.viewProjection);
+        gizmo_system.new_frame(gizmo_state);
 
         if (state.KeyCode['R'])
         {
@@ -174,9 +176,6 @@ int main(int argc, char *argv[])
                                    true);
         }
 
-        //
-        // gizmo after xform user draw
-        //
         renderer.clearDepth();
         static const float identity4x4[] = {
             1, 0, 0, 0, //

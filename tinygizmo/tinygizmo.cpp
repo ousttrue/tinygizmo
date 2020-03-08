@@ -27,10 +27,9 @@ gizmo_system::~gizmo_system()
     delete m_impl;
 }
 
-void gizmo_system::new_frame(const gizmo_application_state &state,
-                             const std::array<float, 16> &viewProjection)
+void gizmo_system::new_frame(const gizmo_application_state &state)
 {
-    m_impl->update(state, viewProjection);
+    m_impl->update(state);
 }
 
 void gizmo_system::render(
