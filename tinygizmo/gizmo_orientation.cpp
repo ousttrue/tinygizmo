@@ -167,13 +167,8 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
 {
     auto &impl = ctx.m_impl;
     auto [gizmo, created] = impl->get_or_create_gizmo(hash_fnv1a(name));
-    if (created)
-    {
-        // TODO
-    }
 
-    auto &t = fpalg::size_cast<rigid_transform>(trs);
-    assert(length2(t.orientation) > float(1e-6));
+    // assert(length2(t.orientation) > float(1e-6));
     auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
     fpalg::Transform gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.position, {0, 0, 0, 1}}; // Orientation is local by default
 
@@ -190,7 +185,7 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
                 auto localHit = localRay.SetT(best_t);
                 using fpalg::operator-;
                 auto offset = gizmoTransform.ApplyPosition(localHit) - trs.position;
-                gizmo->begin(mesh, fpalg::size_cast<minalg::float3>(offset), t, {});
+                gizmo->begin(mesh, offset, trs, {});
             }
         }
         else if (impl->state.has_released)
@@ -206,11 +201,11 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         dragger(*active, worldRay, gizmo->m_state, impl->state.snap_rotation, &gizmoTransform, is_local);
         if (!is_local)
         {
-            t.orientation = qmul(fpalg::size_cast<minalg::float4>(gizmoTransform.rotation), gizmo->m_state.original.orientation);
+            trs.rotation = fpalg::size_cast<fpalg::float4>(qmul(fpalg::size_cast<minalg::float4>(gizmoTransform.rotation), gizmo->m_state.original.orientation));
         }
         else
         {
-            t.orientation = fpalg::size_cast<minalg::float4>(gizmoTransform.rotation);
+            trs.rotation = gizmoTransform.rotation;
         }
     }
 
