@@ -1,5 +1,4 @@
 #include "tinygizmo.h"
-#include "minalg.h"
 #include "impl.h"
 
 

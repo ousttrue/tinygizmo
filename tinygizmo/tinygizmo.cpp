@@ -3,7 +3,6 @@
 
 #include "tinygizmo.h"
 #include "geometry_mesh.h"
-#include "rigid_transform.h"
 
 #include <assert.h>
 #include <memory>

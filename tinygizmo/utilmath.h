@@ -1,6 +1,5 @@
 #pragma once
 #include "minalg.h"
-#include "rigid_transform.h"
 #include "geometry_mesh.h"
 
 namespace tinygizmo

@@ -1,8 +1,6 @@
 #include "tinygizmo.h"
 #include "impl.h"
 #include "assert.h"
-#include "minalg.h"
-#include "rigid_transform.h"
 
 namespace tinygizmo
 {
