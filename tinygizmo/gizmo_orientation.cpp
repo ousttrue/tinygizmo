@@ -9,7 +9,7 @@ namespace tinygizmo
 {
 
 static bool dragger(const GizmoComponent &component,
-                    const ray &ray, const GizmoState &state, float snapVaue,
+                    const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
                     rigid_transform *out, bool is_local)
 {
     auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
@@ -19,22 +19,15 @@ static bool dragger(const GizmoComponent &component,
     auto the_axis = original_pose.transform_vector(component.axis);
     // minalg::float4 the_plane = {the_axis, -dot(the_axis, state.offset)};
 
-    auto t = fpalg::size_cast<fpalg::Ray>(ray) >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.offset)};
+    auto t = worldRay >> fpalg::Plane{fpalg::size_cast<fpalg::float3>(the_axis), fpalg::size_cast<fpalg::float3>(state.offset)};
     if (t < 0)
     {
         return false;
     }
 
-    // float t;
-    // if (!intersect_ray_plane(ray, the_plane, &t))
-    // {
-    //     // *out = start_orientation;
-    //     return false;
-    // }
-
     auto center_of_rotation = state.original.position + the_axis * dot(the_axis, state.originalPositionToClick());
     auto arm1 = normalize(state.offset - center_of_rotation);
-    auto arm2 = normalize(ray.origin + ray.direction * t - center_of_rotation);
+    auto arm2 = normalize(fpalg::size_cast<minalg::float3>(worldRay.SetT(t)) - center_of_rotation);
 
     float d = dot(arm1, arm2);
     if (d > 0.999f)

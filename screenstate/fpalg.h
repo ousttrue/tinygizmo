@@ -419,6 +419,20 @@ struct Ray
     float3 origin;
     float3 direction;
 
+    Ray(const float3 &_origin, const float3 &_direction)
+    :origin(_origin), direction(_direction)
+    {
+    }
+
+    template <typename T>
+    Ray(const T &t)
+    {
+        static_assert(sizeof(T) == sizeof(Ray), "Ray::Ray()");
+        auto &ray = size_cast<Ray>(t);
+        origin = ray.origin;
+        direction = ray.direction;
+    }
+
     Ray ToLocal(const fpalg::Transform &t) const
     {
         auto toLocal = t.Inverse();
@@ -435,8 +449,8 @@ struct Ray
     Ray Transform(const Transform &t) const
     {
         return {
-            .origin = t.ApplyPosition(origin),
-            .direction = t.ApplyDirection(direction),
+            t.ApplyPosition(origin),
+            t.ApplyDirection(direction),
         };
     }
 };

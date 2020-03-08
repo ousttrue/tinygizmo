@@ -23,6 +23,10 @@ enum class transform_mode
     scale
 };
 
+#include <vector>
+#include <ranges>
+#include <iostream>
+
 //////////////////////////
 //   Main Application   //
 //////////////////////////
