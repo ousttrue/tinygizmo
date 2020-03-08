@@ -58,7 +58,7 @@ static bool dragger(const GizmoComponent &component,
     return true;
 }
 
-static minalg::float2 mace_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
+static fpalg::float2 mace_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.1f}, {1.25f, 0.1f}, {1.25f, 0}};
 
 static GizmoComponent xComponent{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, mace_points, _countof(mace_points)),
@@ -105,8 +105,8 @@ void draw(const fpalg::Transform &t, std::vector<gizmo_renderable> &drawlist, co
         for (auto &v : r.mesh.vertices)
         {
             // transform local coordinates into worldspace
-            v.position = fpalg::size_cast<minalg::float3>(t.ApplyPosition(fpalg::size_cast<std::array<float, 3>>(v.position)));
-            v.normal = fpalg::size_cast<minalg::float3>(t.ApplyDirection(fpalg::size_cast<std::array<float, 3>>(v.normal)));
+            v.position = t.ApplyPosition(v.position);
+            v.normal = t.ApplyDirection(v.normal);
         }
         drawlist.push_back(r);
     }

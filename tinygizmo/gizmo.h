@@ -18,8 +18,8 @@ struct GizmoState
 struct GizmoComponent
 {
     geometry_mesh mesh;
-    minalg::float4 base_color;
-    minalg::float4 highlight_color;
+    fpalg::float4 base_color;
+    fpalg::float4 highlight_color;
     minalg::float3 axis;
 };
 

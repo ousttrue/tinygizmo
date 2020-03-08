@@ -51,7 +51,7 @@ static bool axisDragger(const GizmoComponent &component, const fpalg::Ray &world
     return true;
 }
 
-static minalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
+static fpalg::float2 arrow_points[] = {{0.25f, 0}, {0.25f, 0.05f}, {1, 0.05f}, {1, 0.10f}, {1.2f, 0}};
 static GizmoComponent componentX{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 16, arrow_points, _countof(arrow_points)),
     {1, 0.5f, 0.5f, 1.f},
@@ -114,10 +114,8 @@ std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
     return std::make_pair(updated_state, best_t);
 }
 
-void draw(Gizmo &gizmo, gizmo_system_impl *impl, const fpalg::Transform &p)
+void draw(Gizmo &gizmo, gizmo_system_impl *impl, const fpalg::Transform &t)
 {
-    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(p.Matrix());
-
     for (auto c : translation_components)
     {
         gizmo_renderable r{
@@ -126,8 +124,8 @@ void draw(Gizmo &gizmo, gizmo_system_impl *impl, const fpalg::Transform &p)
         };
         for (auto &v : r.mesh.vertices)
         {
-            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-            v.normal = transform_vector(modelMatrix, v.normal);
+            v.position = t.ApplyPosition(v.position); // transform local coordinates into worldspace
+            v.normal = t.ApplyDirection(v.normal);
         }
         impl->drawlist.push_back(r);
     }

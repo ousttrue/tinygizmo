@@ -11,7 +11,7 @@ namespace tinygizmo
 struct gizmo_renderable
 {
     geometry_mesh mesh;
-    minalg::float4 color;
+    fpalg::float4 color;
 };
 
 struct gizmo_system_impl

@@ -5,6 +5,7 @@
 
 namespace fpalg
 {
+using float2 = std::array<float, 2>;
 using float3 = std::array<float, 3>;
 using float4 = std::array<float, 4>;
 
@@ -30,6 +31,13 @@ inline float3 operator+(const float3 &lhs, const float3 &rhs)
 {
     return {lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2]};
 }
+inline float3 &operator+=(float3 &lhs, const float3 &rhs)
+{
+    lhs[0] += rhs[0];
+    lhs[1] += rhs[1];
+    lhs[2] += rhs[2];
+    return lhs;
+}
 inline float3 operator-(const float3 &lhs, const float3 &rhs)
 {
     return {lhs[0] - rhs[0], lhs[1] - rhs[1], lhs[2] - rhs[2]};
@@ -42,6 +50,11 @@ inline float3 operator*(const float3 &lhs, float scalar)
 inline float Dot(const float3 &lhs, const float3 &rhs)
 {
     return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
+}
+
+inline float Length(const float3 &lhs)
+{
+    return std::sqrt(Dot(lhs, lhs));
 }
 
 inline float3 Normalize(const float3 &lhs)
@@ -421,8 +434,9 @@ struct TRS
     float3 scale;
 
     TRS()
-    : position({0, 0, 0}), rotation({0, 0, 0, 1}), scale({1, 1, 1})
-    {}
+        : position({0, 0, 0}), rotation({0, 0, 0, 1}), scale({1, 1, 1})
+    {
+    }
 
     std::array<float, 16> Matrix() const
     {
@@ -463,7 +477,7 @@ struct Ray
         return origin + direction * t;
     }
 
-    Ray Transform(const Transform &t) const
+    Ray Transform(const fpalg::Transform &t) const
     {
         return {
             t.ApplyPosition(origin),

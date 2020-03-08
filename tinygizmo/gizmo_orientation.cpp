@@ -10,7 +10,7 @@ namespace tinygizmo
 
 static bool dragger(const GizmoComponent &component,
                     const fpalg::Ray &worldRay, const GizmoState &state, float snapVaue,
-                    rigid_transform *out, bool is_local)
+                    fpalg::Transform *out, bool is_local)
 {
     auto start_orientation = is_local ? state.original.orientation : minalg::float4(0, 0, 0, 1);
 
@@ -46,18 +46,18 @@ static bool dragger(const GizmoComponent &component,
     if (snapVaue)
     {
         auto snapped = make_rotation_quat_between_vectors_snapped(arm1, arm2, snapVaue);
-        out->orientation = qmul(snapped, start_orientation);
+        out->rotation = fpalg::size_cast<fpalg::float4>(qmul(snapped, start_orientation));
         return true;
     }
     else
     {
         auto a = normalize(cross(arm1, arm2));
-        out->orientation = qmul(rotation_quat(a, angle), start_orientation);
+        out->rotation = fpalg::size_cast<fpalg::float4>(qmul(rotation_quat(a, angle), start_orientation));
         return true;
     }
 }
 
-static minalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
+static fpalg::float2 ring_points[] = {{+0.025f, 1}, {-0.025f, 1}, {-0.025f, 1}, {-0.025f, 1.1f}, {-0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1.1f}, {+0.025f, 1}};
 
 static GizmoComponent componentX{
     geometry_mesh::make_lathed_geometry({1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 32, ring_points, _countof(ring_points), 0.003f),
@@ -101,10 +101,10 @@ static std::pair<const GizmoComponent *, float> raycast(const fpalg::Ray &ray)
 }
 
 static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
-                               const rigid_transform &gizmoTransform, const GizmoComponent *active,
+                               const fpalg::Transform &gizmoTransform, const GizmoComponent *active,
                                const GizmoState &state)
 {
-    auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
+    // auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
 
     // For non-local transformations, we only present one rotation ring
     // and draw an arrow from the center of the gizmo to indicate the degree of rotation
@@ -114,33 +114,39 @@ static void draw_global_active(std::vector<gizmo_renderable> &drawlist,
     };
     for (auto &v : r.mesh.vertices)
     {
-        v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-        v.normal = transform_vector(modelMatrix, v.normal);
+        v.position = gizmoTransform.ApplyPosition(v.position); // transform local coordinates into worldspace
+        v.normal = gizmoTransform.ApplyDirection(v.normal);
     }
     drawlist.push_back(r);
 
     {
         // Create orthonormal basis for drawing the arrow
-        auto a = qrot(gizmoTransform.orientation, state.offset);
-        auto zDir = normalize(active->axis), xDir = normalize(cross(a, zDir)), yDir = cross(zDir, xDir);
+        auto a = gizmoTransform.ApplyDirection(fpalg::size_cast<fpalg::float3>(state.offset));
+        auto zDir = fpalg::Normalize(fpalg::size_cast<fpalg::float3>(active->axis));
+        auto xDir = fpalg::Normalize(fpalg::Cross(a, zDir));
+        auto yDir = fpalg::Cross(zDir, xDir);
 
         // Ad-hoc geometry
-        minalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
-        auto geo = geometry_mesh::make_lathed_geometry(yDir, xDir, zDir, 32, arrow_points, _countof(arrow_points));
+        fpalg::float2 arrow_points[] = {{0.0f, 0.f}, {0.0f, 0.05f}, {0.8f, 0.05f}, {0.9f, 0.10f}, {1.0f, 0}};
+        auto geo = geometry_mesh::make_lathed_geometry(
+            fpalg::size_cast<fpalg::float3>(yDir),
+            fpalg::size_cast<fpalg::float3>(xDir),
+            fpalg::size_cast<fpalg::float3>(zDir),
+            32, arrow_points, _countof(arrow_points));
 
         gizmo_renderable r;
         r.mesh = geo;
-        r.color = minalg::float4(1);
+        r.color = fpalg::float4{1, 1, 1, 1};
         for (auto &v : r.mesh.vertices)
         {
-            v.position = transform_coord(modelMatrix, v.position);
-            v.normal = transform_vector(modelMatrix, v.normal);
+            v.position = gizmoTransform.ApplyPosition(v.position);
+            v.normal = gizmoTransform.ApplyDirection(v.normal);
         }
         drawlist.push_back(r);
     }
 }
 
-static void draw(std::vector<gizmo_renderable> &drawlist, const minalg::float4x4 &modelMatrix, const GizmoComponent *active)
+static void draw(std::vector<gizmo_renderable> &drawlist, const fpalg::Transform &gizmoTransform, const GizmoComponent *active)
 {
     for (auto mesh : orientation_components)
     {
@@ -150,8 +156,8 @@ static void draw(std::vector<gizmo_renderable> &drawlist, const minalg::float4x4
         };
         for (auto &v : r.mesh.vertices)
         {
-            v.position = transform_coord(modelMatrix, v.position); // transform local coordinates into worldspace
-            v.normal = transform_vector(modelMatrix, v.normal);
+            v.position = gizmoTransform.ApplyPosition(v.position);
+            v.normal = gizmoTransform.ApplyDirection(v.normal);
         }
         drawlist.push_back(r);
     }
@@ -168,12 +174,12 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
 
     auto &t = fpalg::size_cast<rigid_transform>(trs);
     assert(length2(t.orientation) > float(1e-6));
-    auto worldRay = impl->get_ray();
-    rigid_transform gizmoTransform = rigid_transform(is_local ? t.orientation : minalg::float4(0, 0, 0, 1), t.position); // Orientation is local by default
+    auto worldRay = fpalg::size_cast<fpalg::Ray>(impl->get_ray());
+    fpalg::Transform gizmoTransform = is_local ? trs.transform : fpalg::Transform{trs.position, {0, 0, 0, 1}}; // Orientation is local by default
 
     // raycast
     {
-        auto localRay = detransform(gizmoTransform, worldRay);
+        auto localRay = worldRay.Transform(gizmoTransform.Inverse());
         auto [mesh, best_t] = raycast(fpalg::size_cast<fpalg::Ray>(localRay));
 
         // update
@@ -181,9 +187,10 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         {
             if (mesh)
             {
-                auto localHit = localRay.origin + localRay.direction * best_t;
-                auto offset = gizmoTransform.transform_point(localHit) - t.position;
-                gizmo->begin(mesh, offset, t, {});
+                auto localHit = localRay.SetT(best_t);
+                using fpalg::operator-;
+                auto offset = gizmoTransform.ApplyPosition(localHit) - trs.position;
+                gizmo->begin(mesh, fpalg::size_cast<minalg::float3>(offset), t, {});
             }
         }
         else if (impl->state.has_released)
@@ -199,23 +206,22 @@ bool orientation_gizmo(const gizmo_system &ctx, const std::string &name, fpalg::
         dragger(*active, worldRay, gizmo->m_state, impl->state.snap_rotation, &gizmoTransform, is_local);
         if (!is_local)
         {
-            t.orientation = qmul(gizmoTransform.orientation, gizmo->m_state.original.orientation);
+            t.orientation = qmul(fpalg::size_cast<minalg::float4>(gizmoTransform.rotation), gizmo->m_state.original.orientation);
         }
         else
         {
-            t.orientation = gizmoTransform.orientation;
+            t.orientation = fpalg::size_cast<minalg::float4>(gizmoTransform.rotation);
         }
     }
 
     // draw
     if (!is_local && active)
     {
-        draw_global_active(impl->drawlist, gizmoTransform, active, gizmo->m_state);
+        draw_global_active(impl->drawlist, fpalg::size_cast<fpalg::Transform>(gizmoTransform), active, gizmo->m_state);
     }
     else
     {
-        auto modelMatrix = fpalg::size_cast<minalg::float4x4>(gizmoTransform.matrix());
-        draw(impl->drawlist, modelMatrix, active);
+        draw(impl->drawlist, fpalg::size_cast<fpalg::Transform>(gizmoTransform), active);
     }
 
     return gizmo->isHoverOrActive();

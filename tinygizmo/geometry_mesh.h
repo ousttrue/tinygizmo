@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "minalg.h"
 #include <fpalg.h>
 
 namespace tinygizmo
@@ -8,9 +7,9 @@ namespace tinygizmo
 
 struct geometry_vertex
 {
-    minalg::float3 position;
-    minalg::float3 normal;
-    minalg::float4 color;
+    fpalg::float3 position;
+    fpalg::float3 normal;
+    fpalg::float4 color;
 };
 
 struct geometry_mesh
@@ -18,9 +17,9 @@ struct geometry_mesh
     std::vector<geometry_vertex> vertices;
     std::vector<uint32_t> triangles;
 
-    static geometry_mesh make_box_geometry(const minalg::float3 &min_bounds, const minalg::float3 &max_bounds);
-    static geometry_mesh make_cylinder_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, uint32_t slices);
-    static geometry_mesh make_lathed_geometry(const minalg::float3 &axis, const minalg::float3 &arm1, const minalg::float3 &arm2, int slices, const minalg::float2 *points, uint32_t pointCount, const float eps = 0.0f);
+    static geometry_mesh make_box_geometry(const fpalg::float3 &min_bounds, const fpalg::float3 &max_bounds);
+    static geometry_mesh make_cylinder_geometry(const fpalg::float3 &axis, const fpalg::float3 &arm1, const fpalg::float3 &arm2, uint32_t slices);
+    static geometry_mesh make_lathed_geometry(const fpalg::float3 &axis, const fpalg::float3 &arm1, const fpalg::float3 &arm2, int slices, const fpalg::float2 *points, uint32_t pointCount, const float eps = 0.0f);
 
     void compute_normals();
 
